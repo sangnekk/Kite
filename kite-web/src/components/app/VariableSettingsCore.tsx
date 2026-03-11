@@ -1,0 +1,144 @@
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "../ui/input";
+import { useForm } from "react-hook-form";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../ui/form";
+import { useCallback, useEffect } from "react";
+import { useVariable } from "@/lib/hooks/api";
+import { useVariableUpdateMutation } from "@/lib/api/mutations";
+import { useAppId, useVariableId } from "@/lib/hooks/params";
+import { toast } from "sonner";
+import { setValidationErrors } from "@/lib/form";
+import ConfirmDialog from "../common/ConfirmDialog";
+import { Switch } from "../ui/switch";
+
+interface FormFields {
+  name: string;
+  scoped: boolean;
+}
+
+export default function VariableSettingsCore() {
+  const variable = useVariable();
+
+  const form = useForm<FormFields>({
+    defaultValues: {
+      name: "",
+      scoped: false,
+    },
+  });
+
+  useEffect(() => {
+    if (variable) {
+      form.reset({
+        name: variable.name,
+        scoped: variable.scoped,
+      });
+    }
+  }, [variable, form]);
+
+  const updateMutation = useVariableUpdateMutation(useAppId(), useVariableId());
+
+  const saveSettings = useCallback(() => {
+    const data = form.getValues();
+
+    updateMutation.mutate(
+      {
+        name: data.name,
+        scoped: data.scoped,
+      },
+      {
+        onSuccess(res) {
+          if (res.success) {
+            toast.success("Đã lưu cài đặt!");
+          } else {
+            if (res.error.code === "validation_failed") {
+              setValidationErrors(form, res.error.data);
+            } else {
+              toast.error(
+                `Cập nhật ứng dụng thất bại: ${res.error.message} (${res.error.code})`
+              );
+            }
+          }
+        },
+      }
+    );
+  }, [form, updateMutation]);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Cài đặt biến</CardTitle>
+        <CardDescription>
+          Cấu hình cách ứng dụng hiển thị với người dùng trên Discord và Vibe Bot.
+        </CardDescription>
+      </CardHeader>
+      <Form {...form}>
+        <form className="grid gap-4">
+          <CardContent className="space-y-5">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tên</FormLabel>
+                  <FormControl>
+                    <Input type="text" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="scoped"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border px-4 py-3">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-sm">Theo phạm vi</FormLabel>
+                    <FormDescription>
+                      Biến theo phạm vi cho phép lưu trữ nhiều giá trị
+                      theo khóa cụ thể. Hữu ích cho việc lưu dữ liệu
+                      riêng theo người dùng.
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      aria-readonly
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </CardContent>
+
+          <CardFooter className="border-t px-6 py-4">
+            <ConfirmDialog
+              title="Bạn có chắc chắn muốn cập nhật cài đặt biến?"
+              description="Thay đổi phạm vi biến sẽ xóa tất cả dữ liệu liên quan và không thể hoàn tác."
+              onConfirm={saveSettings}
+            >
+              <Button>Lưu cài đặt</Button>
+            </ConfirmDialog>
+          </CardFooter>
+        </form>
+      </Form>
+    </Card>
+  );
+}

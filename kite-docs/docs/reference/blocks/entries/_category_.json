@@ -1,0 +1,8 @@
+{
+  "label": "Điểm bắt đầu",
+  "position": 1,
+  "link": {
+    "type": "generated-index",
+    "description": "Thông tin về các khối đầu vào có thể dùng trong flow của Vibe Bot."
+  }
+}

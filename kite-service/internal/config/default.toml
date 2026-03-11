@@ -1,0 +1,46 @@
+cluster_count = 1
+cluster_index = 0
+
+[api]
+host = "127.0.0.1"
+port = 8080
+public_base_url = "http://localhost:8080"
+strict_cookies = true
+
+[app]
+public_base_url = "http://localhost:3000"
+
+[user_limits]
+max_apps_per_user = 10
+max_asset_size = 8_000_000
+
+[engine]
+max_stack_depth = 100
+max_operations = 100
+max_credits = 250
+
+[database.postgres]
+host = "127.0.0.1"
+port = 5432
+user = "postgres"
+db_name = "kite"
+
+[database.s3]
+endpoint = "localhost:9000"
+access_key_id = "kite"
+secret_access_key = "1234567890"
+
+[[billing.plans]]
+id = "basic"
+title = "Basic"
+description = "Bắt đầu với Vibe Bot miễn phí. Không cần thẻ tín dụng."
+price = 0
+default = true
+feature_max_collaborators = 1
+feature_usage_credits_per_month = 10000
+feature_max_guilds = 100
+feature_max_commands = 25
+feature_max_variables = 25
+feature_max_messages = 25
+feature_max_event_listeners = 5
+feature_priority_support = false

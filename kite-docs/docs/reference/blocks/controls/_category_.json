@@ -1,0 +1,8 @@
+{
+  "label": "Điều khiển luồng",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "description": "Thông tin về các khối điều khiển luồng có thể dùng trong flow của Vibe Bot."
+  }
+}

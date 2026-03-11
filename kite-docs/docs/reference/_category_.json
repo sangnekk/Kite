@@ -1,0 +1,8 @@
+{
+  "label": "Tham khảo",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "description": "Thông tin về các khái niệm cốt lõi của Vibe Bot."
+  }
+}

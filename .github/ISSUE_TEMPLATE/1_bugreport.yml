@@ -1,0 +1,13 @@
+name: Report a bug
+description: Report encountered problem
+title: "[Bug] ISSUE_TITLE"
+labels: [bug]
+
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Problem Description
+      placeholder: Provide any relevant information, any suggested solutions, and as much context and examples as possible
+    validations:
+      required: true

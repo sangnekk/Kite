@@ -1,0 +1,8 @@
+{
+  "label": "Hành động",
+  "position": 2,
+  "link": {
+    "type": "generated-index",
+    "description": "Thông tin về các khối hành động có thể dùng trong flow của Vibe Bot."
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "label": "Tùy chọn",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "description": "Thông tin về các khối tùy chọn có thể dùng trong flow của Vibe Bot."
+  }
+}

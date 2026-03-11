@@ -1,0 +1,8 @@
+{
+  "label": "Nội bộ",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "Thông tin về cách Vibe Bot vận hành bên trong."
+  }
+}
