@@ -6,11 +6,28 @@ import moment from "moment-timezone"
 import axios from "axios";
 import { MBTransaction, MBTransactionResponse } from "../types/mbbank";
 
+type LoginResponse = {
+  sessionId: string;
+  cust: {
+    deviceId: string;
+  };
+  result: {
+    responseCode: string;
+  };
+};
 
+const REQUEST_TIMEOUT_MS = 30_000;
+const CAPTCHA_TIMEOUT_MS = 20_000;
+const MAX_RETRY = 2;
+const RETRY_DELAY_MS = 1_000;
+const MB_CAPTCHA_API_URL = process.env.MB_CAPTCHA_API_URL;
+const MB_AUTHORIZATION = process.env.MB_AUTHORIZATION;
+const MB_BASE_URL = process.env.MB_BASE_URL;
 const LOGIN_DIR = path.join(__dirname, "/temp/login_data.json");
 const TRANSACTION_TEMP_DIR = path.join(__dirname, "/temp/transaction_data.json");
 
 function saveTempLoginData(data: any) {
+  fs.mkdirSync(path.dirname(LOGIN_DIR), { recursive: true });
   fs.writeFileSync(LOGIN_DIR, JSON.stringify(data, null, 2));
 }
 
@@ -22,6 +39,7 @@ function loadTempLoginData(): any {
 }
 
 function saveTransactionTempData(data: any) {
+  fs.mkdirSync(path.dirname(TRANSACTION_TEMP_DIR), { recursive: true });
   fs.writeFileSync(TRANSACTION_TEMP_DIR, JSON.stringify(data, null, 2));
 }
 
@@ -32,10 +50,69 @@ function loadTransactionTempData(): any {
   return null;
 }
 
-let tempLoginData = loadTempLoginData();
-let transactionTempData = loadTransactionTempData();
+let tempLoginData: { loginResult: LoginResponse; responseData?: MBTransactionResponse } | null = loadTempLoginData();
+let transactionTempData: MBTransactionResponse | null = loadTransactionTempData();
+
+function validateCredentials(username: string, password: string, accountNumber?: string) {
+  if (!username || username.length > 50) {
+    throw new Error("MB username không hợp lệ.");
+  }
+
+  if (!password || password.length > 100) {
+    throw new Error("MB password không hợp lệ.");
+  }
+
+  if (accountNumber && !/^\d{8,20}$/.test(accountNumber)) {
+    throw new Error("Số tài khoản không hợp lệ.");
+  }
+}
+
+function isLoginSuccess(result: unknown): result is LoginResponse {
+  return Boolean(
+    result &&
+    typeof result === "object" &&
+    (result as LoginResponse).sessionId &&
+    (result as LoginResponse).cust?.deviceId &&
+    (result as LoginResponse).result?.responseCode === "00"
+  );
+}
+
+function isTransactionResponse(data: unknown): data is MBTransactionResponse {
+  return Boolean(
+    data &&
+    typeof data === "object" &&
+    (data as MBTransactionResponse).result?.ok !== undefined &&
+    Array.isArray((data as MBTransactionResponse).transactionHistoryList)
+  );
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function withRetry<T>(fn: () => Promise<T>, retries: number, retryDelayMs: number): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (attempt < retries) {
+        await sleep(retryDelayMs * (attempt + 1));
+      }
+    }
+  }
+
+  throw lastError;
+}
 
 async function login(username: string, password: string) {
+  validateCredentials(username, password);
+
+  if (!MB_CAPTCHA_API_URL) {
+    throw new Error("Thiếu biến môi trường MB_CAPTCHA_API_URL.");
+  }
+
   const browser = await puppeteer.launch({
     headless: true,
     args: [
@@ -46,15 +123,16 @@ async function login(username: string, password: string) {
       "--disable-blink-features=AutomationControlled",
     ],
   });
+
   const page = await browser.newPage();
-  let result;
+
   try {
     await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
     await page.evaluateOnNewDocument(() => {
       Object.defineProperty(navigator, "webdriver", { get: () => false });
     });
 
-    await page.goto("https://online.mbbank.com.vn/pl/login?returnUrl=%2F", {
+    await page.goto(`https://${MB_BASE_URL}/pl/login?returnUrl=%2F`, {
       waitUntil: "networkidle2",
     });
 
@@ -62,50 +140,57 @@ async function login(username: string, password: string) {
 
     const captchaBase64 = await page.evaluate(() => {
       const img = document.querySelector('img[src^="data:image/png;base64,"]');
-      // @ts-expect-error - TypeScript không nhận diện được thuộc tính src của HTMLImageElement
-      return img ? img.src : null;
+      return img instanceof HTMLImageElement ? img.src : null;
     });
 
     if (!captchaBase64) throw new Error("Không tìm thấy ảnh CAPTCHA.");
 
     const base64 = captchaBase64.replace(/^data:image\/png;base64,/, "");
-    const captchaSolution = await solveCaptcha(
-      "http://103.153.64.187:8277/api/captcha/mbbank",
-      base64
-    );
+    const captchaSolution = await solveCaptcha(MB_CAPTCHA_API_URL, base64);
     if (!captchaSolution) throw new Error("Không thể giải CAPTCHA.");
 
     await page.type("#user-id", username);
     await page.type("#new-password", password);
     await page.type('input[placeholder="NHẬP MÃ KIỂM TRA"]', captchaSolution);
 
-    page.on("response", async (response) => {
-      if (
-        response.url().includes("/doLogin") &&
-        response.status() === 200
-      ) {
-        result = await response.json();
-      }
-    });
+    const loginResponsePromise = page.waitForResponse(
+      (response) => response.url().includes("/doLogin"),
+      { timeout: REQUEST_TIMEOUT_MS }
+    );
 
     await page.click("#login-btn");
-  } catch (error: any) {
-    console.error("Lỗi:", error.message);
-  } finally {
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    await browser.close();
-    // @ts-expect-error - TypeScript không nhận diện được kiểu của result
-    if (result && result.result && result.result.responseCode === "00") {
-      saveTempLoginData({ loginResult: result });
+    const loginResponse = await loginResponsePromise;
+
+    if (loginResponse.status() !== 200) {
+      throw new Error(`Đăng nhập thất bại, HTTP ${loginResponse.status()}`);
     }
-    return result;
+
+    const result = (await loginResponse.json()) as LoginResponse;
+
+    if (isLoginSuccess(result)) {
+      saveTempLoginData({ loginResult: result });
+      return result;
+    }
+
+    return null;
+  } catch (error: any) {
+    console.error("Lỗi đăng nhập MB:", error?.message || error);
+    return null;
+  } finally {
+    await browser.close();
   }
 }
 
 async function lsgd(username: string, password: string, account_number: string) {
+  validateCredentials(username, password, account_number);
+
+  if (!MB_AUTHORIZATION) {
+    throw new Error("Thiếu biến môi trường MB_AUTHORIZATION.");
+  }
+
   const time = moment.tz("Asia/Ho_Chi_Minh").format("YYYYMMDDHHmmss") + "00";
   const result = tempLoginData ? tempLoginData.loginResult : await login(username, password);
-  if (result && result.result && result.result.responseCode === "00") {
+  if (result && isLoginSuccess(result)) {
     let data = {
       accountNo: account_number,
       fromDate: moment().subtract(3, "days").format("DD/MM/YYYY"),
@@ -116,26 +201,33 @@ async function lsgd(username: string, password: string, account_number: string) 
     };
     let config = {
       method: "post",
-      url: "https://online.mbbank.com.vn/api/retail-transactionms/transactionms/get-account-transaction-history",
+      url: `https://${MB_BASE_URL}/api/retail-transactionms/transactionms/get-account-transaction-history`,
       headers: {
         app: "MB_WEB",
-        Authorization: "Basic RU1CUkVUQUlMV0VCOlNEMjM0ZGZnMzQlI0BGR0AzNHNmc2RmNDU4NDNm",
+        Authorization: MB_AUTHORIZATION,
         Deviceid: result.cust.deviceId,
-        Host: "online.mbbank.com.vn",
-        Origin: "https://online.mbbank.com.vn",
-        Referer: "https://online.mbbank.com.vn/information-account/source-account",
+        Host: `${MB_BASE_URL}`,
+        Origin: `https://${MB_BASE_URL}`,
+        Referer: `https://${MB_BASE_URL}/information-account/source-account`,
         "Content-Type": "application/json",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         Refno: `${account_number}-${time}`,
         "X-Request-Id": `${account_number}-${time}`,
       },
       data: data,
+      timeout: REQUEST_TIMEOUT_MS,
     };
 
     try {
-      const response = await axios.request(config);
+      const response = await withRetry(
+        async () => axios.request(config),
+        MAX_RETRY,
+        RETRY_DELAY_MS
+      );
+
       const responseData = response.data;
-      if (responseData && responseData.result && responseData.result.ok) {
+
+      if (isTransactionResponse(responseData) && responseData.result.ok) {
         tempLoginData = { loginResult: result, responseData };
         saveTempLoginData(tempLoginData);
         return responseData;
@@ -145,9 +237,10 @@ async function lsgd(username: string, password: string, account_number: string) 
         saveTempLoginData(tempLoginData);
         return null;
       }
-    } catch (error: any) {
-      console.log("Lỗi khi lấy dữ liệu, thử lại sau:", error.message);
-      return false;
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      console.error("Lỗi khi lấy dữ liệu giao dịch:", message);
+      return null;
     }
   } else {
     console.error("Lỗi khi lấy dữ liệu, yêu cầu đăng nhập lại.");
@@ -159,21 +252,25 @@ async function lsgd(username: string, password: string, account_number: string) 
 
 async function solveCaptcha(apiUrl: string, base64Image: string) {
   try {
-    const response = await axios.post(apiUrl, {
-      base64: base64Image,
-    }, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await withRetry(
+      async () => axios.post(apiUrl, {
+        base64: base64Image,
+      }, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        timeout: CAPTCHA_TIMEOUT_MS,
+      }),
+      MAX_RETRY,
+      RETRY_DELAY_MS
+    );
 
     const result = response.data;
 
     if (result && result.captcha) {
-      console.log("CAPTCHA đã được giải:", result.captcha);
       return result.captcha;
     } else {
-      console.error("Lỗi khi giải CAPTCHA: Không nhận được kết quả hợp lệ.", result);
+      console.error("Lỗi khi giải CAPTCHA: Không nhận được kết quả hợp lệ.");
       return null;
     }
   } catch (error: any) {
@@ -182,15 +279,19 @@ async function solveCaptcha(apiUrl: string, base64Image: string) {
   }
 }
 
-export const get_data = async (username: string, password: string, accountNumber: string): Promise<MBTransactionResponse | null> => {
+export const get_data = async (username: string, password: string, accountNumber: string, update: boolean = false): Promise<MBTransactionResponse | null> => {
   try {
+    if (!update && transactionTempData && isTransactionResponse(transactionTempData)) {
+      // Tránh Spam, trả dữ liệu được cập nhật bởi cron
+      return transactionTempData;
+    }
     const newResult = await lsgd(username, password, accountNumber);
-    if (newResult) {
+    if (newResult && isTransactionResponse(newResult)) {
       saveTransactionTempData(newResult);
       transactionTempData = newResult;
-      return newResult
+      return newResult;
     } else {
-      console.error("Đã đăng nhập lại...");
+      console.error("Đã đăng xuất, chờ 1 phút...");
       return null;
     }
   } catch (error: any) {
@@ -202,10 +303,13 @@ export const get_data = async (username: string, password: string, accountNumber
 export const get_new_transactions = async (username: string, password: string, accountNumber: string): Promise<MBTransaction[]> => {
 
   try {
-    const newResult = await get_data(username, password, accountNumber);
+    const previousTransactions = transactionTempData?.transactionHistoryList ?? [];
+
+    const newResult = await get_data(username, password, accountNumber, true);
     if (newResult && newResult.transactionHistoryList) {
+      const previousRefs = new Set(previousTransactions.map((tx) => tx.refNo));
       const newTransactions = newResult.transactionHistoryList.filter(tx => {
-        const isNew = !transactionTempData || !transactionTempData.transactionHistoryList.some((oldTx: MBTransaction) => oldTx.refNo === tx.refNo);
+        const isNew = !previousRefs.has(tx.refNo) && Number(tx.creditAmount) > 0; // Chỉ lấy giao dịch mới có số tiền vào
         return isNew;
       });
       return newTransactions;
