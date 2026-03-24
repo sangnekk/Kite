@@ -30,11 +30,20 @@ endpoint = "localhost:9000"
 access_key_id = "kite"
 secret_access_key = "1234567890"
 
+[billing]
+transfer_code_prefix = "KITE"
+merchant_bank_name = "Bank UserName"
+merchant_account_no = "0123456789"
+webhook_hmac_secret = "hmac_sec"
+checkout_ttl_minutes = 30
+
 [[billing.plans]]
 id = "basic"
 title = "Basic"
 description = "Bắt đầu với Vibe Bot miễn phí. Không cần thẻ tín dụng."
 price = 0
+payment_amount = 0
+premium_duration_days = 0
 default = true
 feature_max_collaborators = 1
 feature_usage_credits_per_month = 10000
@@ -44,3 +53,20 @@ feature_max_variables = 25
 feature_max_messages = 25
 feature_max_event_listeners = 5
 feature_priority_support = false
+
+[[billing.plans]]
+id = "pro"
+title = "Iphone 14 promax"
+description = "Gói cao cấp hơn với nhiều tính năng hơn"
+price = 40000
+payment_amount = 40000
+premium_duration_days = 36
+default = false
+feature_max_collaborators = 5
+feature_usage_credits_per_month = 10000
+feature_max_guilds = 250
+feature_max_commands = 50
+feature_max_variables = 50
+feature_max_messages = 50
+feature_max_event_listeners = 10
+feature_priority_support = true

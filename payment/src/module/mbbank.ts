@@ -279,6 +279,7 @@ async function solveCaptcha(apiUrl: string, base64Image: string) {
   }
 }
 
+let isInRetry: NodeJS.Timeout | null = null;
 export const get_data = async (username: string, password: string, accountNumber: string, update: boolean = false): Promise<MBTransactionResponse | null> => {
   try {
     if (!update && transactionTempData && isTransactionResponse(transactionTempData)) {
@@ -291,7 +292,13 @@ export const get_data = async (username: string, password: string, accountNumber
       transactionTempData = newResult;
       return newResult;
     } else {
-      console.error("Đã đăng xuất, chờ 1 phút...");
+      if (isInRetry) {
+        return null; // Đang trong quá trình retry, tránh gọi lsgd nhiều lần
+      }
+      isInRetry = setTimeout( async () => {
+        return await get_data(username, password, accountNumber, update);
+      }, 15000)
+
       return null;
     }
   } catch (error: any) {
