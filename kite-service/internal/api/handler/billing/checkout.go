@@ -11,10 +11,6 @@ import (
 
 func (h *BillingHandler) HandleAppCheckout(c *handler.Context, req wire.BillingCheckoutRequest) (*wire.BillingCheckoutResponse, error) {
 	planID := req.PlanID
-	if planID == "" {
-		// Backward compatibility while frontend migrates away from LemonSqueezy field naming.
-		planID = req.LemonSqueezyVariantID
-	}
 
 	plan := h.planManager.PlanByID(planID)
 	if plan == nil {
