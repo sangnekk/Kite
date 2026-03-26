@@ -63,7 +63,7 @@ export default function AppPricingList() {
               ) : null}
             </CardTitle>
             <div>
-              <span className="text-3xl font-bold">${pricing.price}</span>
+              <span className="text-3xl font-bold">{pricing.price.toLocaleString()}đ</span>
               <span className="text-muted-foreground"> /month</span>
             </div>
 
@@ -75,7 +75,7 @@ export default function AppPricingList() {
               className="w-full"
               disabled={pricing.current || pricing.price === 0}
               variant={pricing.popular ? "default" : "outline"}
-              onClick={() => checkout(pricing.lemonsqueezy_variant_id)}
+              onClick={() => checkout(pricing.id)}
             >
               {pricing.current ? "Gói hiện tại" : "Bắt đầu ngay"}
             </Button>

@@ -1,11 +1,14 @@
 import debounce from "just-debounce-it";
-import MessagePreview from "./MessagePreview";
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import { Message } from "@/lib/message/schema";
 import { useCurrentMessage } from "@/lib/message/state";
 import { useHookedTheme } from "@/lib/hooks/theme";
 import { cn } from "@/lib/utils";
-import { ScrollArea } from "../ui/scroll-area";
+
+const MessagePreview = dynamic(() => import("./MessagePreview"), {
+  ssr: false,
+});
 
 export default function MessageEditorPreview({
   className,
