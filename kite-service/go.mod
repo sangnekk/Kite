@@ -3,7 +3,6 @@ module github.com/kitecloud/kite/kite-service
 go 1.24
 
 require (
-	github.com/NdoleStudio/lemonsqueezy-go v1.2.4
 	github.com/cyrusaf/ctxlog v1.3.2
 	github.com/dgraph-io/ristretto v0.1.1
 	github.com/diamondburned/arikawa/v3 v3.4.0
