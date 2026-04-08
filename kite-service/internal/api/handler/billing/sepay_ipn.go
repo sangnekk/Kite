@@ -2,11 +2,13 @@ package billing
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/billing/payment"
 	"github.com/kitecloud/kite/kite-service/internal/api/wire"
@@ -48,7 +50,27 @@ func (h *BillingHandler) HandleSePayIPN(c *handler.Context, body json.RawMessage
 
 	session, err := h.paymentSessionStore.PaymentSession(c.Context(), paymentID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load payment session: %w", err)
+		if !errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("failed to load payment session: %w", err)
+		}
+
+		now := time.Now().UTC()
+		session, err = h.paymentSessionStore.CreatePaymentSession(c.Context(), model.PaymentSession{
+			ID:         util.UniqueID(),
+			Provider:   "sepay",
+			PaymentID:  paymentID,
+			AppID:      code.AppID,
+			PlanID:     code.PlanID,
+			Amount:     int(req.TransferAmount),
+			QRImageURL: "",
+			QRContent:  paymentID,
+			Status:     model.PaymentSessionStatusPending,
+			CreatedAt:  now,
+			UpdatedAt:  now,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to create payment session: %w", err)
+		}
 	}
 
 	if session.PlanID != code.PlanID {

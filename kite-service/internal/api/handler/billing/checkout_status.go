@@ -34,10 +34,6 @@ func (h *BillingHandler) HandleAppCheckoutStatus(c *handler.Context) (*wire.Bill
 		return nil, fmt.Errorf("payment session store is not configured")
 	}
 
-	if _, ok := payment.DecodeInvoiceNumber(paymentID); !ok {
-		return nil, handler.ErrBadRequest("invalid_invoice", "invalid invoice number")
-	}
-
 	session, err := h.paymentSessionStore.PaymentSession(c.Context(), paymentID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load payment session: %w", err)

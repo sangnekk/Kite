@@ -36,7 +36,7 @@ func DecodeInvoiceNumber(invoiceNumber string) (*TransferCodeParts, bool) {
 		return nil, false
 	}
 
-	decoded, err := base64.RawURLEncoding.DecodeString(encoded)
+	decoded, err := base64.URLEncoding.DecodeString(encoded)
 	if err != nil {
 		return nil, false
 	}
