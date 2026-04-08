@@ -26,7 +26,12 @@ func (h *BillingHandler) HandleBillingWebhook(c *handler.Context, body json.RawM
 		return nil, fmt.Errorf("failed to unmarshal webhook event: %w", err)
 	}
 
-	code, ok := payment.DecodeInvoiceNumber(req.Description)
+	paymentID, ok := payment.ExtractInvoiceNumber(req.Description)
+	if !ok {
+		return nil, fmt.Errorf("failed to parse transfer code from description")
+	}
+
+	code, ok := payment.DecodeInvoiceNumber(paymentID)
 	if !ok {
 		return nil, fmt.Errorf("failed to parse transfer code from description")
 	}

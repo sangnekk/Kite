@@ -17,6 +17,7 @@ type TransferCodeParts struct {
 }
 
 var transferCodeRegex = regexp.MustCompile(`(?i)\b([a-z0-9]+)-([a-z0-9]+)-([a-z0-9_-]+)-([a-z0-9_-]+)\b`)
+var invoiceNumberRegex = regexp.MustCompile(`(?i)KITE[a-z0-9_-]+=*`)
 
 func EncodeInvoiceNumber(appID, planID, uniqueID string) string {
 	raw := appID + "-" + planID + "-" + uniqueID
@@ -49,6 +50,19 @@ func DecodeInvoiceNumber(invoiceNumber string) (*TransferCodeParts, bool) {
 		PlanID: parts[1],
 		Nonce:  parts[2],
 	}, true
+}
+
+func ExtractInvoiceNumber(text string) (string, bool) {
+	if text == "" {
+		return "", false
+	}
+
+	match := invoiceNumberRegex.FindString(text)
+	if match == "" {
+		return "", false
+	}
+
+	return match, true
 }
 
 func VerifyHMAC(payload []byte, signature string, secret string) bool {
