@@ -35,11 +35,11 @@ func (h *BillingHandler) HandleSePayIPN(c *handler.Context, body json.RawMessage
 	paymentRef := firstNonEmpty(derefString(req.Code), req.Content, req.Description, req.ReferenceCode)
 	paymentID, ok := payment.ExtractInvoiceNumber(paymentRef)
 	if !ok {
-		return nil, handler.ErrBadRequest("invalid_invoice_number", "failed to parse payment code")
+		return nil, handler.ErrBadRequest("invalid_invoice_number", "failed to parse invoice number")
 	}
 	code, ok := payment.DecodeInvoiceNumber(paymentID)
 	if !ok {
-		return nil, handler.ErrBadRequest("invalid_invoice_number", "failed to parse payment code")
+		return nil, handler.ErrBadRequest("invalid_payment_code", "failed to parse payment code")
 	}
 
 	if h.paymentSessionStore == nil {
