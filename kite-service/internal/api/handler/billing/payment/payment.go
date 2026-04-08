@@ -17,7 +17,8 @@ type TransferCodeParts struct {
 }
 
 var transferCodeRegex = regexp.MustCompile(`(?i)\b([a-z0-9]+)-([a-z0-9]+)-([a-z0-9_-]+)-([a-z0-9_-]+)\b`)
-var invoiceNumberRegex = regexp.MustCompile(`(?i)KITE[a-z0-9_-]+=*`)
+var invoiceNumberPartRegex = regexp.MustCompile(`(?i)^[a-z0-9]+$`)
+var invoiceNumberNonceRegex = regexp.MustCompile(`(?i)^[a-z0-9_-]+$`)
 
 func EncodeInvoiceNumber(appID, planID, uniqueID string) string {
 	raw := appID + "-" + planID + "-" + uniqueID
@@ -35,13 +36,17 @@ func DecodeInvoiceNumber(invoiceNumber string) (*TransferCodeParts, bool) {
 		return nil, false
 	}
 
-	decoded, err := base64.URLEncoding.DecodeString(encoded)
+	decoded, err := base64.RawURLEncoding.DecodeString(encoded)
 	if err != nil {
 		return nil, false
 	}
 
 	parts := strings.SplitN(string(decoded), "-", 3)
 	if len(parts) != 3 {
+		return nil, false
+	}
+
+	if !invoiceNumberPartRegex.MatchString(parts[0]) || !invoiceNumberPartRegex.MatchString(parts[1]) || !invoiceNumberNonceRegex.MatchString(parts[2]) {
 		return nil, false
 	}
 
@@ -57,12 +62,25 @@ func ExtractInvoiceNumber(text string) (string, bool) {
 		return "", false
 	}
 
-	match := invoiceNumberRegex.FindString(text)
-	if match == "" {
+	upper := strings.ToUpper(text)
+	start := strings.Index(upper, "KITE")
+	if start < 0 {
 		return "", false
 	}
 
-	return match, true
+	candidate := strings.TrimSpace(text[start:])
+	for end := 4; end <= len(candidate); end++ {
+		if (end-4)%4 != 0 {
+			continue
+		}
+
+		token := candidate[:end]
+		if _, ok := DecodeInvoiceNumber(token); ok {
+			return token, true
+		}
+	}
+
+	return "", false
 }
 
 func VerifyHMAC(payload []byte, signature string, secret string) bool {
