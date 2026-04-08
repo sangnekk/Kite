@@ -36,7 +36,7 @@ func DecodeInvoiceNumber(invoiceNumber string) (*TransferCodeParts, bool) {
 		return nil, false
 	}
 
-	decoded, err := base64.URLEncoding.DecodeString(encoded)
+	decoded, err := decodeBase64URLString(encoded)
 	if err != nil {
 		return nil, false
 	}
@@ -69,18 +69,37 @@ func ExtractInvoiceNumber(text string) (string, bool) {
 	}
 
 	candidate := strings.TrimSpace(text[start:])
+	matched := ""
 	for end := 4; end <= len(candidate); end++ {
-		if (end-4)%4 != 0 {
-			continue
-		}
-
 		token := candidate[:end]
-		if _, ok := DecodeInvoiceNumber(token); ok {
-			return token, true
+		if parts, ok := DecodeInvoiceNumber(token); ok {
+			canonical := EncodeInvoiceNumber(parts.AppID, parts.PlanID, parts.Nonce)
+			if strings.EqualFold(strings.TrimRight(canonical, "="), strings.TrimRight(token, "=")) {
+				if len(canonical) > len(matched) {
+					matched = canonical
+				}
+			}
 		}
 	}
 
+	if matched != "" {
+		return matched, true
+	}
+
 	return "", false
+}
+
+func decodeBase64URLString(encoded string) ([]byte, error) {
+	if encoded == "" {
+		return nil, base64.CorruptInputError(0)
+	}
+
+	padding := (4 - len(encoded)%4) % 4
+	if padding > 0 {
+		encoded += strings.Repeat("=", padding)
+	}
+
+	return base64.URLEncoding.DecodeString(encoded)
 }
 
 func VerifyHMAC(payload []byte, signature string, secret string) bool {
