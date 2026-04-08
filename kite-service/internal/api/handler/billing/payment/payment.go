@@ -17,7 +17,8 @@ type TransferCodeParts struct {
 }
 
 var transferCodeRegex = regexp.MustCompile(`(?i)\b([a-z0-9]+)-([a-z0-9]+)-([a-z0-9_-]+)-([a-z0-9_-]+)\b`)
-var invoiceNumberPartRegex = regexp.MustCompile(`(?i)^[a-z0-9]+$`)
+var invoiceNumberAppIDRegex = regexp.MustCompile(`(?i)^[a-z0-9]+$`)
+var invoiceNumberPlanIDRegex = regexp.MustCompile(`(?i)^[a-z0-9_-]+$`)
 var invoiceNumberNonceRegex = regexp.MustCompile(`(?i)^[a-z0-9_-]+$`)
 
 func EncodeInvoiceNumber(appID, planID, uniqueID string) string {
@@ -46,7 +47,7 @@ func DecodeInvoiceNumber(invoiceNumber string) (*TransferCodeParts, bool) {
 		return nil, false
 	}
 
-	if !invoiceNumberPartRegex.MatchString(parts[0]) || !invoiceNumberPartRegex.MatchString(parts[1]) || !invoiceNumberNonceRegex.MatchString(parts[2]) {
+	if !invoiceNumberAppIDRegex.MatchString(parts[0]) || !invoiceNumberPlanIDRegex.MatchString(parts[1]) || !invoiceNumberNonceRegex.MatchString(parts[2]) {
 		return nil, false
 	}
 

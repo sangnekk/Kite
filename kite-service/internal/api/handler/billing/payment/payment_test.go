@@ -39,3 +39,37 @@ func TestExtractInvoiceNumberNormalizesUnpaddedTokenInsideText(t *testing.T) {
 		t.Fatalf("expected canonical invoice number %q, got %q", canonical, extracted)
 	}
 }
+
+func TestDecodeInvoiceNumberAllowsUnderscorePlanID(t *testing.T) {
+	canonical := EncodeInvoiceNumber("zm8jzz9wskkvahds", "premium_extra", "wgbeocdh8mqhxo09")
+
+	parts, ok := DecodeInvoiceNumber(canonical)
+	if !ok {
+		t.Fatalf("expected invoice number to decode with underscore plan id")
+	}
+
+	if parts.AppID != "zm8jzz9wskkvahds" {
+		t.Fatalf("unexpected app id: %s", parts.AppID)
+	}
+	if parts.PlanID != "premium_extra" {
+		t.Fatalf("unexpected plan id: %s", parts.PlanID)
+	}
+	if parts.Nonce != "wgbeocdh8mqhxo09" {
+		t.Fatalf("unexpected nonce: %s", parts.Nonce)
+	}
+}
+
+func TestExtractInvoiceNumberWithUnderscorePlanIDFromBankText(t *testing.T) {
+	canonical := EncodeInvoiceNumber("zm8jzz9wskkvahds", "premium_extra", "wgbeocdh8mqhxo09")
+	unpad := strings.TrimRight(canonical, "=")
+	text := "124446678719-" + unpad + "-CHUYEN TIEN-OQCH0009Zhek-MOMO124446678719MOMO"
+
+	extracted, ok := ExtractInvoiceNumber(text)
+	if !ok {
+		t.Fatalf("expected invoice number to be extracted")
+	}
+
+	if extracted != canonical {
+		t.Fatalf("expected canonical invoice number %q, got %q", canonical, extracted)
+	}
+}
