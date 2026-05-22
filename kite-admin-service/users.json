@@ -1,0 +1,14 @@
+{
+  "admins": [
+    {
+      "username": "admin",
+      "hash_password": "$argon2id$v=19$m=65536,t=3,p=4$placeholder$placeholder"
+    }
+  ],
+  "staffs": [
+    {
+      "username": "staff",
+      "hash_password": "$argon2id$v=19$m=65536,t=3,p=4$placeholder$placeholder"
+    }
+  ]
+}

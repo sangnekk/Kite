@@ -16,6 +16,17 @@ services:
       timeout: 30s
       retries: 3
 
+  redis:
+    image: redis:7-alpine
+    restart: always
+    volumes:
+      - kite-local-redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 30s
+      retries: 3
+
   minio:
     image: quay.io/minio/minio
     command: server --console-address ":9001" /data
@@ -52,6 +63,40 @@ services:
       postgres:
         condition: service_healthy
 
+  admin-service:
+    build:
+      context: ./kite-admin-service
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres@postgres:5432/kite
+      - REDIS_URL=redis://redis:6379/0
+      - JWT_SECRET=${ADMIN_JWT_SECRET:-change-me-in-production}
+    volumes:
+      - kite-admin-data:/app/.data
+      - ./kite-admin-service/users.json:/app/users.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  admin-console:
+    build:
+      context: ./kite-admin-console
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api
+    restart: always
+    ports:
+      - "3001:80"
+    depends_on:
+      - admin-service
+
 volumes:
   kite-local-postgres:
   kite-local-minio:
+  kite-local-redis:
+  kite-admin-data:
