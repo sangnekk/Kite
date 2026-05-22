@@ -7,17 +7,18 @@ RUN npm ci
 
 COPY . .
 
-ARG VITE_API_URL=/api
+ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 
 RUN npm run build
 
 
-FROM nginx:1.27-alpine
+FROM node:20-alpine
 
-COPY --from=builder /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+WORKDIR /app
 
-EXPOSE 80
+COPY --from=builder /app/dist ./dist
 
-CMD ["nginx", "-g", "daemon off;"]
+EXPOSE 8080
+
+CMD ["npx", "--yes", "serve", "-s", "dist", "-l", "8080"]

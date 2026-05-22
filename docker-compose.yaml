@@ -46,6 +46,8 @@ services:
     restart: always
     ports:
       - "8080:8080"
+    env_file:
+      - .env
     environment:
       - KITE_API__HOST=0.0.0.0
       - KITE_DATABASE__POSTGRES__HOST=postgres
@@ -69,11 +71,13 @@ services:
       dockerfile: Dockerfile
     restart: always
     ports:
-      - "8000:8000"
+      - "${ADMIN_SERVICE_PORT}:8000"
+    env_file:
+      - .env
     environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres@postgres:5432/kite
-      - REDIS_URL=redis://redis:6379/0
-      - JWT_SECRET=${ADMIN_JWT_SECRET:-change-me-in-production}
+      - DATABASE_URL=${ADMIN_DATABASE_URL}
+      - REDIS_URL=${ADMIN_REDIS_URL}
+      - JWT_SECRET=${ADMIN_JWT_SECRET}
     volumes:
       - kite-admin-data:/app/.data
       - ./kite-admin-service/users.json:/app/users.json:ro
@@ -88,10 +92,10 @@ services:
       context: ./kite-admin-console
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: /api
+        VITE_API_URL: ${ADMIN_CONSOLE_API_URL}
     restart: always
     ports:
-      - "3001:80"
+      - "${ADMIN_CONSOLE_PORT}:8080"
     depends_on:
       - admin-service
 
