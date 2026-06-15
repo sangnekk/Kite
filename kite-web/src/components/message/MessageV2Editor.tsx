@@ -44,7 +44,6 @@ const ADDABLE: { label: string; type: number }[] = [
   { label: "Section", type: 9 },
   { label: "Media Gallery", type: 12 },
   { label: "Separator", type: 14 },
-  { label: "File", type: 13 },
   { label: "Button Row", type: 1 },
 ];
 
@@ -57,8 +56,6 @@ function newComponent(type: number): any {
       return { id, type: 10, content: "" };
     case 14:
       return { id, type: 14, divider: true, spacing: 1 };
-    case 13:
-      return { id, type: 13, media: { url: "" } };
     case 11:
       return { id, type: 11, media: { url: "" } };
     case 12:
@@ -231,8 +228,6 @@ function V2ComponentEditor({
       return <ThumbnailEditor path={path} component={component} />;
     case 12:
       return <MediaGalleryEditor path={path} component={component} />;
-    case 13:
-      return <FileEditor path={path} component={component} />;
     case 1:
       return (
         <ActionRowEditor
@@ -389,32 +384,6 @@ function ThumbnailEditor({
             onChange={(v) => update(path, { spoiler: v || undefined })}
           />
         </div>
-      </div>
-    </Card>
-  );
-}
-
-function FileEditor({ path, component }: { path: number[]; component: any }) {
-  const update = useCurrentMessage((s) => s.updateComponentAtPath);
-  return (
-    <Card className="p-3">
-      <ComponentHeader path={path} title="File" />
-      <div className="text-sm text-muted-foreground mb-2">
-        Discord requires files to be uploaded (external URLs are not allowed for
-        file components).
-      </div>
-      <MediaInput
-        media={component.media}
-        onChange={(media) => update(path, { media })}
-        uploadOnly
-      />
-      <div className="flex-none mt-3">
-        <MessageInput
-          type="toggle"
-          label="Spoiler"
-          value={!!component.spoiler}
-          onChange={(v) => update(path, { spoiler: v || undefined })}
-        />
       </div>
     </Card>
   );
