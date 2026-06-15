@@ -63,37 +63,3 @@ feature_max_variables = 25
 feature_max_messages = 25
 feature_max_event_listeners = 5
 feature_priority_support = false
-
-[[billing.plans]]
-id = "plus"
-title = "Plus"
-description = "Nâng cấp lên Plus với nhiều tính năng hơn và hỗ trợ ưu tiên."
-price = 5000
-payment_amount = 5000
-premium_duration_days = 30
-default = false
-feature_max_collaborators = 3
-feature_usage_credits_per_month = 10000
-feature_max_guilds = 300
-feature_max_commands = 50
-feature_max_variables = 30
-feature_max_messages = 30
-feature_max_event_listeners = 5
-feature_priority_support = true
-
-[[billing.plans]]
-id = "premium_extra" # Không sử dụng '-'
-title = "Premium Extra"
-description = "Gói cao cấp hơn với nhiều tính năng hơn"
-price = 7000
-payment_amount = 7000
-premium_duration_days = 36
-default = false
-feature_max_collaborators = 5
-feature_usage_credits_per_month = 10000
-feature_max_guilds = 500
-feature_max_commands = 72
-feature_max_variables = 50
-feature_max_messages = 50
-feature_max_event_listeners = 10
-feature_priority_support = true
