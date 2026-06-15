@@ -56,6 +56,10 @@ export const nodeEntryCommandDataSchema = nodeBaseDataSchema.extend({
       "Must be only lowercase alphanumeric characters and underscores, and have at most 3 words"
     ),
   description: z.string().max(100).min(1),
+  // Trigger types. Absence means slash enabled, prefix disabled (backwards
+  // compatible with commands created before this existed).
+  command_disable_slash: z.boolean().optional(),
+  command_enable_prefix: z.boolean().optional(),
 });
 
 export const nodeOptionCommandArgumentDataSchema = nodeBaseDataSchema.extend({

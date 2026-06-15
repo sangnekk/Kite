@@ -147,6 +147,11 @@ type FlowNodeData struct {
 	CommandArgumentMaxValue  float64                     `json:"command_argument_max_value,omitempty"`
 	CommandArgumentMaxLength int                         `json:"command_argument_max_length,omitempty"`
 
+	// Command trigger types (on the entry_command node). For backwards
+	// compatibility the absence of these means: slash enabled, prefix disabled.
+	CommandDisableSlash bool `json:"command_disable_slash,omitempty"`
+	CommandEnablePrefix bool `json:"command_enable_prefix,omitempty"`
+
 	// Command Permissions
 	CommandPermissions string `json:"command_permissions,omitempty"`
 

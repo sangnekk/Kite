@@ -104,7 +104,7 @@ export const nodeTypes: Record<string, NodeValues> = {
     defaultDescription:
       "Khởi đầu lệnh. Thả các hành động và tùy chọn vào đây!",
     dataSchema: nodeEntryCommandDataSchema,
-    dataFields: ["name", "description"],
+    dataFields: ["name", "description", "command_types"],
     fixed: true,
   },
   entry_event: {

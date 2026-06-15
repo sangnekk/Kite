@@ -85,6 +85,7 @@ const intputs: Record<string, any> = {
   temporary_name: TemporaryNameInput,
   name: NameInput,
   description: DescriptionInput,
+  command_types: CommandTypesInput,
   command_argument_type: CommandArgumentTypeInput,
   command_argument_required: CommandArgumentRequiredInput,
   command_argument_min_value: CommandArgumentMinValueInput,
@@ -379,6 +380,37 @@ function DescriptionInput({ data, updateData, errors }: InputProps) {
       updateValue={(v) => updateData({ description: v || undefined })}
       errors={errors}
     />
+  );
+}
+
+function CommandTypesInput({ data, updateData, errors }: InputProps) {
+  return (
+    <div>
+      <div className="font-medium text-foreground mb-1">Loại lệnh</div>
+      <div className="text-muted-foreground text-sm mb-2">
+        Chọn cách người dùng có thể gọi lệnh này. Có thể chọn cả hai.
+      </div>
+      <div className="space-y-2">
+        <BaseCheckbox
+          field="command_disable_slash"
+          title="Slash command (/tên)"
+          value={!data.command_disable_slash}
+          updateValue={(v) =>
+            updateData({ command_disable_slash: v ? undefined : true })
+          }
+          errors={errors}
+        />
+        <BaseCheckbox
+          field="command_enable_prefix"
+          title="Prefix / mention (@bot tên hoặc !tên)"
+          value={!!data.command_enable_prefix}
+          updateValue={(v) =>
+            updateData({ command_enable_prefix: v || undefined })
+          }
+          errors={errors}
+        />
+      </div>
+    </div>
   );
 }
 

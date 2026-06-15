@@ -8,6 +8,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ReactNode, useState } from "react";
 import {
   Form,
@@ -30,6 +31,8 @@ import { getNodeId } from "@/lib/flow/nodes";
 interface FormFields {
   name: string;
   description: string;
+  slash: boolean;
+  prefix: boolean;
 }
 
 export default function CommandCreateDialog({
@@ -47,15 +50,27 @@ export default function CommandCreateDialog({
     defaultValues: {
       name: "",
       description: "",
+      slash: true,
+      prefix: false,
     },
   });
 
   function onSubmit(data: FormFields) {
     if (createMutation.isPending) return;
 
+    if (!data.slash && !data.prefix) {
+      toast.error("Chọn ít nhất một loại: Slash hoặc Prefix.");
+      return;
+    }
+
     createMutation.mutate(
       {
-        flow_source: getInitialFlowData(data.name, data.description),
+        flow_source: getInitialFlowData(
+          data.name,
+          data.description,
+          data.slash,
+          data.prefix
+        ),
         enabled: true,
       },
       {
@@ -127,6 +142,44 @@ export default function CommandCreateDialog({
                 </FormItem>
               )}
             />
+            <div className="space-y-2">
+              <FormLabel>Loại lệnh</FormLabel>
+              <FormField
+                control={form.control}
+                name="slash"
+                render={({ field }) => (
+                  <FormItem className="flex items-center gap-2 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormLabel className="font-normal">
+                      Slash command (<span className="font-mono">/tên</span>)
+                    </FormLabel>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="prefix"
+                render={({ field }) => (
+                  <FormItem className="flex items-center gap-2 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormLabel className="font-normal">
+                      Prefix / mention (<span className="font-mono">@bot tên</span>{" "}
+                      hoặc <span className="font-mono">!tên</span>)
+                    </FormLabel>
+                  </FormItem>
+                )}
+              />
+            </div>
             <DialogFooter>
               <LoadingButton type="submit" loading={createMutation.isPending}>
                 Tạo lệnh
@@ -139,13 +192,23 @@ export default function CommandCreateDialog({
   );
 }
 
-function getInitialFlowData(name: string, description: string) {
+function getInitialFlowData(
+  name: string,
+  description: string,
+  slash: boolean,
+  prefix: boolean
+) {
   return {
     nodes: [
       {
         id: getNodeId(),
         position: { x: 0, y: 0 },
-        data: { name, description },
+        data: {
+          name,
+          description,
+          command_disable_slash: !slash || undefined,
+          command_enable_prefix: prefix || undefined,
+        },
         type: "entry_command",
       },
     ],

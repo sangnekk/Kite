@@ -101,6 +101,11 @@ export interface FlowNodeData {
   command_argument_max_value?: number /* float64 */;
   command_argument_max_length?: number /* int */;
   /**
+   * Command trigger types (entry_command node)
+   */
+  command_disable_slash?: boolean;
+  command_enable_prefix?: boolean;
+  /**
    * Command Permissions
    */
   command_permissions?: string;

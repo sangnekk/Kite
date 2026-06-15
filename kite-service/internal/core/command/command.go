@@ -85,6 +85,11 @@ func (m *CommandManager) appCommands(ctx context.Context, appID string) ([]api.C
 			return nil, fmt.Errorf("failed to compile command flow: %w", err)
 		}
 
+		// Prefix-only commands are not registered as Discord slash commands.
+		if !node.CommandSlashEnabled() {
+			continue
+		}
+
 		data := node.CommandData()
 		res = append(res, api.CreateCommandData{
 			Name:                     data.Name,

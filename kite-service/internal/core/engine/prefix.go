@@ -64,7 +64,7 @@ func (a *App) handlePrefixCommand(appID string, session *state.State, e *gateway
 	a.RLock()
 	var cmd *Command
 	for _, c := range a.commands {
-		if c.cmd.Name == name {
+		if c.cmd.Name == name && c.flow.CommandPrefixEnabled() {
 			cmd = c
 			break
 		}

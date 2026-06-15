@@ -196,6 +196,25 @@ func (n *CompiledFlowNode) CommandDescription() string {
 	return n.Data.Description
 }
 
+// CommandSlashEnabled reports whether the command should be registered and
+// handled as a Discord slash command. Defaults to true for backwards
+// compatibility (older commands have no trigger-type flags).
+func (n *CompiledFlowNode) CommandSlashEnabled() bool {
+	if !n.IsCommandEntry() {
+		return false
+	}
+	return !n.Data.CommandDisableSlash
+}
+
+// CommandPrefixEnabled reports whether the command can be triggered by a text
+// prefix or a bot mention. Defaults to false.
+func (n *CompiledFlowNode) CommandPrefixEnabled() bool {
+	if !n.IsCommandEntry() {
+		return false
+	}
+	return n.Data.CommandEnablePrefix
+}
+
 func (n *CompiledFlowNode) CommandArguments() discord.CommandOptions {
 	res := make(discord.CommandOptions, 0)
 	for _, node := range n.Parents.Default {
