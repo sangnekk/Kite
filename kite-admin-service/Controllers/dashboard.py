@@ -21,7 +21,8 @@ async def get_dashboard(
     db: AsyncSession = Depends(get_db),
     _admin: dict = Depends(require_admin),
 ):
-    now = datetime.now(timezone.utc)
+    # DB timestamp columns are naive UTC (TIMESTAMP, not TIMESTAMPTZ); keep comparisons naive
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     h24_ago = now - timedelta(hours=24)
     h48_ago = now - timedelta(hours=48)
 

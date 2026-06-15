@@ -88,7 +88,7 @@ async def update_subscription(
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields to update")
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     update_data["updated_at"] = now
 
     if update_data.get("status") == "cancelled":
@@ -218,7 +218,7 @@ async def update_payment_session(
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields to update")
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     update_data["updated_at"] = now
 
     if update_data.get("status") == "paid":

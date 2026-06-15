@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { TrendingUp, TrendingDown, Users, Bot, Zap, TriangleAlert as AlertTriangle, Activity, Loader2, CreditCard } from "lucide-react"
+import { TrendingUp, TrendingDown, Users, Bot, Zap, TriangleAlert as AlertTriangle, Activity, Loader2 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -19,7 +19,7 @@ import {
 } from "recharts"
 import { useAuth } from "@/context/AuthContext"
 
-type AdminPage = "dashboard" | "users" | "apps" | "logs" | "flows" | "billing" | "assets" | "plugins" | "abuse" | "revenue"
+type AdminPage = "dashboard" | "users" | "apps" | "logs" | "billing" | "revenue"
 
 interface DashboardProps {
   onNavigate: (page: AdminPage) => void

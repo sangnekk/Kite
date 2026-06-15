@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useRef, useEffect, ReactNode } from "react"
+import { createContext, useContext, useState, useCallback, useRef, useEffect, type ReactNode } from "react"
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000"
 
@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Ref so logout/apiFetch always see latest without re-creating callbacks
-  const logoutRef = useRef<() => Promise<void>>()
+  const logoutRef = useRef<() => Promise<void>>(undefined)
 
   const logout = useCallback(async () => {
     if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current)
@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshTimerRef.current = setTimeout(() => silentRefreshRef.current?.(), delay)
   }, [])
 
-  const silentRefreshRef = useRef<() => Promise<void>>()
+  const silentRefreshRef = useRef<() => Promise<void>>(undefined)
 
   const silentRefresh = useCallback(async () => {
     const refresh_token = localStorage.getItem("refresh_token")

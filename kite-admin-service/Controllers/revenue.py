@@ -13,7 +13,7 @@ router = APIRouter(prefix="/revenue", tags=["revenue"])
 
 
 def _period_boundaries(period: str) -> tuple[datetime, datetime, datetime, datetime]:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     if period == "day":
         current_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         prev_start = current_start - timedelta(days=1)
@@ -70,7 +70,7 @@ async def revenue_chart(
     db: AsyncSession = Depends(get_db),
     _user: dict = Depends(get_current_user),
 ):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     if period == "day":
         start = now - timedelta(hours=24)
         trunc = func.date_trunc("hour", PaymentSession.paid_at)

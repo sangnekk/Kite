@@ -7,7 +7,6 @@ import {
   CreditCard,
   DollarSign,
   LogOut,
-  Bell,
   Moon,
   Sun,
 } from "lucide-react"

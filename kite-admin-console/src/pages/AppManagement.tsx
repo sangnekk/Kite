@@ -134,12 +134,6 @@ export function AppManagement() {
     return (status as Record<string, string>)?.status ?? "offline"
   }
 
-  const levelDot: Record<string, string> = {
-    error: "bg-destructive",
-    warn: "bg-yellow-500",
-    info: "bg-green-500",
-  }
-
   if (selectedId) {
     return (
       <div className="p-6 space-y-6">
