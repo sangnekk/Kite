@@ -74,6 +74,7 @@ func StartServer(c context.Context, cfg *config.Config) error {
 				ClusterIndex:  cfg.ClusterIndex,
 			},
 			AppStore:             pg,
+			AppSettingsStore:     pg,
 			AssetStore:           assetStore,
 			LogStore:             pg,
 			UsageStore:           pg,

@@ -72,6 +72,11 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 
 		interaction := ctx.Data.Interaction()
 		if interaction == nil {
+			// Prefix/text commands have no interaction, so the response is sent
+			// as a regular channel message instead.
+			if isTextCommand(ctx) {
+				return n.respondAsMessage(ctx)
+			}
 			return &FlowError{
 				Code:    FlowNodeErrorUnknown,
 				Message: "interaction is nil",
@@ -149,6 +154,11 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 
 		interaction := ctx.Data.Interaction()
 		if interaction == nil {
+			// Prefix/text commands have no interaction response to edit, so we
+			// just send a new channel message.
+			if isTextCommand(ctx) {
+				return n.respondAsMessage(ctx)
+			}
 			return &FlowError{
 				Code:    FlowNodeErrorUnknown,
 				Message: "interaction is nil",
@@ -257,6 +267,10 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 	case FlowNodeTypeActionResponseDelete:
 		interaction := ctx.Data.Interaction()
 		if interaction == nil {
+			if isTextCommand(ctx) {
+				// Nothing to delete for a text command response.
+				return n.ExecuteChildren(ctx)
+			}
 			return &FlowError{
 				Code:    FlowNodeErrorUnknown,
 				Message: "interaction is nil",
@@ -289,6 +303,10 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 	case FlowNodeTypeActionResponseDefer:
 		interaction := ctx.Data.Interaction()
 		if interaction == nil {
+			if isTextCommand(ctx) {
+				// Deferring is a no-op for text commands (no interaction).
+				return n.ExecuteChildren(ctx)
+			}
 			return &FlowError{
 				Code:    FlowNodeErrorUnknown,
 				Message: "interaction is nil",
@@ -1956,6 +1974,45 @@ func (n *CompiledFlowNode) prepareV2Message(ctx *FlowContext, data *message.Mess
 	payload.Attachments = attachments
 
 	return &message.V2Message{Payload: payload, Files: files}, nil
+}
+
+// isTextCommand reports whether the flow was triggered by a prefix/text command
+// (detected via an optional interface implemented by the context data, so the
+// FlowContextData interface itself does not need to change).
+func isTextCommand(ctx *FlowContext) bool {
+	tc, ok := ctx.Data.(interface{ IsTextCommand() bool })
+	return ok && tc.IsTextCommand()
+}
+
+// respondAsMessage sends a command response as a regular channel message. It is
+// used for prefix/text commands, which have no interaction to respond to.
+func (n *CompiledFlowNode) respondAsMessage(ctx *FlowContext) error {
+	messageData, rawV2, resumePointID, err := n.prepareMessageSendData(ctx)
+	if err != nil {
+		return traceError(n, err)
+	}
+
+	channelID := ctx.Data.ChannelID()
+
+	var msg *discord.Message
+	if rawV2 != nil {
+		msg, err = ctx.Discord.CreateMessageRaw(ctx, channelID, rawV2.Body())
+	} else {
+		msg, err = ctx.Discord.CreateMessage(ctx, channelID, messageData)
+	}
+	if err != nil {
+		return traceError(n, err)
+	}
+
+	ctx.StoreNodeResult(n, thing.NewDiscordMessage(*msg))
+	if resumePointID != "" {
+		_, err = ctx.suspend(ResumePointTypeMessageComponents, resumePointID, n.ID)
+		if err != nil {
+			return traceError(n, err)
+		}
+	}
+
+	return n.ExecuteChildren(ctx)
 }
 
 func createDefaultErrorResponse(fCtx *FlowContext, err error) {

@@ -32,6 +32,29 @@ type AppDiscordStatus struct {
 
 type AppGetResponse = App
 
+type AppSettings struct {
+	EnablePrefixCommands bool   `json:"enable_prefix_commands"`
+	CommandPrefix        string `json:"command_prefix"`
+	// MessageContentIntent reports whether the bot has the privileged message
+	// content intent. Without it only @mention commands work.
+	MessageContentIntent bool `json:"message_content_intent"`
+}
+
+type AppSettingsGetResponse = AppSettings
+
+type AppSettingsUpdateRequest struct {
+	EnablePrefixCommands bool   `json:"enable_prefix_commands"`
+	CommandPrefix        string `json:"command_prefix"`
+}
+
+func (req AppSettingsUpdateRequest) Validate() error {
+	return validation.ValidateStruct(&req,
+		validation.Field(&req.CommandPrefix, validation.Length(0, 16)),
+	)
+}
+
+type AppSettingsUpdateResponse = AppSettings
+
 type AppCreateRequest struct {
 	DiscordToken string `json:"discord_token"`
 }

@@ -46,3 +46,10 @@ type AppStore interface {
 
 	AppEntities(ctx context.Context, appID string) ([]*model.AppEntity, error)
 }
+
+type AppSettingsStore interface {
+	// AppSettings returns the settings for an app. If none have been stored yet
+	// it returns a zero-value settings struct (defaults), not an error.
+	AppSettings(ctx context.Context, appID string) (*model.AppSettings, error)
+	UpsertAppSettings(ctx context.Context, settings *model.AppSettings) (*model.AppSettings, error)
+}

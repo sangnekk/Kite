@@ -12,6 +12,31 @@ import (
 	"gopkg.in/guregu/null.v4"
 )
 
+// Discord application flags for the (privileged) message content intent.
+const (
+	gatewayMessageContent        = 1 << 18
+	gatewayMessageContentLimited = 1 << 19
+)
+
+// hasMessageContentIntent reports whether the bot has the MESSAGE_CONTENT
+// privileged intent enabled (full or limited). Without it, custom prefixes
+// can't work (Discord won't deliver content for non-mention messages), so the
+// UI uses this to decide whether to unlock the prefix configuration.
+func (h *AppHandler) hasMessageContentIntent(ctx context.Context, app *model.App) bool {
+	client, err := h.getAppClient(ctx, app)
+	if err != nil {
+		return false
+	}
+
+	application, err := client.CurrentApplication()
+	if err != nil {
+		return false
+	}
+
+	flags := uint32(application.Flags)
+	return flags&gatewayMessageContent != 0 || flags&gatewayMessageContentLimited != 0
+}
+
 func (h *AppHandler) getAppClient(ctx context.Context, app *model.App) (*api.Client, error) {
 	token, err := h.tokenCrypt.DecryptString(app.DiscordToken)
 	if err != nil {

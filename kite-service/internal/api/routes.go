@@ -113,8 +113,11 @@ func (s *APIServer) RegisterRoutes(
 	usersGroup.Get("/{userID}", handler.Typed(userHandler.HandlerUserGet))
 
 	// App routes
+	// The concrete store (postgres Client) also implements AppSettingsStore.
+	appSettingsStore, _ := appStore.(store.AppSettingsStore)
 	appHandler := app.NewAppHandler(
 		appStore,
+		appSettingsStore,
 		userStore,
 		s.config.UserLimits.MaxAppsPerUser,
 		tokenCrypt,
@@ -144,6 +147,11 @@ func (s *APIServer) RegisterRoutes(
 		handler.CacheByUser(cacheManager, time.Minute),
 	)
 	appGroup.Get("/entities", handler.Typed(appHandler.HandleAppEntityList))
+	appGroup.Get("/settings", handler.Typed(appHandler.HandleAppSettingsGet))
+	appGroup.Put("/settings",
+		handler.TypedWithBody(appHandler.HandleAppSettingsUpdate),
+		handler.RateLimitByUser(10, time.Minute),
+	)
 	appGroup.Get("/collaborators", handler.Typed(appHandler.HandleAppCollaboratorsList))
 	appGroup.Post("/collaborators", handler.TypedWithBody(appHandler.HandleAppCollaboratorCreate))
 	appGroup.Delete("/collaborators/{userID}", handler.Typed(appHandler.HandleAppCollaboratorDelete))

@@ -308,6 +308,30 @@ func NewContextFromEvent(event ws.Event, session *state.State) Context {
 	}
 }
 
+// NewContextFromTextCommand builds the eval context for a prefix/text command.
+// It exposes the same message/user/channel/guild envs as a regular event plus
+// an `arg` function backed by the pre-parsed text arguments.
+func NewContextFromTextCommand(event ws.Event, args map[string]any, session *state.State) Context {
+	eventEnv := NewEventEnv(event)
+
+	return Context{
+		Env: Env{
+			"event":   eventEnv,
+			"user":    eventEnv.User,
+			"member":  eventEnv.Member,
+			"channel": eventEnv.Channel,
+			"guild":   eventEnv.Guild,
+			"server":  eventEnv.Guild,
+			"message": eventEnv.Message,
+			"app":     NewAppEnv(session),
+
+			"arg": func(name string) any {
+				return args[name]
+			},
+		},
+	}
+}
+
 type UserEnv struct {
 	og discord.User
 

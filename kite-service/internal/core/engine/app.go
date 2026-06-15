@@ -27,6 +27,9 @@ type App struct {
 	commands        map[string]*Command
 	listeners       map[string]*EventListener
 	// TODO?: Cache messages (LRUCache<*MessageInstance>)
+
+	settingsCache   *model.AppSettings
+	settingsCacheAt time.Time
 }
 
 func NewApp(
@@ -412,6 +415,12 @@ func (a *App) HandleEvent(appID string, session *state.State, event gateway.Even
 			}
 		}
 	default:
+		// Prefix/mention text commands are triggered by message create events,
+		// in addition to any matching event listeners.
+		if msgEvent, ok := event.(*gateway.MessageCreateEvent); ok {
+			a.handlePrefixCommand(appID, session, msgEvent)
+		}
+
 		eventType := model.EventTypeFromDiscordEventType(e.EventType())
 
 		a.RLock()

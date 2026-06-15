@@ -12,6 +12,8 @@ import {
   AppTokenUpdateResponse,
   AppUpdateRequest,
   AppUpdateResponse,
+  AppSettingsUpdateRequest,
+  AppSettingsUpdateResponse,
   AssetCreateResponse,
   AuthLogoutResponse,
   BillingCheckoutRequest,
@@ -114,6 +116,26 @@ export function useAppUpdateMutation(appId: string) {
     onSuccess: () => {
       client.invalidateQueries({
         queryKey: ["apps"],
+      });
+    },
+  });
+}
+
+export function useAppSettingsUpdateMutation(appId: string) {
+  const client = useQueryClient();
+
+  return useMutation({
+    mutationFn: (req: AppSettingsUpdateRequest) =>
+      apiRequest<AppSettingsUpdateResponse>(`/v1/apps/${appId}/settings`, {
+        method: "PUT",
+        body: JSON.stringify(req),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }),
+    onSuccess: () => {
+      client.invalidateQueries({
+        queryKey: ["apps", appId, "settings"],
       });
     },
   });

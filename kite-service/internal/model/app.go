@@ -26,6 +26,16 @@ type AppCredentials struct {
 	DiscordToken string
 }
 
+// AppSettings holds per-app configuration that lives outside the main apps
+// table (in its own app_settings table) so it can evolve without touching the
+// sqlc-generated apps queries.
+type AppSettings struct {
+	AppID                string
+	EnablePrefixCommands bool
+	CommandPrefix        string
+	UpdatedAt            time.Time
+}
+
 type AppDiscordStatus struct {
 	Status        string `json:"status,omitempty"`
 	ActivityType  int    `json:"activity_type,omitempty"`

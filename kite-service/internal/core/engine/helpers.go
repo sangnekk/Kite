@@ -24,6 +24,7 @@ import (
 type Env struct {
 	Config               EngineConfig
 	AppStore             store.AppStore
+	AppSettingsStore     store.AppSettingsStore
 	AssetStore           store.AssetStore
 	LogStore             store.LogStore
 	UsageStore           store.UsageStore
@@ -123,6 +124,50 @@ func (s Env) flowContext(
 	}
 
 	return fCtx
+}
+
+// executeTextCommand runs a command's flow that was triggered by a text/prefix
+// message (instead of a slash command interaction).
+func (s Env) executeTextCommand(
+	ctx context.Context,
+	appID string,
+	node *flow.CompiledFlowNode,
+	session *state.State,
+	event *gateway.MessageCreateEvent,
+	args map[string]any,
+	links entityLinks,
+) {
+	defer s.recoverPanic(appID, links)
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	providers := s.flowProviders(appID, session, links)
+	fCtx := flow.NewContext(
+		ctx,
+		30*time.Second,
+		&PrefixCommandData{event: event},
+		providers,
+		flow.FlowContextLimits{
+			MaxStackDepth: s.Config.MaxStackDepth,
+			MaxOperations: s.Config.MaxOperations,
+			MaxCredits:    s.Config.MaxCredits,
+		},
+		eval.NewContextFromTextCommand(event, args, session),
+		nil,
+	)
+	defer fCtx.Cancel()
+
+	if err := node.Execute(fCtx); err != nil {
+		s.createLogEntry(
+			appID,
+			model.LogLevelError,
+			fmt.Sprintf("Failed to execute prefix command: %v", err),
+			links,
+		)
+	}
+
+	s.createUsageRecord(appID, fCtx.CreditsUsed(), links)
 }
 
 func (s Env) executeFlowEvent(

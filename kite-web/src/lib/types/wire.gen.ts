@@ -28,6 +28,17 @@ export interface AppDiscordStatus {
   activity_url?: string;
 }
 export type AppGetResponse = App;
+export interface AppSettings {
+  enable_prefix_commands: boolean;
+  command_prefix: string;
+  message_content_intent: boolean;
+}
+export type AppSettingsGetResponse = AppSettings;
+export interface AppSettingsUpdateRequest {
+  enable_prefix_commands: boolean;
+  command_prefix: string;
+}
+export type AppSettingsUpdateResponse = AppSettings;
 export interface AppCreateRequest {
   discord_token: string;
 }
