@@ -1787,6 +1787,10 @@ func (n *CompiledFlowNode) ExecuteChildren(ctx *FlowContext) error {
 func (n *CompiledFlowNode) autoDeferInteraction(ctx *FlowContext) error {
 	interaction := ctx.Data.Interaction()
 	if interaction == nil {
+		// Text/prefix commands have no interaction to defer; just skip.
+		if isTextCommand(ctx) {
+			return nil
+		}
 		return &FlowError{
 			Code:    FlowNodeErrorUnknown,
 			Message: "interaction is nil",
