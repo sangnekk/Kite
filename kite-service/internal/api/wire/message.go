@@ -37,14 +37,14 @@ type MessageCreateRequest struct {
 func (req *MessageCreateRequest) Sanitize() {
 	// Remove unused flow sources
 	newFlowSources := make(map[string]flow.FlowData, len(req.FlowSources))
-	for _, row := range req.Data.Components {
-		for _, comp := range row.Components {
-			flow, ok := req.FlowSources[comp.FlowSourceID]
-			if ok {
-				newFlowSources[comp.FlowSourceID] = flow
-			}
+	req.Data.WalkComponents(func(comp *message.ComponentData) {
+		if comp.FlowSourceID == "" {
+			return
 		}
-	}
+		if flow, ok := req.FlowSources[comp.FlowSourceID]; ok {
+			newFlowSources[comp.FlowSourceID] = flow
+		}
+	})
 
 	req.FlowSources = newFlowSources
 }
@@ -86,14 +86,14 @@ type MessageUpdateRequest struct {
 func (req *MessageUpdateRequest) Sanitize() {
 	// Remove unused flow sources
 	newFlowSources := make(map[string]flow.FlowData, len(req.FlowSources))
-	for _, row := range req.Data.Components {
-		for _, comp := range row.Components {
-			flow, ok := req.FlowSources[comp.FlowSourceID]
-			if ok {
-				newFlowSources[comp.FlowSourceID] = flow
-			}
+	req.Data.WalkComponents(func(comp *message.ComponentData) {
+		if comp.FlowSourceID == "" {
+			return
 		}
-	}
+		if flow, ok := req.FlowSources[comp.FlowSourceID]; ok {
+			newFlowSources[comp.FlowSourceID] = flow
+		}
+	})
 
 	req.FlowSources = newFlowSources
 }

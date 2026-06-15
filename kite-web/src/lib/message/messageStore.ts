@@ -11,10 +11,55 @@ import {
   MessageComponentSelectMenu,
   Emoji,
   MessageAttachment,
+  MessageComponentThumbnail,
+  MessageComponentMediaGalleryItem,
+  MESSAGE_FLAG_COMPONENTS_V2,
 } from "./schema";
 import { getUniqueId } from "@/lib/utils";
 import { temporal } from "zundo";
 import debounce from "just-debounce-it";
+
+// ---------------------------------------------------------------------------
+// Components V2 tree helpers
+//
+// V2 components are arbitrarily nested (container -> section -> text display).
+// We address them by a `path` of indices that navigates into nested
+// `components` arrays. These helpers use `any` because narrowing the deeply
+// recursive union on every access is impractical; the runtime `type` checks in
+// the mutations keep things safe.
+// ---------------------------------------------------------------------------
+
+function resolveChildArray(root: any[], parentPath: number[]): any[] | null {
+  let arr: any[] = root;
+  for (const idx of parentPath) {
+    const node = arr?.[idx];
+    if (!node || !Array.isArray(node.components)) return null;
+    arr = node.components;
+  }
+  return arr ?? null;
+}
+
+function resolveNodeAtPath(root: any[], path: number[]): any | null {
+  if (path.length === 0) return null;
+  const parent = resolveChildArray(root, path.slice(0, -1));
+  return parent?.[path[path.length - 1]] ?? null;
+}
+
+// regenerateComponentIds deep-clones a component subtree, assigning fresh ids
+// and flow_source_ids so duplicated buttons don't share a flow.
+function regenerateComponentIds(node: any): any {
+  const clone = JSON.parse(JSON.stringify(node));
+  const walk = (n: any) => {
+    if (!n || typeof n !== "object") return;
+    if ("id" in n) n.id = getUniqueId();
+    if ("flow_source_id" in n) n.flow_source_id = getUniqueId().toString();
+    if (Array.isArray(n.components)) n.components.forEach(walk);
+    if (n.accessory) walk(n.accessory);
+    if (Array.isArray(n.items)) n.items.forEach(walk);
+  };
+  walk(clone);
+  return clone;
+}
 
 export interface MessageStore extends Message {
   clear(): void;
@@ -124,12 +169,38 @@ export interface MessageStore extends Message {
 
   getSelectMenu: (i: number, j: number) => MessageComponentSelectMenu | null;
   getButton: (i: number, j: number) => MessageComponentButton | null;
+
+  // Components V2
+  setFlags: (flags: number) => void;
+  setComponentsV2Enabled: (enabled: boolean) => void;
+  addComponentAtPath: (parentPath: number[], component: any) => void;
+  deleteComponentAtPath: (path: number[]) => void;
+  moveComponentAtPath: (path: number[], dir: -1 | 1) => void;
+  duplicateComponentAtPath: (path: number[]) => void;
+  updateComponentAtPath: (path: number[], patch: Record<string, any>) => void;
+  getComponentAtPath: (path: number[]) => any | null;
+  setSectionAccessory: (
+    path: number[],
+    accessory: MessageComponentButton | MessageComponentThumbnail
+  ) => void;
+  addMediaGalleryItem: (
+    path: number[],
+    item: MessageComponentMediaGalleryItem
+  ) => void;
+  updateMediaGalleryItem: (
+    path: number[],
+    k: number,
+    patch: Record<string, any>
+  ) => void;
+  deleteMediaGalleryItem: (path: number[], k: number) => void;
+  moveMediaGalleryItem: (path: number[], k: number, dir: -1 | 1) => void;
 }
 
 export const emptyMessage: Message = {
   username: undefined,
   avatar_url: undefined,
   content: "",
+  flags: 0,
   tts: false,
   attachments: [],
   embeds: [],
@@ -519,7 +590,7 @@ export const createMessageStore = (initial?: Message) => {
           moveComponentRowUp: (i: number) =>
             set((state) => {
               const row = state.components && state.components[i];
-              if (!row) {
+              if (!row || row.type !== 1) {
                 return;
               }
               state.components.splice(i, 1);
@@ -528,7 +599,7 @@ export const createMessageStore = (initial?: Message) => {
           moveComponentRowDown: (i: number) =>
             set((state) => {
               const row = state.components && state.components[i];
-              if (!row) {
+              if (!row || row.type !== 1) {
                 return;
               }
               state.components.splice(i, 1);
@@ -537,7 +608,7 @@ export const createMessageStore = (initial?: Message) => {
           duplicateComponentRow: (i: number) =>
             set((state) => {
               const row = state.components && state.components[i];
-              if (!row) {
+              if (!row || row.type !== 1) {
                 return;
               }
 
@@ -561,7 +632,7 @@ export const createMessageStore = (initial?: Message) => {
           addButton: (i: number, button: MessageComponentButton) =>
             set((state) => {
               const row = state.components && state.components[i];
-              if (!row) {
+              if (!row || row.type !== 1) {
                 return;
               }
 
@@ -574,7 +645,7 @@ export const createMessageStore = (initial?: Message) => {
           clearButtons: (i: number) =>
             set((state) => {
               const row = state.components && state.components[i];
-              if (!row) {
+              if (!row || row.type !== 1) {
                 return;
               }
 
@@ -583,7 +654,7 @@ export const createMessageStore = (initial?: Message) => {
           deleteButton: (i: number, j: number) =>
             set((state) => {
               const row = state.components[i];
-              if (!row) {
+              if (!row || row.type !== 1) {
                 return;
               }
 
@@ -592,7 +663,7 @@ export const createMessageStore = (initial?: Message) => {
           moveButtonUp: (i: number, j: number) =>
             set((state) => {
               const row = state.components[i];
-              if (!row) {
+              if (!row || row.type !== 1) {
                 return;
               }
               const button = row.components[j];
@@ -605,7 +676,7 @@ export const createMessageStore = (initial?: Message) => {
           moveButtonDown: (i: number, j: number) =>
             set((state) => {
               const row = state.components && state.components[i];
-              if (!row) {
+              if (!row || row.type !== 1) {
                 return;
               }
               const button = row.components[j];
@@ -618,7 +689,7 @@ export const createMessageStore = (initial?: Message) => {
           duplicateButton: (i: number, j: number) =>
             set((state) => {
               const row = state.components && state.components[i];
-              if (!row) {
+              if (!row || row.type !== 1) {
                 return;
               }
               const button = row.components && row.components[j];
@@ -641,7 +712,7 @@ export const createMessageStore = (initial?: Message) => {
           ) =>
             set((state) => {
               const row = state.components && state.components[i];
-              if (!row) {
+              if (!row || row.type !== 1) {
                 return;
               }
               const button = row.components && row.components[j];
@@ -657,7 +728,7 @@ export const createMessageStore = (initial?: Message) => {
           setButtonLabel: (i: number, j: number, label: string) =>
             set((state) => {
               const row = state.components && state.components[i];
-              if (!row) {
+              if (!row || row.type !== 1) {
                 return;
               }
               const button = row.components && row.components[j];
@@ -669,7 +740,7 @@ export const createMessageStore = (initial?: Message) => {
           setButtonEmoji: (i: number, j: number, emoji: Emoji | undefined) =>
             set((state) => {
               const row = state.components && state.components[i];
-              if (!row) {
+              if (!row || row.type !== 1) {
                 return;
               }
               const button = row.components && row.components[j];
@@ -681,7 +752,7 @@ export const createMessageStore = (initial?: Message) => {
           setButtonUrl: (i: number, j: number, url: string) =>
             set((state) => {
               const row = state.components && state.components[i];
-              if (!row) {
+              if (!row || row.type !== 1) {
                 return;
               }
               const button = row.components && row.components[j];
@@ -697,7 +768,7 @@ export const createMessageStore = (initial?: Message) => {
           ) =>
             set((state) => {
               const row = state.components && state.components[i];
-              if (!row) {
+              if (!row || row.type !== 1) {
                 return;
               }
               const button = row.components && row.components[j];
@@ -713,7 +784,7 @@ export const createMessageStore = (initial?: Message) => {
           ) =>
             set((state) => {
               const row = state.components && state.components[i];
-              if (!row) {
+              if (!row || row.type !== 1) {
                 return;
               }
               const selectMenu = row.components && row.components[j];
@@ -729,7 +800,7 @@ export const createMessageStore = (initial?: Message) => {
           ) =>
             set((state) => {
               const row = state.components && state.components[i];
-              if (!row) {
+              if (!row || row.type !== 1) {
                 return;
               }
               const selectMenu = row.components && row.components[j];
@@ -745,7 +816,7 @@ export const createMessageStore = (initial?: Message) => {
           ) =>
             set((state) => {
               const row = state.components && state.components[i];
-              if (!row) {
+              if (!row || row.type !== 1) {
                 return;
               }
               const selectMenu = row.components && row.components[j];
@@ -762,7 +833,7 @@ export const createMessageStore = (initial?: Message) => {
           clearSelectMenuOptions: (i: number, j: number) =>
             set((state) => {
               const row = state.components && state.components[i];
-              if (!row) {
+              if (!row || row.type !== 1) {
                 return;
               }
               const selectMenu = row.components && row.components[j];
@@ -775,7 +846,7 @@ export const createMessageStore = (initial?: Message) => {
           moveSelectMenuOptionDown: (i: number, j: number, k: number) =>
             set((state) => {
               const row = state.components && state.components[i];
-              if (!row) {
+              if (!row || row.type !== 1) {
                 return;
               }
               const selectMenu = row.components && row.components[j];
@@ -792,7 +863,7 @@ export const createMessageStore = (initial?: Message) => {
           moveSelectMenuOptionUp: (i: number, j: number, k: number) =>
             set((state) => {
               const row = state.components && state.components[i];
-              if (!row) {
+              if (!row || row.type !== 1) {
                 return;
               }
               const selectMenu = row.components && row.components[j];
@@ -809,7 +880,7 @@ export const createMessageStore = (initial?: Message) => {
           duplicateSelectMenuOption: (i: number, j: number, k: number) =>
             set((state) => {
               const row = state.components && state.components[i];
-              if (!row) {
+              if (!row || row.type !== 1) {
                 return;
               }
               const selectMenu = row.components && row.components[j];
@@ -829,7 +900,7 @@ export const createMessageStore = (initial?: Message) => {
           deleteSelectMenuOption: (i: number, j: number, k: number) =>
             set((state) => {
               const row = state.components && state.components[i];
-              if (!row) {
+              if (!row || row.type !== 1) {
                 return;
               }
               const selectMenu = row.components && row.components[j];
@@ -847,7 +918,7 @@ export const createMessageStore = (initial?: Message) => {
           ) =>
             set((state) => {
               const row = state.components && state.components[i];
-              if (!row) {
+              if (!row || row.type !== 1) {
                 return;
               }
               const selectMenu = row.components && row.components[j];
@@ -868,7 +939,7 @@ export const createMessageStore = (initial?: Message) => {
           ) =>
             set((state) => {
               const row = state.components && state.components[i];
-              if (!row) {
+              if (!row || row.type !== 1) {
                 return;
               }
               const selectMenu = row.components && row.components[j];
@@ -889,7 +960,7 @@ export const createMessageStore = (initial?: Message) => {
           ) =>
             set((state) => {
               const row = state.components && state.components[i];
-              if (!row) {
+              if (!row || row.type !== 1) {
                 return;
               }
               const selectMenu = row.components && row.components[j];
@@ -906,7 +977,7 @@ export const createMessageStore = (initial?: Message) => {
           getSelectMenu: (i: number, j: number) => {
             const state = get();
             const row = state.components && state.components[i];
-            if (!row) {
+            if (!row || row.type !== 1) {
               return null;
             }
 
@@ -919,7 +990,7 @@ export const createMessageStore = (initial?: Message) => {
           getButton: (i: number, j: number) => {
             const state = get();
             const row = state.components && state.components[i];
-            if (!row) {
+            if (!row || row.type !== 1) {
               return null;
             }
 
@@ -929,6 +1000,121 @@ export const createMessageStore = (initial?: Message) => {
             }
             return null;
           },
+
+          // ---- Components V2 ----
+          setFlags: (flags: number) => set({ flags }),
+          setComponentsV2Enabled: (enabled: boolean) =>
+            set((state) => {
+              const cur = state.flags ?? 0;
+              if (enabled) {
+                state.flags = cur | MESSAGE_FLAG_COMPONENTS_V2;
+                // Components V2 disallows content and embeds.
+                state.content = "";
+                state.embeds = [];
+              } else {
+                state.flags = cur & ~MESSAGE_FLAG_COMPONENTS_V2;
+              }
+              // The component shapes are incompatible between V1 and V2, so we
+              // start fresh when switching modes.
+              state.components = [];
+            }),
+          addComponentAtPath: (parentPath: number[], component: any) =>
+            set((state) => {
+              const arr = resolveChildArray(state.components as any[], parentPath);
+              if (!arr) return;
+              arr.push(component as any);
+            }),
+          deleteComponentAtPath: (path: number[]) =>
+            set((state) => {
+              if (path.length === 0) return;
+              const parent = resolveChildArray(
+                state.components as any[],
+                path.slice(0, -1)
+              );
+              if (!parent) return;
+              parent.splice(path[path.length - 1], 1);
+            }),
+          moveComponentAtPath: (path: number[], dir: -1 | 1) =>
+            set((state) => {
+              if (path.length === 0) return;
+              const parent = resolveChildArray(
+                state.components as any[],
+                path.slice(0, -1)
+              );
+              if (!parent) return;
+              const i = path[path.length - 1];
+              const j = i + dir;
+              if (j < 0 || j >= parent.length) return;
+              const [node] = parent.splice(i, 1);
+              parent.splice(j, 0, node);
+            }),
+          duplicateComponentAtPath: (path: number[]) =>
+            set((state) => {
+              if (path.length === 0) return;
+              const parent = resolveChildArray(
+                state.components as any[],
+                path.slice(0, -1)
+              );
+              if (!parent) return;
+              const i = path[path.length - 1];
+              const node = parent[i];
+              if (!node) return;
+              parent.splice(i + 1, 0, regenerateComponentIds(node));
+            }),
+          updateComponentAtPath: (path: number[], patch: Record<string, any>) =>
+            set((state) => {
+              const node = resolveNodeAtPath(state.components as any[], path);
+              if (!node) return;
+              Object.assign(node, patch);
+            }),
+          getComponentAtPath: (path: number[]) =>
+            resolveNodeAtPath(get().components as any[], path),
+          setSectionAccessory: (
+            path: number[],
+            accessory: MessageComponentButton | MessageComponentThumbnail
+          ) =>
+            set((state) => {
+              const node = resolveNodeAtPath(state.components as any[], path);
+              if (!node || node.type !== 9) return;
+              node.accessory = accessory as any;
+            }),
+          addMediaGalleryItem: (
+            path: number[],
+            item: MessageComponentMediaGalleryItem
+          ) =>
+            set((state) => {
+              const node = resolveNodeAtPath(state.components as any[], path);
+              if (!node || node.type !== 12) return;
+              if (!node.items) node.items = [];
+              node.items.push(item as any);
+            }),
+          updateMediaGalleryItem: (
+            path: number[],
+            k: number,
+            patch: Record<string, any>
+          ) =>
+            set((state) => {
+              const node = resolveNodeAtPath(state.components as any[], path);
+              if (!node || node.type !== 12) return;
+              const it = node.items?.[k];
+              if (!it) return;
+              Object.assign(it, patch);
+            }),
+          deleteMediaGalleryItem: (path: number[], k: number) =>
+            set((state) => {
+              const node = resolveNodeAtPath(state.components as any[], path);
+              if (!node || node.type !== 12) return;
+              node.items?.splice(k, 1);
+            }),
+          moveMediaGalleryItem: (path: number[], k: number, dir: -1 | 1) =>
+            set((state) => {
+              const node = resolveNodeAtPath(state.components as any[], path);
+              if (!node || node.type !== 12 || !node.items) return;
+              const j = k + dir;
+              if (j < 0 || j >= node.items.length) return;
+              const [it] = node.items.splice(k, 1);
+              node.items.splice(j, 0, it);
+            }),
         }),
         {
           limit: 10,

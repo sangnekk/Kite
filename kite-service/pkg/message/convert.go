@@ -8,6 +8,11 @@ import (
 
 type ConvertOptions struct {
 	ComponentIDFactory componentIDFactory
+
+	// MediaFilenames maps an asset ID to the multipart filename it will be
+	// uploaded under, so Components V2 media can reference it via
+	// attachment://<filename>. It is only used for Components V2 messages.
+	MediaFilenames map[string]string
 }
 
 func (m *MessageData) ToSendMessageData(opts ConvertOptions) api.SendMessageData {
@@ -20,9 +25,12 @@ func (m *MessageData) ToSendMessageData(opts ConvertOptions) api.SendMessageData
 		embeds[i] = embed.ToEmbed()
 	}
 
-	components := make(discord.ContainerComponents, len(m.Components))
-	for i, component := range m.Components {
-		components[i] = component.ToComponent(opts)
+	components := make(discord.ContainerComponents, 0, len(m.Components))
+	for i := range m.Components {
+		cc := m.Components[i].toContainerComponent(opts)
+		if cc != nil {
+			components = append(components, cc)
+		}
 	}
 
 	return api.SendMessageData{
@@ -44,9 +52,12 @@ func (m *MessageData) ToEditMessageData(opts ConvertOptions) api.EditMessageData
 		embeds[i] = embed.ToEmbed()
 	}
 
-	components := make(discord.ContainerComponents, len(m.Components))
-	for i, component := range m.Components {
-		components[i] = component.ToComponent(opts)
+	components := make(discord.ContainerComponents, 0, len(m.Components))
+	for i := range m.Components {
+		cc := m.Components[i].toContainerComponent(opts)
+		if cc != nil {
+			components = append(components, cc)
+		}
 	}
 
 	var flags *discord.MessageFlags
@@ -74,9 +85,12 @@ func (m *MessageData) ToInteractionResponseData(opts ConvertOptions) api.Interac
 		embeds[i] = embed.ToEmbed()
 	}
 
-	components := make(discord.ContainerComponents, len(m.Components))
-	for i, component := range m.Components {
-		components[i] = component.ToComponent(opts)
+	components := make(discord.ContainerComponents, 0, len(m.Components))
+	for i := range m.Components {
+		cc := m.Components[i].toContainerComponent(opts)
+		if cc != nil {
+			components = append(components, cc)
+		}
 	}
 
 	return api.InteractionResponseData{
@@ -176,14 +190,27 @@ func (a *EmbedAuthorData) ToEmbedAuthor() *discord.EmbedAuthor {
 	}
 }
 
-func (r *ComponentRowData) ToComponent(opts ConvertOptions) discord.ContainerComponent {
-	if r == nil {
+// toContainerComponent converts a top-level component to an arikawa container
+// component for the classic ("V1") send path. Only action rows are supported
+// here; Components V2 layout components are serialized through a separate raw
+// path (see convert_v2.go) and never reach this function.
+func (c *ComponentData) toContainerComponent(opts ConvertOptions) discord.ContainerComponent {
+	if c == nil {
 		return nil
 	}
 
-	components := make(discord.ActionRowComponent, len(r.Components))
-	for i, component := range r.Components {
-		components[i] = component.ToComponent(opts)
+	// A missing type (0) means a classic action row for backwards
+	// compatibility with messages stored before the type field existed.
+	if c.Type != 0 && c.Type != ComponentTypeActionRow {
+		return nil
+	}
+
+	components := make(discord.ActionRowComponent, 0, len(c.Components))
+	for i := range c.Components {
+		ic := c.Components[i].ToComponent(opts)
+		if ic != nil {
+			components = append(components, ic)
+		}
 	}
 
 	return &components

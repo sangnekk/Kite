@@ -292,6 +292,132 @@ export const actionRowSchema = z.object({
 
 export type MessageComponentActionRow = z.infer<typeof actionRowSchema>;
 
+// ---------------------------------------------------------------------------
+// Components V2
+//
+// When the message has the IS_COMPONENTS_V2 flag (see MESSAGE_FLAG_COMPONENTS_V2)
+// the top-level `components` array holds these layout/content components instead
+// of action rows, and `content`/`embeds` are not allowed.
+// ---------------------------------------------------------------------------
+
+export const MESSAGE_FLAG_COMPONENTS_V2 = 1 << 15; // 32768
+
+export const mediaItemSchema = z
+  .object({
+    url: z.optional(z.string()),
+    asset_id: z.optional(z.string()),
+  })
+  .refine(
+    (v) => !!v.url || !!v.asset_id,
+    "Media must have a URL or an uploaded file"
+  );
+
+export type MessageComponentMediaItem = z.infer<typeof mediaItemSchema>;
+
+export const textDisplaySchema = z.object({
+  id: uniqueIdSchema.default(() => getUniqueId()),
+  type: z.literal(10),
+  content: z.string().min(1).max(4000),
+});
+
+export type MessageComponentTextDisplay = z.infer<typeof textDisplaySchema>;
+
+export const separatorSchema = z.object({
+  id: uniqueIdSchema.default(() => getUniqueId()),
+  type: z.literal(14),
+  divider: z.optional(z.boolean()),
+  spacing: z.optional(z.literal(1).or(z.literal(2))),
+});
+
+export type MessageComponentSeparator = z.infer<typeof separatorSchema>;
+
+export const thumbnailSchema = z.object({
+  id: uniqueIdSchema.default(() => getUniqueId()),
+  type: z.literal(11),
+  media: mediaItemSchema,
+  description: z.optional(z.string().max(1024)),
+  spoiler: z.optional(z.boolean()),
+});
+
+export type MessageComponentThumbnail = z.infer<typeof thumbnailSchema>;
+
+export const fileSchema = z.object({
+  id: uniqueIdSchema.default(() => getUniqueId()),
+  type: z.literal(13),
+  media: mediaItemSchema,
+  spoiler: z.optional(z.boolean()),
+});
+
+export type MessageComponentFile = z.infer<typeof fileSchema>;
+
+export const mediaGalleryItemSchema = z.object({
+  media: mediaItemSchema,
+  description: z.optional(z.string().max(1024)),
+  spoiler: z.optional(z.boolean()),
+});
+
+export type MessageComponentMediaGalleryItem = z.infer<
+  typeof mediaGalleryItemSchema
+>;
+
+export const mediaGallerySchema = z.object({
+  id: uniqueIdSchema.default(() => getUniqueId()),
+  type: z.literal(12),
+  items: z.array(mediaGalleryItemSchema).min(1).max(10),
+});
+
+export type MessageComponentMediaGallery = z.infer<typeof mediaGallerySchema>;
+
+// A section groups 1-3 text displays with a single accessory (a button or a
+// thumbnail).
+export const sectionAccessorySchema = z.union([buttonSchema, thumbnailSchema]);
+
+export const sectionSchema = z.object({
+  id: uniqueIdSchema.default(() => getUniqueId()),
+  type: z.literal(9),
+  components: z.array(textDisplaySchema).min(1).max(3),
+  accessory: sectionAccessorySchema,
+});
+
+export type MessageComponentSection = z.infer<typeof sectionSchema>;
+
+// Components allowed directly inside a container.
+export const containerChildSchema = z.union([
+  actionRowSchema,
+  textDisplaySchema,
+  sectionSchema,
+  mediaGallerySchema,
+  separatorSchema,
+  fileSchema,
+]);
+
+export type MessageComponentContainerChild = z.infer<
+  typeof containerChildSchema
+>;
+
+export const containerSchema = z.object({
+  id: uniqueIdSchema.default(() => getUniqueId()),
+  type: z.literal(17),
+  accent_color: z.optional(z.number().max(16777215)),
+  spoiler: z.optional(z.boolean()),
+  components: z.array(containerChildSchema).min(1).max(10),
+});
+
+export type MessageComponentContainer = z.infer<typeof containerSchema>;
+
+// Any top-level component, V1 (action row) or V2 (layout/content).
+export const topLevelComponentSchema = z.union([
+  actionRowSchema,
+  containerSchema,
+  textDisplaySchema,
+  sectionSchema,
+  mediaGallerySchema,
+  separatorSchema,
+  fileSchema,
+]);
+
+export type MessageComponent = z.infer<typeof topLevelComponentSchema>;
+
 export const messageContentSchema = z.string().max(2000);
 
 export type MessageContent = z.infer<typeof messageContentSchema>;
@@ -348,24 +474,57 @@ export type MessageAttachment = z.infer<typeof attachmentSchema>;
 export const messageSchema = z
   .object({
     content: messageContentSchema.default(""),
+    flags: z.optional(z.number()).default(0),
     username: webhookUsernameSchema,
     avatar_url: webhookAvatarUrlSchema,
     tts: messageTtsSchema.default(false),
     attachments: z.array(attachmentSchema).max(10).default([]),
     embeds: z.array(embedSchema).max(10).default([]),
     allowed_mentions: messageAllowedMentionsSchema,
-    components: z.array(actionRowSchema).max(5).default([]),
+    components: z.array(topLevelComponentSchema).max(40).default([]),
     thread_name: messageThreadNameSchema,
   })
   .superRefine((data, ctx) => {
-    // this currently doesn't take attachments into account
-    if (!data.content && !data.embeds.length && !data.components.length) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["content"],
-        message: "Content is required when no other fields are set",
-      });
+    const isV2 = ((data.flags ?? 0) & MESSAGE_FLAG_COMPONENTS_V2) !== 0;
+
+    if (isV2) {
+      // With Components V2 the content and embeds fields are not allowed;
+      // everything has to be expressed through components.
+      if (data.content) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["content"],
+          message: "Content is not allowed when Components V2 is enabled",
+        });
+      }
+      if (data.embeds.length) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["embeds"],
+          message: "Embeds are not allowed when Components V2 is enabled",
+        });
+      }
+      if (!data.components.length) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["components"],
+          message: "At least one component is required with Components V2",
+        });
+      }
+    } else {
+      // this currently doesn't take attachments into account
+      if (!data.content && !data.embeds.length && !data.components.length) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["content"],
+          message: "Content is required when no other fields are set",
+        });
+      }
     }
   });
 
 export type Message = z.infer<typeof messageSchema>;
+
+export function isComponentsV2(message: { flags?: number }): boolean {
+  return ((message.flags ?? 0) & MESSAGE_FLAG_COMPONENTS_V2) !== 0;
+}

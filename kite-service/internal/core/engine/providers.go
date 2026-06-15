@@ -15,6 +15,7 @@ import (
 	"github.com/diamondburned/arikawa/v3/discord"
 	"github.com/diamondburned/arikawa/v3/state"
 	disstore "github.com/diamondburned/arikawa/v3/state/store"
+	"github.com/diamondburned/arikawa/v3/utils/httputil"
 	"github.com/diamondburned/arikawa/v3/utils/sendpart"
 	"github.com/kitecloud/kite/kite-service/internal/model"
 	"github.com/kitecloud/kite/kite-service/internal/store"
@@ -31,9 +32,10 @@ import (
 type DiscordProvider struct {
 	provider.MockDiscordProvider // TODO: remove this
 
-	appID    string
-	appStore store.AppStore
-	session  *state.State
+	appID      string
+	appStore   store.AppStore
+	assetStore store.AssetStore
+	session    *state.State
 
 	interactionResponseMutex sync.Mutex
 	interactionsWithResponse map[discord.InteractionID]struct{}
@@ -42,15 +44,44 @@ type DiscordProvider struct {
 func NewDiscordProvider(
 	appID string,
 	appStore store.AppStore,
+	assetStore store.AssetStore,
 	session *state.State,
 ) *DiscordProvider {
 	return &DiscordProvider{
-		appID:    appID,
-		appStore: appStore,
-		session:  session,
+		appID:      appID,
+		appStore:   appStore,
+		assetStore: assetStore,
+		session:    session,
 
 		interactionsWithResponse: make(map[discord.InteractionID]struct{}),
 	}
+}
+
+// ResolveAsset returns the content and metadata of an uploaded asset.
+func (p *DiscordProvider) ResolveAsset(ctx context.Context, assetID string) (*provider.AssetData, error) {
+	if p.assetStore == nil {
+		return nil, fmt.Errorf("asset store is not configured")
+	}
+
+	asset, err := p.assetStore.AssetWithContent(ctx, assetID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get asset: %w", err)
+	}
+
+	return &provider.AssetData{
+		Name:        asset.Name,
+		ContentType: asset.ContentType,
+		Content:     asset.Content,
+	}, nil
+}
+
+// sendRaw sends a raw request body. If the body is a multipart writer (i.e. it
+// carries file uploads) it is sent as multipart/form-data, otherwise as JSON.
+func (p *DiscordProvider) sendRaw(method, url string, body any, v any) error {
+	if mw, ok := body.(sendpart.DataMultipartWriter); ok {
+		return sendpart.Do(p.session.Client.Client, method, mw, v, url)
+	}
+	return p.session.Client.RequestJSON(v, method, url, httputil.WithJSONBody(body))
 }
 
 func (p *DiscordProvider) Member(ctx context.Context, guildID discord.GuildID, userID discord.UserID) (*discord.Member, error) {
@@ -219,6 +250,91 @@ func (p *DiscordProvider) EditMessage(ctx context.Context, channelID discord.Cha
 	}
 
 	return msg, nil
+}
+
+// CreateMessageRaw sends a raw JSON message payload. It is used for Components
+// V2 messages, which arikawa's typed API cannot represent.
+func (p *DiscordProvider) CreateMessageRaw(ctx context.Context, channelID discord.ChannelID, body any) (*discord.Message, error) {
+	var msg discord.Message
+	url := api.EndpointChannels + channelID.String() + "/messages"
+	if err := p.sendRaw("POST", url, body, &msg); err != nil {
+		return nil, fmt.Errorf("failed to send message: %w", err)
+	}
+
+	return &msg, nil
+}
+
+// EditMessageRaw edits a message with a raw JSON payload (Components V2).
+func (p *DiscordProvider) EditMessageRaw(ctx context.Context, channelID discord.ChannelID, messageID discord.MessageID, body any) (*discord.Message, error) {
+	var msg discord.Message
+	url := api.EndpointChannels + channelID.String() + "/messages/" + messageID.String()
+	if err := p.sendRaw("PATCH", url, body, &msg); err != nil {
+		return nil, fmt.Errorf("failed to edit message: %w", err)
+	}
+
+	return &msg, nil
+}
+
+// CreateInteractionResponseRaw responds to an interaction with a raw JSON
+// callback payload (Components V2).
+func (p *DiscordProvider) CreateInteractionResponseRaw(ctx context.Context, interactionID discord.InteractionID, interactionToken string, body any) (*provider.InteractionResponseResource, error) {
+	p.interactionResponseMutex.Lock()
+	defer p.interactionResponseMutex.Unlock()
+
+	endpoint := api.EndpointInteractions + interactionID.String() + "/" + interactionToken + "/callback?with_response=true"
+
+	var res struct {
+		Resource struct {
+			Type    api.InteractionResponseType `json:"type"`
+			Message *discord.Message            `json:"message,omitempty"`
+		} `json:"resource"`
+	}
+	if err := p.sendRaw("POST", endpoint, body, &res); err != nil {
+		return nil, fmt.Errorf("failed to respond to interaction: %w", err)
+	}
+
+	p.interactionsWithResponse[interactionID] = struct{}{}
+
+	return &provider.InteractionResponseResource{
+		Type:    res.Resource.Type,
+		Message: res.Resource.Message,
+	}, nil
+}
+
+// EditInteractionResponseRaw edits the original interaction response with a raw
+// JSON payload (Components V2).
+func (p *DiscordProvider) EditInteractionResponseRaw(ctx context.Context, applicationID discord.AppID, token string, body any) (*discord.Message, error) {
+	var msg discord.Message
+	url := api.EndpointWebhooks + applicationID.String() + "/" + token + "/messages/@original"
+	if err := p.sendRaw("PATCH", url, body, &msg); err != nil {
+		return nil, fmt.Errorf("failed to edit interaction response: %w", err)
+	}
+
+	return &msg, nil
+}
+
+// CreateInteractionFollowupRaw creates a followup message with a raw JSON
+// payload (Components V2).
+func (p *DiscordProvider) CreateInteractionFollowupRaw(ctx context.Context, applicationID discord.AppID, token string, body any) (*discord.Message, error) {
+	var msg discord.Message
+	url := api.EndpointWebhooks + applicationID.String() + "/" + token
+	if err := p.sendRaw("POST", url, body, &msg); err != nil {
+		return nil, fmt.Errorf("failed to create interaction followup: %w", err)
+	}
+
+	return &msg, nil
+}
+
+// EditInteractionFollowupRaw edits a followup message with a raw JSON payload
+// (Components V2).
+func (p *DiscordProvider) EditInteractionFollowupRaw(ctx context.Context, applicationID discord.AppID, token string, messageID discord.MessageID, body any) (*discord.Message, error) {
+	var msg discord.Message
+	url := api.EndpointWebhooks + applicationID.String() + "/" + token + "/messages/" + messageID.String()
+	if err := p.sendRaw("PATCH", url, body, &msg); err != nil {
+		return nil, fmt.Errorf("failed to edit interaction followup: %w", err)
+	}
+
+	return &msg, nil
 }
 
 func (p *DiscordProvider) DeleteMessage(

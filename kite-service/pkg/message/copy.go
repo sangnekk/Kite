@@ -10,7 +10,7 @@ func (m *MessageData) Copy() MessageData {
 		embeds[i] = embed.Copy()
 	}
 
-	components := make([]ComponentRowData, len(m.Components))
+	components := make([]ComponentData, len(m.Components))
 	for i, component := range m.Components {
 		components[i] = component.Copy()
 	}
@@ -101,22 +101,38 @@ func (a *EmbedAuthorData) Copy() *EmbedAuthorData {
 	}
 }
 
-func (c ComponentRowData) Copy() ComponentRowData {
+func (c ComponentData) Copy() ComponentData {
+	options := make([]ComponentSelectOptionData, len(c.Options))
+	for i, option := range c.Options {
+		options[i] = option.Copy()
+	}
+
 	components := make([]ComponentData, len(c.Components))
 	for i, component := range c.Components {
 		components[i] = component.Copy()
 	}
 
-	return ComponentRowData{
-		ID:         c.ID,
-		Components: components,
+	items := make([]MediaGalleryItemData, len(c.Items))
+	for i, item := range c.Items {
+		items[i] = item.Copy()
 	}
-}
 
-func (c ComponentData) Copy() ComponentData {
-	options := make([]ComponentSelectOptionData, len(c.Options))
-	for i, option := range c.Options {
-		options[i] = option.Copy()
+	var accentColor *int
+	if c.AccentColor != nil {
+		v := *c.AccentColor
+		accentColor = &v
+	}
+
+	var divider *bool
+	if c.Divider != nil {
+		v := *c.Divider
+		divider = &v
+	}
+
+	var accessory *ComponentData
+	if c.Accessory != nil {
+		v := c.Accessory.Copy()
+		accessory = &v
 	}
 
 	return ComponentData{
@@ -131,7 +147,36 @@ func (c ComponentData) Copy() ComponentData {
 		MinValues:    c.MinValues,
 		MaxValues:    c.MaxValues,
 		Options:      options,
+		Content:      c.Content,
+		AccentColor:  accentColor,
+		Spoiler:      c.Spoiler,
+		Divider:      divider,
+		Spacing:      c.Spacing,
+		Media:        c.Media.Copy(),
+		Description:  c.Description,
+		Items:        items,
+		Components:   components,
+		Accessory:    accessory,
 		FlowSourceID: c.FlowSourceID,
+	}
+}
+
+func (m *UnfurledMediaItemData) Copy() *UnfurledMediaItemData {
+	if m == nil {
+		return nil
+	}
+
+	return &UnfurledMediaItemData{
+		URL:     m.URL,
+		AssetID: m.AssetID,
+	}
+}
+
+func (i MediaGalleryItemData) Copy() MediaGalleryItemData {
+	return MediaGalleryItemData{
+		Media:       i.Media.Copy(),
+		Description: i.Description,
+		Spoiler:     i.Spoiler,
 	}
 }
 

@@ -16,6 +16,7 @@ import (
 	"github.com/diamondburned/arikawa/v3/api"
 	"github.com/diamondburned/arikawa/v3/discord"
 	"github.com/diamondburned/arikawa/v3/utils/json/option"
+	"github.com/diamondburned/arikawa/v3/utils/sendpart"
 	"github.com/kitecloud/kite/kite-service/internal/util"
 	"github.com/kitecloud/kite/kite-service/pkg/eval"
 	"github.com/kitecloud/kite/kite-service/pkg/message"
@@ -77,7 +78,7 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 			}
 		}
 
-		responseData, resumePointID, err := n.prepareMessageResponseData(ctx)
+		responseData, rawV2, resumePointID, err := n.prepareMessageResponseData(ctx)
 		if err != nil {
 			return traceError(n, err)
 		}
@@ -89,17 +90,24 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 
 		var msg *discord.Message
 		if hasCreatedResponse {
-			msg, err = ctx.Discord.CreateInteractionFollowup(ctx, interaction.AppID, interaction.Token, responseData)
+			if rawV2 != nil {
+				msg, err = ctx.Discord.CreateInteractionFollowupRaw(ctx, interaction.AppID, interaction.Token, rawV2.Body())
+			} else {
+				msg, err = ctx.Discord.CreateInteractionFollowup(ctx, interaction.AppID, interaction.Token, responseData)
+			}
 			if err != nil {
 				return traceError(n, err)
 			}
 		} else {
-			resp := api.InteractionResponse{
-				Type: api.MessageInteractionWithSource,
-				Data: &responseData,
+			var res *provider.InteractionResponseResource
+			if rawV2 != nil {
+				res, err = ctx.Discord.CreateInteractionResponseRaw(ctx, interaction.ID, interaction.Token, rawV2.ResponseBody(int(api.MessageInteractionWithSource)))
+			} else {
+				res, err = ctx.Discord.CreateInteractionResponse(ctx, interaction.ID, interaction.Token, api.InteractionResponse{
+					Type: api.MessageInteractionWithSource,
+					Data: &responseData,
+				})
 			}
-
-			res, err := ctx.Discord.CreateInteractionResponse(ctx, interaction.ID, interaction.Token, resp)
 			if err != nil {
 				return traceError(n, err)
 			}
@@ -147,7 +155,7 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 			}
 		}
 
-		responseData, resumePointID, err := n.prepareMessageResponseData(ctx)
+		responseData, rawV2, resumePointID, err := n.prepareMessageResponseData(ctx)
 		if err != nil {
 			return traceError(n, err)
 		}
@@ -160,21 +168,28 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 			}
 
 			if hasCreatedResponse {
-				msg, err = ctx.Discord.EditInteractionResponse(ctx, interaction.AppID, interaction.Token, api.EditInteractionResponseData{
-					Content:    responseData.Content,
-					Embeds:     responseData.Embeds,
-					Components: responseData.Components,
-				})
+				if rawV2 != nil {
+					msg, err = ctx.Discord.EditInteractionResponseRaw(ctx, interaction.AppID, interaction.Token, rawV2.Body())
+				} else {
+					msg, err = ctx.Discord.EditInteractionResponse(ctx, interaction.AppID, interaction.Token, api.EditInteractionResponseData{
+						Content:    responseData.Content,
+						Embeds:     responseData.Embeds,
+						Components: responseData.Components,
+					})
+				}
 				if err != nil {
 					return traceError(n, err)
 				}
 			} else {
-				resp := api.InteractionResponse{
-					Type: api.UpdateMessage,
-					Data: &responseData,
+				var res *provider.InteractionResponseResource
+				if rawV2 != nil {
+					res, err = ctx.Discord.CreateInteractionResponseRaw(ctx, interaction.ID, interaction.Token, rawV2.ResponseBody(int(api.UpdateMessage)))
+				} else {
+					res, err = ctx.Discord.CreateInteractionResponse(ctx, interaction.ID, interaction.Token, api.InteractionResponse{
+						Type: api.UpdateMessage,
+						Data: &responseData,
+					})
 				}
-
-				res, err := ctx.Discord.CreateInteractionResponse(ctx, interaction.ID, interaction.Token, resp)
 				if err != nil {
 					return traceError(n, err)
 				}
@@ -189,16 +204,26 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 				return traceError(n, err)
 			}
 
-			msg, err = ctx.Discord.EditInteractionFollowup(
-				ctx,
-				interaction.AppID,
-				interaction.Token,
-				discord.MessageID(messageTarget.Snowflake()),
-				api.EditInteractionResponseData{
-					Content: responseData.Content,
-					Embeds:  responseData.Embeds,
-				},
-			)
+			if rawV2 != nil {
+				msg, err = ctx.Discord.EditInteractionFollowupRaw(
+					ctx,
+					interaction.AppID,
+					interaction.Token,
+					discord.MessageID(messageTarget.Snowflake()),
+					rawV2.Body(),
+				)
+			} else {
+				msg, err = ctx.Discord.EditInteractionFollowup(
+					ctx,
+					interaction.AppID,
+					interaction.Token,
+					discord.MessageID(messageTarget.Snowflake()),
+					api.EditInteractionResponseData{
+						Content: responseData.Content,
+						Embeds:  responseData.Embeds,
+					},
+				)
+			}
 			if err != nil {
 				return traceError(n, err)
 			}
@@ -359,7 +384,7 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 			return n.resumeFromComponent(ctx)
 		}
 
-		messageData, resumePointID, err := n.prepareMessageSendData(ctx)
+		messageData, rawV2, resumePointID, err := n.prepareMessageSendData(ctx)
 		if err != nil {
 			return traceError(n, err)
 		}
@@ -369,11 +394,12 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 			return traceError(n, err)
 		}
 
-		msg, err := ctx.Discord.CreateMessage(
-			ctx,
-			discord.ChannelID(channelTarget.Snowflake()),
-			messageData,
-		)
+		var msg *discord.Message
+		if rawV2 != nil {
+			msg, err = ctx.Discord.CreateMessageRaw(ctx, discord.ChannelID(channelTarget.Snowflake()), rawV2.Body())
+		} else {
+			msg, err = ctx.Discord.CreateMessage(ctx, discord.ChannelID(channelTarget.Snowflake()), messageData)
+		}
 		if err != nil {
 			return traceError(n, err)
 		}
@@ -416,20 +442,30 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 			return traceError(n, err)
 		}
 
-		messageData, resumePointID, err := n.prepareMessageSendData(ctx)
+		messageData, rawV2, resumePointID, err := n.prepareMessageSendData(ctx)
 		if err != nil {
 			return traceError(n, err)
 		}
 
-		msg, err := ctx.Discord.EditMessage(
-			ctx,
-			discord.ChannelID(channelTarget.Snowflake()),
-			discord.MessageID(messageTarget.Snowflake()),
-			api.EditMessageData{
-				Content: option.NewNullableString(messageData.Content),
-				Embeds:  &messageData.Embeds,
-			},
-		)
+		var msg *discord.Message
+		if rawV2 != nil {
+			msg, err = ctx.Discord.EditMessageRaw(
+				ctx,
+				discord.ChannelID(channelTarget.Snowflake()),
+				discord.MessageID(messageTarget.Snowflake()),
+				rawV2.Body(),
+			)
+		} else {
+			msg, err = ctx.Discord.EditMessage(
+				ctx,
+				discord.ChannelID(channelTarget.Snowflake()),
+				discord.MessageID(messageTarget.Snowflake()),
+				api.EditMessageData{
+					Content: option.NewNullableString(messageData.Content),
+					Embeds:  &messageData.Embeds,
+				},
+			)
+		}
 		if err != nil {
 			return traceError(n, err)
 		}
@@ -489,7 +525,7 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 			return n.resumeFromComponent(ctx)
 		}
 
-		messageData, resumePointID, err := n.prepareMessageSendData(ctx)
+		messageData, rawV2, resumePointID, err := n.prepareMessageSendData(ctx)
 		if err != nil {
 			return traceError(n, err)
 		}
@@ -504,7 +540,12 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 			return traceError(n, err)
 		}
 
-		msg, err := ctx.Discord.CreateMessage(ctx, channel.ID, messageData)
+		var msg *discord.Message
+		if rawV2 != nil {
+			msg, err = ctx.Discord.CreateMessageRaw(ctx, channel.ID, rawV2.Body())
+		} else {
+			msg, err = ctx.Discord.CreateMessage(ctx, channel.ID, messageData)
+		}
 		if err != nil {
 			return traceError(n, err)
 		}
@@ -1813,10 +1854,13 @@ func (n *CompiledFlowNode) prepareMessageData(ctx *FlowContext) (message.Message
 	return data, nil
 }
 
-func (n *CompiledFlowNode) prepareMessageResponseData(ctx *FlowContext) (api.InteractionResponseData, string, error) {
+// prepareMessageResponseData builds the interaction response data. The second
+// return value is non-nil for Components V2 messages and must be sent through
+// the raw (*Raw) provider methods instead of the typed api.InteractionResponseData.
+func (n *CompiledFlowNode) prepareMessageResponseData(ctx *FlowContext) (api.InteractionResponseData, *message.V2Message, string, error) {
 	data, err := n.prepareMessageData(ctx)
 	if err != nil {
-		return api.InteractionResponseData{}, "", err
+		return api.InteractionResponseData{}, nil, "", err
 	}
 
 	var resumePointID string
@@ -1824,22 +1868,34 @@ func (n *CompiledFlowNode) prepareMessageResponseData(ctx *FlowContext) (api.Int
 		resumePointID = util.UniqueID()
 	}
 
-	responseData := data.ToInteractionResponseData(message.ConvertOptions{
+	opts := message.ConvertOptions{
 		ComponentIDFactory: func(component *message.ComponentData) discord.ComponentID {
 			if resumePointID != "" {
 				return discord.ComponentID(message.CustomIDMessageComponentResumePoint(resumePointID, component.ID))
 			}
 			return discord.ComponentID(component.FlowSourceID)
 		},
-	})
+	}
 
-	return responseData, resumePointID, nil
+	if data.IsComponentsV2() {
+		v2, err := n.prepareV2Message(ctx, &data, opts)
+		if err != nil {
+			return api.InteractionResponseData{}, nil, "", err
+		}
+		return api.InteractionResponseData{}, v2, resumePointID, nil
+	}
+
+	responseData := data.ToInteractionResponseData(opts)
+	return responseData, nil, resumePointID, nil
 }
 
-func (n *CompiledFlowNode) prepareMessageSendData(ctx *FlowContext) (api.SendMessageData, string, error) {
+// prepareMessageSendData builds the message send data. The second return value
+// is non-nil for Components V2 messages and must be sent through the raw (*Raw)
+// provider methods instead of the typed api.SendMessageData.
+func (n *CompiledFlowNode) prepareMessageSendData(ctx *FlowContext) (api.SendMessageData, *message.V2Message, string, error) {
 	data, err := n.prepareMessageData(ctx)
 	if err != nil {
-		return api.SendMessageData{}, "", err
+		return api.SendMessageData{}, nil, "", err
 	}
 
 	var resumePointID string
@@ -1848,16 +1904,58 @@ func (n *CompiledFlowNode) prepareMessageSendData(ctx *FlowContext) (api.SendMes
 		resumePointID = util.UniqueID()
 	}
 
-	sendData := data.ToSendMessageData(message.ConvertOptions{
+	opts := message.ConvertOptions{
 		ComponentIDFactory: func(component *message.ComponentData) discord.ComponentID {
 			if resumePointID != "" {
 				return discord.ComponentID(message.CustomIDMessageComponentResumePoint(resumePointID, component.ID))
 			}
 			return discord.ComponentID(component.FlowSourceID)
 		},
-	})
+	}
 
-	return sendData, resumePointID, nil
+	if data.IsComponentsV2() {
+		v2, err := n.prepareV2Message(ctx, &data, opts)
+		if err != nil {
+			return api.SendMessageData{}, nil, "", err
+		}
+		return api.SendMessageData{}, v2, resumePointID, nil
+	}
+
+	sendData := data.ToSendMessageData(opts)
+	return sendData, nil, resumePointID, nil
+}
+
+// prepareV2Message resolves any asset-backed media into multipart uploads and
+// builds the final Components V2 payload (with attachment:// references).
+func (n *CompiledFlowNode) prepareV2Message(ctx *FlowContext, data *message.MessageData, opts message.ConvertOptions) (*message.V2Message, error) {
+	assetIDs := data.MediaAssetIDs()
+
+	var files []sendpart.File
+	var attachments []message.V2Attachment
+	if len(assetIDs) > 0 {
+		filenames := make(map[string]string, len(assetIDs))
+		files = make([]sendpart.File, 0, len(assetIDs))
+		attachments = make([]message.V2Attachment, 0, len(assetIDs))
+
+		for i, assetID := range assetIDs {
+			asset, err := ctx.Discord.ResolveAsset(ctx, assetID)
+			if err != nil {
+				return nil, fmt.Errorf("failed to resolve asset %s: %w", assetID, err)
+			}
+
+			filename := fmt.Sprintf("%d-%s", i, asset.Name)
+			filenames[assetID] = filename
+			attachments = append(attachments, message.V2Attachment{ID: i, Filename: filename})
+			files = append(files, sendpart.File{Name: filename, Reader: bytes.NewReader(asset.Content)})
+		}
+
+		opts.MediaFilenames = filenames
+	}
+
+	payload := data.ToV2Payload(opts)
+	payload.Attachments = attachments
+
+	return &message.V2Message{Payload: payload, Files: files}, nil
 }
 
 func createDefaultErrorResponse(fCtx *FlowContext, err error) {

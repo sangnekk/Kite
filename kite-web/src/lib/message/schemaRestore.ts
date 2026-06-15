@@ -1,5 +1,13 @@
 import { z } from "zod";
 import { getUniqueId } from "@/lib/utils";
+import {
+  containerSchema,
+  textDisplaySchema,
+  sectionSchema,
+  mediaGallerySchema,
+  separatorSchema,
+  fileSchema,
+} from "./schema";
 
 export const uniqueIdSchema = z.preprocess(
   (d) => {
@@ -405,11 +413,24 @@ export const attachmentSchema = z.object({
 
 export type MessageAttachment = z.infer<typeof attachmentSchema>;
 
+// Any top-level component when restoring: a (lenient) action row or one of the
+// strict Components V2 layout/content components.
+export const topLevelComponentSchema = z.union([
+  actionRowSchema,
+  containerSchema,
+  textDisplaySchema,
+  sectionSchema,
+  mediaGallerySchema,
+  separatorSchema,
+  fileSchema,
+]);
+
 export const messageSchema = z.object({
   content: z.preprocess(
     (d) => d ?? undefined,
     messageContentSchema.default("")
   ),
+  flags: z.preprocess((d) => d ?? undefined, z.number().default(0)),
   username: webhookUsernameSchema,
   avatar_url: webhookAvatarUrlSchema,
   tts: messageTtsSchema,
@@ -421,7 +442,7 @@ export const messageSchema = z.object({
   allowed_mentions: messageAllowedMentionsSchema,
   components: z.preprocess(
     (d) => d ?? undefined,
-    z.array(actionRowSchema).default([])
+    z.array(topLevelComponentSchema).default([])
   ),
   thread_name: messageThreadNameSchema,
 });

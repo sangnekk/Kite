@@ -3,12 +3,36 @@
 //////////
 // source: data.go
 
+/**
+ * Discord component types. Types 1-8 are the classic ("V1") components, types
+ * 9-17 are the new Components V2 layout/content components.
+ */
+export const ComponentTypeActionRow = 1;
+export const ComponentTypeButton = 2;
+export const ComponentTypeStringSelect = 3;
+export const ComponentTypeTextInput = 4;
+export const ComponentTypeUserSelect = 5;
+export const ComponentTypeRoleSelect = 6;
+export const ComponentTypeMentionableSelect = 7;
+export const ComponentTypeChannelSelect = 8;
+export const ComponentTypeSection = 9;
+export const ComponentTypeTextDisplay = 10;
+export const ComponentTypeThumbnail = 11;
+export const ComponentTypeMediaGallery = 12;
+export const ComponentTypeFile = 13;
+export const ComponentTypeSeparator = 14;
+export const ComponentTypeContainer = 17;
+/**
+ * MessageFlagsComponentsV2 (IS_COMPONENTS_V2) enables Components V2 for a
+ * message. When set, the content and embeds fields are not allowed.
+ */
+export const MessageFlagsComponentsV2 = 1 << 15; // 32768
 export interface MessageData {
   content?: string;
   flags?: number /* int */;
   attachments?: MessageAttachment[];
   embeds?: EmbedData[];
-  components?: ComponentRowData[];
+  components?: ComponentData[];
   allowed_mentions?: AllowedMentionsData;
 }
 export interface MessageAttachment {
@@ -48,10 +72,6 @@ export interface EmbedFieldData {
   value?: string;
   inline?: boolean;
 }
-export interface ComponentRowData {
-  id?: number /* int */;
-  components?: ComponentData[];
-}
 export interface ComponentData {
   id?: number /* int */;
   type?: number /* int */;
@@ -70,7 +90,47 @@ export interface ComponentData {
   min_values?: number /* int */;
   max_values?: number /* int */;
   options?: ComponentSelectOptionData[];
+  /**
+   * Text Display (10)
+   */
+  content?: string;
+  /**
+   * Container (17)
+   */
+  accent_color?: number /* int */;
+  spoiler?: boolean;
+  /**
+   * Separator (14)
+   */
+  divider?: boolean;
+  spacing?: number /* int */;
+  /**
+   * Thumbnail (11) and File (13)
+   */
+  media?: UnfurledMediaItemData;
+  description?: string;
+  /**
+   * Media Gallery (12)
+   */
+  items?: MediaGalleryItemData[];
+  /**
+   * Children of layout components: Action Row (1), Section (9), Container (17).
+   */
+  components?: ComponentData[];
+  /**
+   * Accessory of a Section (9): either a Button (2) or a Thumbnail (11).
+   */
+  accessory?: ComponentData;
   flow_source_id?: string;
+}
+export interface UnfurledMediaItemData {
+  url?: string;
+  asset_id?: string;
+}
+export interface MediaGalleryItemData {
+  media?: UnfurledMediaItemData;
+  description?: string;
+  spoiler?: boolean;
 }
 export interface ComponentSelectOptionData {
   id?: number /* int */;

@@ -1,6 +1,7 @@
 import { format, parseISO } from "date-fns";
-import { Message } from "@/lib/message/schema";
+import { Message, isComponentsV2 } from "@/lib/message/schema";
 import { colorIntToHex } from "@/tools/common/utils/color";
+import MessageV2Components from "./MessageV2Preview";
 
 import {
   DiscordActionRow,
@@ -45,6 +46,7 @@ export default function MessagePreview({
   lightTheme?: boolean;
   reducePadding?: boolean;
 }) {
+  const isV2 = isComponentsV2(msg);
   return (
     <DiscordMessages lightTheme={!!lightTheme} className="min-h-full flex-auto">
       <DiscordMessage
@@ -121,31 +123,39 @@ export default function MessagePreview({
           </DiscordAttachments>
         )}
 
-        {msg.components.length != 0 && (
+        {!isV2 && msg.components.length != 0 && (
           <DiscordAttachments slot="components">
-            {msg.components.map((row) => (
-              <DiscordActionRow key={row.id}>
-                {row.components.map((comp) =>
-                  comp.type === 2 ? (
-                    <DiscordButton
-                      key={comp.id}
-                      type={buttonStyles[comp.style]}
-                      url={comp.style === 5 ? comp.url : undefined}
-                      emoji={
-                        comp.emoji?.name
-                          ? getTwemojiUrl(comp.emoji.name)
-                          : undefined
-                      }
-                      emojiName={comp.emoji?.name}
-                      disabled={comp.disabled}
-                    >
-                      {comp.label}
-                    </DiscordButton>
-                  ) : null
-                )}
-              </DiscordActionRow>
-            ))}
+            {msg.components.map((row) =>
+              row.type === 1 ? (
+                <DiscordActionRow key={row.id}>
+                  {row.components.map((comp) =>
+                    comp.type === 2 ? (
+                      <DiscordButton
+                        key={comp.id}
+                        type={buttonStyles[comp.style]}
+                        url={comp.style === 5 ? comp.url : undefined}
+                        emoji={
+                          comp.emoji?.name
+                            ? getTwemojiUrl(comp.emoji.name)
+                            : undefined
+                        }
+                        emojiName={comp.emoji?.name}
+                        disabled={comp.disabled}
+                      >
+                        {comp.label}
+                      </DiscordButton>
+                    ) : null
+                  )}
+                </DiscordActionRow>
+              ) : null
+            )}
           </DiscordAttachments>
+        )}
+
+        {isV2 && (
+          <div slot="components" className="mt-1 w-full">
+            <MessageV2Components components={msg.components} />
+          </div>
         )}
       </DiscordMessage>
     </DiscordMessages>

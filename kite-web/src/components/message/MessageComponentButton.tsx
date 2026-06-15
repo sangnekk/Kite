@@ -15,6 +15,7 @@ import FlowPreview from "../flow/FlowPreview";
 import FlowDialog from "../flow/FlowDialog";
 import { FlowData } from "@/lib/flow/dataSchema";
 import { getUniqueId } from "@/lib/utils";
+import { MessageComponentActionRow } from "@/lib/message/schema";
 
 export const buttonColors = {
   1: "#5865F2",
@@ -48,7 +49,8 @@ export default function MessageComponentButton({
   disableFlowEditor?: boolean;
 }) {
   const buttonCount = useCurrentMessage(
-    (state) => state.components[rowIndex].components.length
+    (state) =>
+      (state.components[rowIndex] as MessageComponentActionRow).components.length
   );
 
   const [label, setLabel] = useCurrentMessage(

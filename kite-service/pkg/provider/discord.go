@@ -27,6 +27,16 @@ type DiscordProvider interface {
 	CreateMessage(ctx context.Context, channelID discord.ChannelID, message api.SendMessageData) (*discord.Message, error)
 	EditMessage(ctx context.Context, channelID discord.ChannelID, messageID discord.MessageID, message api.EditMessageData) (*discord.Message, error)
 	DeleteMessage(ctx context.Context, channelID discord.ChannelID, messageID discord.MessageID, reason api.AuditLogReason) error
+
+	// Raw senders for Components V2 messages. The body is a JSON-serializable
+	// Discord payload built by the message package; arikawa's typed API cannot
+	// represent Components V2 (see message/convert_v2.go).
+	CreateMessageRaw(ctx context.Context, channelID discord.ChannelID, body any) (*discord.Message, error)
+	EditMessageRaw(ctx context.Context, channelID discord.ChannelID, messageID discord.MessageID, body any) (*discord.Message, error)
+	CreateInteractionResponseRaw(ctx context.Context, interactionID discord.InteractionID, interactionToken string, body any) (*InteractionResponseResource, error)
+	EditInteractionResponseRaw(ctx context.Context, applicationID discord.AppID, token string, body any) (*discord.Message, error)
+	CreateInteractionFollowupRaw(ctx context.Context, applicationID discord.AppID, token string, body any) (*discord.Message, error)
+	EditInteractionFollowupRaw(ctx context.Context, applicationID discord.AppID, token string, messageID discord.MessageID, body any) (*discord.Message, error)
 	CreateMessageReaction(ctx context.Context, channelID discord.ChannelID, messageID discord.MessageID, emoji discord.APIEmoji) error
 	DeleteMessageReaction(ctx context.Context, channelID discord.ChannelID, messageID discord.MessageID, emoji discord.APIEmoji) error
 	BanMember(ctx context.Context, guildID discord.GuildID, userID discord.UserID, data api.BanData) error
@@ -49,11 +59,23 @@ type DiscordProvider interface {
 
 	HasCreatedInteractionResponse(ctx context.Context, interactionID discord.InteractionID) (bool, error)
 	AutoDeferInteraction(ctx context.Context, interactionID discord.InteractionID, interactionToken string, flags discord.MessageFlags)
+
+	// ResolveAsset returns the content and metadata of an uploaded asset. It is
+	// used to turn asset references in Components V2 media into multipart
+	// attachment:// uploads.
+	ResolveAsset(ctx context.Context, assetID string) (*AssetData, error)
 }
 
 type InteractionResponseResource struct {
 	Type    api.InteractionResponseType
 	Message *discord.Message
+}
+
+// AssetData is the content and metadata of an uploaded asset.
+type AssetData struct {
+	Name        string
+	ContentType string
+	Content     []byte
 }
 
 type MockDiscordProvider struct{}
@@ -129,6 +151,34 @@ func (p *MockDiscordProvider) DeleteMessage(
 	reason api.AuditLogReason,
 ) error {
 	return nil
+}
+
+func (p *MockDiscordProvider) CreateMessageRaw(ctx context.Context, channelID discord.ChannelID, body any) (*discord.Message, error) {
+	return nil, nil
+}
+
+func (p *MockDiscordProvider) EditMessageRaw(ctx context.Context, channelID discord.ChannelID, messageID discord.MessageID, body any) (*discord.Message, error) {
+	return nil, nil
+}
+
+func (p *MockDiscordProvider) CreateInteractionResponseRaw(ctx context.Context, interactionID discord.InteractionID, interactionToken string, body any) (*InteractionResponseResource, error) {
+	return nil, nil
+}
+
+func (p *MockDiscordProvider) EditInteractionResponseRaw(ctx context.Context, applicationID discord.AppID, token string, body any) (*discord.Message, error) {
+	return nil, nil
+}
+
+func (p *MockDiscordProvider) CreateInteractionFollowupRaw(ctx context.Context, applicationID discord.AppID, token string, body any) (*discord.Message, error) {
+	return nil, nil
+}
+
+func (p *MockDiscordProvider) EditInteractionFollowupRaw(ctx context.Context, applicationID discord.AppID, token string, messageID discord.MessageID, body any) (*discord.Message, error) {
+	return nil, nil
+}
+
+func (p *MockDiscordProvider) ResolveAsset(ctx context.Context, assetID string) (*AssetData, error) {
+	return nil, nil
 }
 
 func (p *MockDiscordProvider) CreateMessageReaction(ctx context.Context, channelID discord.ChannelID, messageID discord.MessageID, emoji discord.APIEmoji) error {

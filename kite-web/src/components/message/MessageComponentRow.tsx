@@ -11,6 +11,7 @@ import {
 import { Button } from "../ui/button";
 import { getUniqueId } from "@/lib/utils";
 import MessageComponentButton from "./MessageComponentButton";
+import { MessageComponentActionRow } from "@/lib/message/schema";
 
 export default function MessageComponentRow({
   rowIndex,
@@ -24,11 +25,15 @@ export default function MessageComponentRow({
   const rowCount = useCurrentMessage((state) => state.components.length);
   const components = useCurrentMessage(
     useShallow((state) =>
-      state.components[rowIndex].components.map((c) => c.id)
+      (state.components[rowIndex] as MessageComponentActionRow).components.map(
+        (c) => c.id
+      )
     )
   );
   const isButtonRow = useCurrentMessage((state) =>
-    state.components[rowIndex].components.every((c) => c.type === 2)
+    (state.components[rowIndex] as MessageComponentActionRow).components.every(
+      (c) => c.type === 2
+    )
   );
   const [moveUp, moveDown, duplicate, remove] = useCurrentMessage(
     useShallow((state) => [
