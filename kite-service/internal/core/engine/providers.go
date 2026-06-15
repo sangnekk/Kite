@@ -174,7 +174,7 @@ func (p *DiscordProvider) CreateInteractionResponse(ctx context.Context, interac
 	var res struct {
 		Resource struct {
 			Type    api.InteractionResponseType `json:"type"`
-			Message *discord.Message            `json:"message,omitempty"`
+			Message *leanMessage                `json:"message,omitempty"`
 		} `json:"resource"`
 	}
 	if err := sendpart.POST(p.session.Client.Client, response, &res, endpoint); err != nil {
@@ -183,9 +183,14 @@ func (p *DiscordProvider) CreateInteractionResponse(ctx context.Context, interac
 
 	p.interactionsWithResponse[interactionID] = struct{}{}
 
+	var msg *discord.Message
+	if res.Resource.Message != nil {
+		msg = &res.Resource.Message.Message
+	}
+
 	return &provider.InteractionResponseResource{
 		Type:    res.Resource.Type,
-		Message: res.Resource.Message,
+		Message: msg,
 	}, nil
 }
 
@@ -252,27 +257,47 @@ func (p *DiscordProvider) EditMessage(ctx context.Context, channelID discord.Cha
 	return msg, nil
 }
 
+// leanMessage decodes a Discord message while skipping its `components` field.
+// arikawa's ContainerComponents cannot unmarshal Components V2 (it fails with
+// "expected container, got *discord.UnknownComponent"), so we shadow the field
+// with a generic value and ignore it — only the rest of the message is needed.
+type leanMessage struct {
+	discord.Message
+	Components interface{} `json:"components"`
+}
+
+// sendRawMessage performs a raw request and decodes the resulting message
+// leniently (ignoring Components V2 in the response).
+func (p *DiscordProvider) sendRawMessage(method, url string, body any) (*discord.Message, error) {
+	var lean leanMessage
+	if err := p.sendRaw(method, url, body, &lean); err != nil {
+		return nil, err
+	}
+
+	return &lean.Message, nil
+}
+
 // CreateMessageRaw sends a raw JSON message payload. It is used for Components
 // V2 messages, which arikawa's typed API cannot represent.
 func (p *DiscordProvider) CreateMessageRaw(ctx context.Context, channelID discord.ChannelID, body any) (*discord.Message, error) {
-	var msg discord.Message
 	url := api.EndpointChannels + channelID.String() + "/messages"
-	if err := p.sendRaw("POST", url, body, &msg); err != nil {
+	msg, err := p.sendRawMessage("POST", url, body)
+	if err != nil {
 		return nil, fmt.Errorf("failed to send message: %w", err)
 	}
 
-	return &msg, nil
+	return msg, nil
 }
 
 // EditMessageRaw edits a message with a raw JSON payload (Components V2).
 func (p *DiscordProvider) EditMessageRaw(ctx context.Context, channelID discord.ChannelID, messageID discord.MessageID, body any) (*discord.Message, error) {
-	var msg discord.Message
 	url := api.EndpointChannels + channelID.String() + "/messages/" + messageID.String()
-	if err := p.sendRaw("PATCH", url, body, &msg); err != nil {
+	msg, err := p.sendRawMessage("PATCH", url, body)
+	if err != nil {
 		return nil, fmt.Errorf("failed to edit message: %w", err)
 	}
 
-	return &msg, nil
+	return msg, nil
 }
 
 // CreateInteractionResponseRaw responds to an interaction with a raw JSON
@@ -286,7 +311,7 @@ func (p *DiscordProvider) CreateInteractionResponseRaw(ctx context.Context, inte
 	var res struct {
 		Resource struct {
 			Type    api.InteractionResponseType `json:"type"`
-			Message *discord.Message            `json:"message,omitempty"`
+			Message *leanMessage                `json:"message,omitempty"`
 		} `json:"resource"`
 	}
 	if err := p.sendRaw("POST", endpoint, body, &res); err != nil {
@@ -295,46 +320,51 @@ func (p *DiscordProvider) CreateInteractionResponseRaw(ctx context.Context, inte
 
 	p.interactionsWithResponse[interactionID] = struct{}{}
 
+	var msg *discord.Message
+	if res.Resource.Message != nil {
+		msg = &res.Resource.Message.Message
+	}
+
 	return &provider.InteractionResponseResource{
 		Type:    res.Resource.Type,
-		Message: res.Resource.Message,
+		Message: msg,
 	}, nil
 }
 
 // EditInteractionResponseRaw edits the original interaction response with a raw
 // JSON payload (Components V2).
 func (p *DiscordProvider) EditInteractionResponseRaw(ctx context.Context, applicationID discord.AppID, token string, body any) (*discord.Message, error) {
-	var msg discord.Message
 	url := api.EndpointWebhooks + applicationID.String() + "/" + token + "/messages/@original"
-	if err := p.sendRaw("PATCH", url, body, &msg); err != nil {
+	msg, err := p.sendRawMessage("PATCH", url, body)
+	if err != nil {
 		return nil, fmt.Errorf("failed to edit interaction response: %w", err)
 	}
 
-	return &msg, nil
+	return msg, nil
 }
 
 // CreateInteractionFollowupRaw creates a followup message with a raw JSON
 // payload (Components V2).
 func (p *DiscordProvider) CreateInteractionFollowupRaw(ctx context.Context, applicationID discord.AppID, token string, body any) (*discord.Message, error) {
-	var msg discord.Message
 	url := api.EndpointWebhooks + applicationID.String() + "/" + token
-	if err := p.sendRaw("POST", url, body, &msg); err != nil {
+	msg, err := p.sendRawMessage("POST", url, body)
+	if err != nil {
 		return nil, fmt.Errorf("failed to create interaction followup: %w", err)
 	}
 
-	return &msg, nil
+	return msg, nil
 }
 
 // EditInteractionFollowupRaw edits a followup message with a raw JSON payload
 // (Components V2).
 func (p *DiscordProvider) EditInteractionFollowupRaw(ctx context.Context, applicationID discord.AppID, token string, messageID discord.MessageID, body any) (*discord.Message, error) {
-	var msg discord.Message
 	url := api.EndpointWebhooks + applicationID.String() + "/" + token + "/messages/" + messageID.String()
-	if err := p.sendRaw("PATCH", url, body, &msg); err != nil {
+	msg, err := p.sendRawMessage("PATCH", url, body)
+	if err != nil {
 		return nil, fmt.Errorf("failed to edit interaction followup: %w", err)
 	}
 
-	return &msg, nil
+	return msg, nil
 }
 
 func (p *DiscordProvider) DeleteMessage(
