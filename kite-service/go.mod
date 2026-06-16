@@ -1,6 +1,6 @@
 module github.com/kitecloud/kite/kite-service
 
-go 1.24
+go 1.25
 
 require (
 	github.com/cyrusaf/ctxlog v1.3.2
@@ -102,4 +102,4 @@ require (
 
 replace github.com/sangnekk/Kite/kite-web v0.0.0 => ../kite-web
 
-replace github.com/diamondburned/arikawa/v3 v3.4.0 => github.com/merlinfuchs/arikawa/v3 v3.4.1-0.20250903214413-e1ffc5e53352
+replace github.com/diamondburned/arikawa/v3 v3.4.0 => ../arikawa

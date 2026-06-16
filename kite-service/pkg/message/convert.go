@@ -15,29 +15,38 @@ type ConvertOptions struct {
 	MediaFilenames map[string]string
 }
 
+func (m *MessageData) toComponents(opts ConvertOptions) discord.TopLevelComponents {
+	components := make(discord.TopLevelComponents, 0, len(m.Components))
+	for i := range m.Components {
+		if tlc := m.Components[i].toTopLevelComponent(opts); tlc != nil {
+			components = append(components, tlc)
+		}
+	}
+	return components
+}
+
 func (m *MessageData) ToSendMessageData(opts ConvertOptions) api.SendMessageData {
 	if m == nil {
 		return api.SendMessageData{}
 	}
 
-	embeds := make([]discord.Embed, len(m.Embeds))
-	for i, embed := range m.Embeds {
-		embeds[i] = embed.ToEmbed()
-	}
-
-	components := make(discord.ContainerComponents, 0, len(m.Components))
-	for i := range m.Components {
-		cc := m.Components[i].toContainerComponent(opts)
-		if cc != nil {
-			components = append(components, cc)
+	// Components V2 disallows content and embeds.
+	content := m.Content
+	var embeds []discord.Embed
+	if !m.IsComponentsV2() {
+		embeds = make([]discord.Embed, len(m.Embeds))
+		for i, embed := range m.Embeds {
+			embeds[i] = embed.ToEmbed()
 		}
+	} else {
+		content = ""
 	}
 
 	return api.SendMessageData{
-		Content:         m.Content,
+		Content:         content,
 		Flags:           discord.MessageFlags(m.Flags),
 		Embeds:          embeds,
-		Components:      components,
+		Components:      m.toComponents(opts),
 		AllowedMentions: m.AllowedMentions.ToAllowedMentions(),
 	}
 }
@@ -47,17 +56,18 @@ func (m *MessageData) ToEditMessageData(opts ConvertOptions) api.EditMessageData
 		return api.EditMessageData{}
 	}
 
-	embeds := make([]discord.Embed, len(m.Embeds))
-	for i, embed := range m.Embeds {
-		embeds[i] = embed.ToEmbed()
-	}
+	components := m.toComponents(opts)
 
-	components := make(discord.ContainerComponents, 0, len(m.Components))
-	for i := range m.Components {
-		cc := m.Components[i].toContainerComponent(opts)
-		if cc != nil {
-			components = append(components, cc)
+	content := option.NewNullableString(m.Content)
+	var embeds *[]discord.Embed
+	if !m.IsComponentsV2() {
+		e := make([]discord.Embed, len(m.Embeds))
+		for i, embed := range m.Embeds {
+			e[i] = embed.ToEmbed()
 		}
+		embeds = &e
+	} else {
+		content = option.NewNullableString("")
 	}
 
 	var flags *discord.MessageFlags
@@ -67,9 +77,9 @@ func (m *MessageData) ToEditMessageData(opts ConvertOptions) api.EditMessageData
 	}
 
 	return api.EditMessageData{
-		Content:         option.NewNullableString(m.Content),
+		Content:         content,
 		Flags:           flags,
-		Embeds:          &embeds,
+		Embeds:          embeds,
 		Components:      &components,
 		AllowedMentions: m.AllowedMentions.ToAllowedMentions(),
 	}
@@ -80,23 +90,24 @@ func (m *MessageData) ToInteractionResponseData(opts ConvertOptions) api.Interac
 		return api.InteractionResponseData{}
 	}
 
-	embeds := make([]discord.Embed, len(m.Embeds))
-	for i, embed := range m.Embeds {
-		embeds[i] = embed.ToEmbed()
-	}
+	components := m.toComponents(opts)
 
-	components := make(discord.ContainerComponents, 0, len(m.Components))
-	for i := range m.Components {
-		cc := m.Components[i].toContainerComponent(opts)
-		if cc != nil {
-			components = append(components, cc)
+	content := option.NewNullableString(m.Content)
+	var embeds *[]discord.Embed
+	if !m.IsComponentsV2() {
+		e := make([]discord.Embed, len(m.Embeds))
+		for i, embed := range m.Embeds {
+			e[i] = embed.ToEmbed()
 		}
+		embeds = &e
+	} else {
+		content = option.NewNullableString("")
 	}
 
 	return api.InteractionResponseData{
-		Content:         option.NewNullableString(m.Content),
+		Content:         content,
 		Flags:           discord.MessageFlags(m.Flags),
-		Embeds:          &embeds,
+		Embeds:          embeds,
 		Components:      &components,
 		AllowedMentions: m.AllowedMentions.ToAllowedMentions(),
 	}
@@ -190,72 +201,145 @@ func (a *EmbedAuthorData) ToEmbedAuthor() *discord.EmbedAuthor {
 	}
 }
 
-// toContainerComponent converts a top-level component to an arikawa container
-// component for the classic ("V1") send path. Only action rows are supported
-// here; Components V2 layout components are serialized through a separate raw
-// path (see convert_v2.go) and never reach this function.
-func (c *ComponentData) toContainerComponent(opts ConvertOptions) discord.ContainerComponent {
-	if c == nil {
+// toTopLevelComponent converts a top-level component, returning nil if the
+// resulting component can't appear at the top level of a message.
+func (c *ComponentData) toTopLevelComponent(opts ConvertOptions) discord.TopLevelComponent {
+	comp := c.toComponent(opts)
+	if comp == nil {
 		return nil
 	}
-
-	// A missing type (0) means a classic action row for backwards
-	// compatibility with messages stored before the type field existed.
-	if c.Type != 0 && c.Type != ComponentTypeActionRow {
-		return nil
+	if tlc, ok := comp.(discord.TopLevelComponent); ok {
+		return tlc
 	}
-
-	components := make(discord.ActionRowComponent, 0, len(c.Components))
-	for i := range c.Components {
-		ic := c.Components[i].ToComponent(opts)
-		if ic != nil {
-			components = append(components, ic)
-		}
-	}
-
-	return &components
+	return nil
 }
 
-func (c *ComponentData) ToComponent(opts ConvertOptions) discord.InteractiveComponent {
+// toComponent maps an internal component (any nesting level) to a native
+// arikawa component, supporting both classic and Components V2 types.
+func (c *ComponentData) toComponent(opts ConvertOptions) discord.Component {
 	if c == nil {
 		return nil
 	}
 
 	switch c.Type {
-	case int(discord.ButtonComponentType):
-		var style discord.ButtonComponentStyle
-		switch c.Style {
-		case 2:
-			style = discord.SecondaryButtonStyle()
-		case 3:
-			style = discord.SuccessButtonStyle()
-		case 4:
-			style = discord.DangerButtonStyle()
-		case 5:
-			style = discord.LinkButtonStyle(c.URL)
-		default:
-			style = discord.PrimaryButtonStyle()
-		}
-
-		var customID discord.ComponentID
-		if c.Style != 5 {
-			if opts.ComponentIDFactory != nil {
-				customID = opts.ComponentIDFactory(c)
-			} else {
-				customID = discord.ComponentID(c.FlowSourceID)
+	case 0, ComponentTypeActionRow:
+		// type 0 means a classic action row for backwards compatibility.
+		row := make(discord.ActionRowComponent, 0, len(c.Components))
+		for i := range c.Components {
+			if ic, ok := c.Components[i].toComponent(opts).(discord.InteractiveComponent); ok {
+				row = append(row, ic)
 			}
 		}
-
-		return &discord.ButtonComponent{
-			Style:    style,
-			Label:    c.Label,
-			Emoji:    c.Emoji.ToEmoji(),
-			Disabled: c.Disabled,
-			CustomID: customID,
+		return &row
+	case ComponentTypeButton:
+		return c.toButton(opts)
+	case ComponentTypeTextDisplay:
+		return &discord.TextDisplayComponent{Content: c.Content}
+	case ComponentTypeSeparator:
+		divider := true
+		if c.Divider != nil {
+			divider = *c.Divider
 		}
+		return &discord.SeparatorComponent{
+			Divider: divider,
+			Spacing: discord.SeparatorComponentSpacing(c.Spacing),
+		}
+	case ComponentTypeThumbnail:
+		return &discord.ThumbnailComponent{
+			Media:       c.Media.toUnfurled(opts),
+			Description: c.Description,
+			Spoiler:     c.Spoiler,
+		}
+	case ComponentTypeMediaGallery:
+		items := make([]discord.MediaGalleryComponentItem, 0, len(c.Items))
+		for i := range c.Items {
+			items = append(items, discord.MediaGalleryComponentItem{
+				Media:       c.Items[i].Media.toUnfurled(opts),
+				Description: c.Items[i].Description,
+				Spoiler:     c.Items[i].Spoiler,
+			})
+		}
+		return &discord.MediaGalleryComponent{Items: items}
+	case ComponentTypeFile:
+		return &discord.FileComponent{
+			File:    c.Media.toUnfurled(opts),
+			Spoiler: c.Spoiler,
+		}
+	case ComponentTypeSection:
+		section := &discord.SectionComponent{}
+		for i := range c.Components {
+			if child := c.Components[i].toComponent(opts); child != nil {
+				section.Components = append(section.Components, child)
+			}
+		}
+		if c.Accessory != nil {
+			section.Accessory = c.Accessory.toComponent(opts)
+		}
+		return section
+	case ComponentTypeContainer:
+		container := &discord.ContainerComponent{Spoiler: c.Spoiler}
+		if c.AccentColor != nil {
+			container.AccentColor = discord.Color(*c.AccentColor)
+		}
+		for i := range c.Components {
+			if child := c.Components[i].toComponent(opts); child != nil {
+				container.Components = append(container.Components, child)
+			}
+		}
+		return container
 	}
 
 	return nil
+}
+
+func (c *ComponentData) toButton(opts ConvertOptions) *discord.ButtonComponent {
+	var style discord.ButtonComponentStyle
+	switch c.Style {
+	case 2:
+		style = discord.SecondaryButtonStyle()
+	case 3:
+		style = discord.SuccessButtonStyle()
+	case 4:
+		style = discord.DangerButtonStyle()
+	case 5:
+		style = discord.LinkButtonStyle(discord.URL(c.URL))
+	default:
+		style = discord.PrimaryButtonStyle()
+	}
+
+	var customID discord.ComponentID
+	if c.Style != 5 {
+		if opts.ComponentIDFactory != nil {
+			customID = opts.ComponentIDFactory(c)
+		} else {
+			customID = discord.ComponentID(c.FlowSourceID)
+		}
+	}
+
+	return &discord.ButtonComponent{
+		Style:    style,
+		Label:    c.Label,
+		Emoji:    c.Emoji.ToEmoji(),
+		Disabled: c.Disabled,
+		CustomID: customID,
+	}
+}
+
+// toUnfurled converts a media item to a native unfurled media item. External
+// URLs are used directly; uploaded assets are referenced via attachment://.
+func (m *UnfurledMediaItemData) toUnfurled(opts ConvertOptions) discord.UnfurledMediaitem {
+	if m == nil {
+		return discord.UnfurledMediaitem{}
+	}
+
+	url := m.URL
+	if url == "" && m.AssetID != "" {
+		if filename, ok := opts.MediaFilenames[m.AssetID]; ok {
+			url = "attachment://" + filename
+		}
+	}
+
+	return discord.UnfurledMediaitem{URL: url}
 }
 
 func (e *ComponentEmojiData) ToEmoji() *discord.ComponentEmoji {

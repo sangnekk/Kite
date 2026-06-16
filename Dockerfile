@@ -1,26 +1,59 @@
-FROM golang:latest AS builder
-WORKDIR /root/
-COPY . .
+# syntax=docker/dockerfile:1
 
-# # Install NodeJS (https://github.com/nodesource/distributions#installation-instructions)
-RUN apt-get update
-RUN apt-get install -y ca-certificates curl gnupg build-essential
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-RUN apt-get -y install nodejs
+###############################################################################
+# Stage 1 — build the Next.js frontend as a static export (kite-web/out)
+###############################################################################
+FROM node:20-slim AS web
+WORKDIR /app/kite-web
 
- # Build website
+# Install dependencies first so this layer is cached unless the lockfile changes.
+COPY kite-web/package.json kite-web/package-lock.json ./
+RUN npm ci
+
+# Build the static export.
+COPY kite-web/ ./
 ENV OUTPUT=export
-RUN cd kite-web && npm install && npm run build && cd ..
+RUN npm run build
 
-# Build backend
-RUN cd kite-service && go build --tags "embedweb" && cd ..
+###############################################################################
+# Stage 2 — build the Go backend with the frontend embedded
+###############################################################################
+FROM golang:1.25-bookworm AS builder
+WORKDIR /src
 
+# Download Go modules first; cached unless any go.{mod,sum} changes. arikawa is
+# a local fork referenced via a replace directive in kite-service/go.mod.
+COPY go.work go.work.sum ./
+COPY kite-service/go.mod kite-service/go.sum ./kite-service/
+COPY kite-web/go.mod kite-web/go.sum ./kite-web/
+COPY arikawa/go.mod arikawa/go.sum ./arikawa/
+RUN go mod download
+
+# Go sources. kite-web only needs its Go files (the embed package).
+COPY kite-service ./kite-service
+COPY kite-web/*.go ./kite-web/
+COPY arikawa ./arikawa
+
+# Bring in the built frontend so the `embedweb` build tag can embed it.
+COPY --from=web /app/kite-web/out ./kite-web/out
+
+# Static, stripped binary with the web UI embedded.
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    cd kite-service && \
+    CGO_ENABLED=0 go build -tags embedweb -ldflags "-s -w" -o /out/kite-service
+
+###############################################################################
+# Stage 3 — minimal runtime image
+###############################################################################
 FROM debian:stable-slim
 WORKDIR /root/
-COPY --from=builder /root/kite-service/kite-service .
 
-RUN apt-get update
-RUN apt-get install -y ca-certificates gnupg build-essential
+# Only certificates are needed at runtime (TLS to Discord / Postgres / S3).
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /out/kite-service ./kite-service
 
 EXPOSE 8080
-CMD ./kite-service database migrate postgres up; ./kite-service server start
+CMD ["/bin/sh", "-c", "./kite-service database migrate postgres up; ./kite-service server start"]

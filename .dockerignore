@@ -1,0 +1,29 @@
+# Version control / IDE / CI
+.git
+.gitignore
+.idea
+.github
+arikawa/.git
+arikawa/.github
+arikawa/0-examples
+
+# Node
+**/node_modules
+**/.next
+kite-web/out
+
+# Go build outputs
+kite-service/kite-service
+**/*.exe
+
+# Other services / docs (not part of the kite image)
+kite-admin-console
+kite-admin-service
+kite-docs
+kite_original_source
+
+# Local / secrets / misc
+.env
+**/*.log
+example-flow.png
+flow.png
