@@ -1916,6 +1916,24 @@ func (n *CompiledFlowNode) respondAsMessage(ctx *FlowContext) error {
 		}
 	}
 
+	// When the response uses a message template its components are wired through
+	// flow sources (custom ID = flow source ID, no resume point). The message
+	// instance has to be linked so that component interactions can be routed back
+	// to the template's flows; without this, prefix/text command buttons report
+	// "This interaction failed".
+	if n.Data.MessageTemplateID != "" {
+		err := ctx.MessageTemplate.LinkMessageTemplateInstance(ctx, provider.MessageTemplateInstance{
+			MessageTemplateID: n.Data.MessageTemplateID,
+			MessageID:         msg.ID,
+			ChannelID:         ctx.Data.ChannelID(),
+			GuildID:           ctx.Data.GuildID(),
+			Ephemeral:         n.Data.MessageEphemeral,
+		})
+		if err != nil {
+			ctx.Log.CreateLogEntry(ctx, n.Data.LogLevel, fmt.Sprintf("failed to link message template instance: %s", err.Error()))
+		}
+	}
+
 	return n.ExecuteChildren(ctx)
 }
 
