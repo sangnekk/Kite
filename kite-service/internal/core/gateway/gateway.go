@@ -102,8 +102,9 @@ func (g *Gateway) startGateway() {
 
 		features := g.planManager.AppFeatures(g.ctx, g.app.ID)
 		if len(e.Guilds) > features.MaxGuilds {
-			g.createLogEntry(model.LogLevelError, "Bots that are in more than 100 servers are currently not supported.")
-			g.disableApp("Bots that are in more than 100 servers are currently not supported.")
+			msg := fmt.Sprintf("Bots that are in more than %d servers are currently not supported.", features.MaxGuilds)
+			g.createLogEntry(model.LogLevelError, msg)
+			g.disableApp(msg)
 			return
 		}
 	})
