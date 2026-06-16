@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -251,6 +252,174 @@ func (c *Client) DeleteAllVariableValues(ctx context.Context, variableID string)
 	}
 
 	return nil
+}
+
+func (c *Client) SpendVariableValue(ctx context.Context, variableID string, scope null.String, amount thing.Thing, allowNegative bool) (*model.VariableValue, error) {
+	tx, err := c.DB.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	current := thing.NewFloat(0.0)
+	currentValue, err := c.variableValueWithTx(ctx, tx, variableID, scope)
+	if err != nil {
+		if !errors.Is(err, store.ErrNotFound) {
+			return nil, fmt.Errorf("failed to get current variable value: %w", err)
+		}
+	} else {
+		current = currentValue.Data
+	}
+
+	if !allowNegative && current.Float() < amount.Float() {
+		return nil, store.ErrInsufficientFunds
+	}
+
+	now := time.Now().UTC()
+	newValue, err := c.setVariableValueWithTx(ctx, tx, model.VariableValue{
+		VariableID: variableID,
+		Scope:      scope,
+		Data:       current.Sub(amount),
+		CreatedAt:  now,
+		UpdatedAt:  now,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to set variable value: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return newValue, nil
+}
+
+func (c *Client) TransferVariableValue(ctx context.Context, variableID string, fromScope, toScope null.String, amount thing.Thing, allowNegative bool) (*model.VariableValue, *model.VariableValue, error) {
+	tx, err := c.DB.Begin(ctx)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	// Lock the affected rows in a deterministic order (sorted by scope key) so two
+	// concurrent transfers between the same scopes can't deadlock each other.
+	lockOrder := []null.String{fromScope, toScope}
+	if scopeKey(toScope) < scopeKey(fromScope) {
+		lockOrder = []null.String{toScope, fromScope}
+	}
+
+	balances := make(map[string]thing.Thing, 2)
+	for _, s := range lockOrder {
+		if _, ok := balances[scopeKey(s)]; ok {
+			continue
+		}
+		balances[scopeKey(s)] = thing.NewFloat(0.0)
+		row, err := c.variableValueWithTx(ctx, tx, variableID, s)
+		if err != nil {
+			if !errors.Is(err, store.ErrNotFound) {
+				return nil, nil, fmt.Errorf("failed to get current variable value: %w", err)
+			}
+		} else {
+			balances[scopeKey(s)] = row.Data
+		}
+	}
+
+	fromCurrent := balances[scopeKey(fromScope)]
+	if !allowNegative && fromCurrent.Float() < amount.Float() {
+		return nil, nil, store.ErrInsufficientFunds
+	}
+
+	// Transferring to the same scope is a no-op: just return the current balance.
+	if scopeKey(fromScope) == scopeKey(toScope) {
+		row, err := c.variableValueWithTx(ctx, tx, variableID, fromScope)
+		if err != nil && !errors.Is(err, store.ErrNotFound) {
+			return nil, nil, err
+		}
+		if err := tx.Commit(ctx); err != nil {
+			return nil, nil, fmt.Errorf("failed to commit transaction: %w", err)
+		}
+		if row == nil {
+			return nil, nil, store.ErrNotFound
+		}
+		return row, row, nil
+	}
+
+	now := time.Now().UTC()
+	newFrom, err := c.setVariableValueWithTx(ctx, tx, model.VariableValue{
+		VariableID: variableID,
+		Scope:      fromScope,
+		Data:       fromCurrent.Sub(amount),
+		CreatedAt:  now,
+		UpdatedAt:  now,
+	})
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to set sender variable value: %w", err)
+	}
+
+	newTo, err := c.setVariableValueWithTx(ctx, tx, model.VariableValue{
+		VariableID: variableID,
+		Scope:      toScope,
+		Data:       balances[scopeKey(toScope)].Add(amount),
+		CreatedAt:  now,
+		UpdatedAt:  now,
+	})
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to set recipient variable value: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return newFrom, newTo, nil
+}
+
+func (c *Client) VariableValuesTop(ctx context.Context, variableID string, limit int) ([]*model.VariableValue, error) {
+	// thing.Thing is stored as JSONB shaped like {"t": "int", "v": 500}; we order by
+	// the inner numeric value and skip any entry whose value isn't a number.
+	rows, err := c.DB.Query(ctx, `
+SELECT id, variable_id, scope, value, created_at, updated_at
+FROM variable_values
+WHERE variable_id = $1 AND jsonb_typeof(value->'v') = 'number'
+ORDER BY (value->>'v')::numeric DESC
+LIMIT $2
+`, variableID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var values []*model.VariableValue
+	for rows.Next() {
+		var row pgmodel.VariableValue
+		if err := rows.Scan(
+			&row.ID,
+			&row.VariableID,
+			&row.Scope,
+			&row.Value,
+			&row.CreatedAt,
+			&row.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		v, err := rowToVariableValue(row)
+		if err != nil {
+			return nil, err
+		}
+		values = append(values, &v)
+	}
+
+	return values, rows.Err()
+}
+
+// scopeKey returns a stable string key for a nullable scope so it can be used in
+// maps and ordering. A NULL scope sorts before any real scope.
+func scopeKey(scope null.String) string {
+	if !scope.Valid {
+		return "\x00"
+	}
+	return "\x01" + scope.String
 }
 
 func (c *Client) variableValueWithTx(ctx context.Context, tx pgx.Tx, variableID string, scope null.String) (*model.VariableValue, error) {

@@ -126,8 +126,6 @@ const intputs: Record<string, any> = {
     MemberBanDeleteMessageDurationInput,
   member_timeout_duration_seconds: MemberTimeoutDurationInput,
   member_nick: MemberNickInput,
-  roblox_user_target: RobloxUserTargetInput,
-  roblox_lookup_mode: RobloxLookupModeInput,
   log_level: LogLevelInput,
   log_message: LogMessageInput,
   condition_compare_base_value: ConditionCompareBaseValueInput,
@@ -1119,37 +1117,6 @@ function MemberNickInput({ data, updateData, errors }: InputProps) {
       }
       errors={errors}
       placeholders
-    />
-  );
-}
-
-function RobloxUserTargetInput({ data, updateData, errors }: InputProps) {
-  return (
-    <BaseInput
-      type="text"
-      field="roblox_user_target"
-      title="Mục tiêu người dùng Roblox"
-      value={data.roblox_user_target || ""}
-      updateValue={(v) => updateData({ roblox_user_target: v || undefined })}
-      errors={errors}
-      placeholders
-    />
-  );
-}
-
-function RobloxLookupModeInput({ data, updateData, errors }: InputProps) {
-  return (
-    <BaseInput
-      type="select"
-      field="roblox_lookup_mode"
-      title="Chế độ tra cứu Roblox"
-      value={data.roblox_lookup_mode || ""}
-      options={[
-        { label: "ID", value: "id" },
-        { label: "Tên người dùng", value: "username" },
-      ]}
-      updateValue={(v) => updateData({ roblox_lookup_mode: v || undefined })}
-      errors={errors}
     />
   );
 }

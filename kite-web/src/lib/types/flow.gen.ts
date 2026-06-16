@@ -47,7 +47,6 @@ export const FlowNodeTypeActionForumPostCreate: FlowNodeType = "action_forum_pos
 export const FlowNodeTypeActionRoleGet: FlowNodeType = "action_role_get";
 export const FlowNodeTypeActionGuildGet: FlowNodeType = "action_guild_get";
 export const FlowNodeTypeActionMessageGet: FlowNodeType = "action_message_get";
-export const FlowNodeTypeActionRobloxUserGet: FlowNodeType = "action_roblox_user_get";
 export const FlowNodeTypeActionHTTPRequest: FlowNodeType = "action_http_request";
 export const FlowNodeTypeActionAIChatCompletion: FlowNodeType = "action_ai_chat_completion";
 export const FlowNodeTypeActionAISearchWeb: FlowNodeType = "action_ai_web_search";
@@ -154,11 +153,6 @@ export interface FlowNodeData {
   role_target?: string;
   role_data?: RoleData;
   /**
-   * Roblox User Get
-   */
-  roblox_user_target?: string;
-  roblox_lookup_mode?: RobloxLookupType;
-  /**
    * Variable Set, Delete
    */
   variable_id?: string;
@@ -252,9 +246,6 @@ export const EventFilterTypeMessageContent: EventFilterTarget = "message_content
 export const EventFilterTypeUserID: EventFilterTarget = "user_id";
 export const EventFilterTypeGuildID: EventFilterTarget = "guild_id";
 export const EventFilterTypeChannelID: EventFilterTarget = "channel_id";
-export type RobloxLookupType = string;
-export const RobloxLookupTypeID: RobloxLookupType = "id";
-export const RobloxLookupTypeName: RobloxLookupType = "username";
 export interface CommandArgumentChoiceData {
   name?: string;
   value?: string;

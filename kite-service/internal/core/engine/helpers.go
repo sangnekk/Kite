@@ -58,7 +58,6 @@ func (s Env) flowProviders(appID string, session *state.State, links entityLinks
 
 	return flow.FlowProviders{
 		Discord: NewDiscordProvider(appID, s.AppStore, s.AssetStore, session),
-		Roblox:  NewRobloxProvider(s.HttpClient),
 		Log: NewLogProvider(
 			appID,
 			s.LogStore,
@@ -68,6 +67,7 @@ func (s Env) flowProviders(appID string, session *state.State, links entityLinks
 		AI:              aiProvider,
 		MessageTemplate: NewMessageTemplateProvider(s.MessageStore, s.MessageInstanceStore),
 		Variable:        NewVariableProvider(s.VariableValueStore),
+		Economy:         NewEconomyProvider(s.VariableValueStore),
 		ResumePoint: NewResumePointProvider(
 			s.ResumePointStore,
 			appID,

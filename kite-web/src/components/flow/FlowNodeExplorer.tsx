@@ -108,11 +108,6 @@ const nodeCategories = {
       contextTypes: null,
     },
     {
-      title: "Roblox",
-      nodeTypes: ["action_roblox_user_get"],
-      contextTypes: null,
-    },
-    {
       title: "Hành động khác",
       nodeTypes: [
         "action_expression_evaluate",

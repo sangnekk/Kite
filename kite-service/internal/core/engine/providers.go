@@ -1,9 +1,7 @@
 package engine
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -611,6 +609,102 @@ func (p *VariableProvider) DeleteVariable(ctx context.Context, id string, scope 
 	return nil
 }
 
+type EconomyProvider struct {
+	variableValueStore store.VariableValueStore
+}
+
+func NewEconomyProvider(variableValueStore store.VariableValueStore) *EconomyProvider {
+	return &EconomyProvider{
+		variableValueStore: variableValueStore,
+	}
+}
+
+func (p *EconomyProvider) GetBalance(ctx context.Context, currencyID string, scope null.String) (thing.Thing, error) {
+	row, err := p.variableValueStore.VariableValue(ctx, currencyID, scope)
+	if err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			return thing.NewFloat(0.0), nil
+		}
+		return thing.Null, fmt.Errorf("failed to get balance: %w", err)
+	}
+
+	return row.Data, nil
+}
+
+func (p *EconomyProvider) AddBalance(ctx context.Context, currencyID string, scope null.String, amount thing.Thing) (thing.Thing, error) {
+	newValue, err := p.variableValueStore.UpdateVariableValue(ctx, provider.VariableOperationIncrement, model.VariableValue{
+		VariableID: currencyID,
+		Scope:      scope,
+		Data:       amount,
+		CreatedAt:  time.Now().UTC(),
+		UpdatedAt:  time.Now().UTC(),
+	})
+	if err != nil {
+		return thing.Null, fmt.Errorf("failed to add balance: %w", err)
+	}
+
+	return newValue.Data, nil
+}
+
+func (p *EconomyProvider) SetBalance(ctx context.Context, currencyID string, scope null.String, amount thing.Thing) (thing.Thing, error) {
+	newValue, err := p.variableValueStore.UpdateVariableValue(ctx, provider.VariableOperationOverwrite, model.VariableValue{
+		VariableID: currencyID,
+		Scope:      scope,
+		Data:       amount,
+		CreatedAt:  time.Now().UTC(),
+		UpdatedAt:  time.Now().UTC(),
+	})
+	if err != nil {
+		return thing.Null, fmt.Errorf("failed to set balance: %w", err)
+	}
+
+	return newValue.Data, nil
+}
+
+func (p *EconomyProvider) RemoveBalance(ctx context.Context, currencyID string, scope null.String, amount thing.Thing, allowNegative bool) (thing.Thing, error) {
+	newValue, err := p.variableValueStore.SpendVariableValue(ctx, currencyID, scope, amount, allowNegative)
+	if err != nil {
+		if errors.Is(err, store.ErrInsufficientFunds) {
+			return thing.Null, provider.ErrInsufficientFunds
+		}
+		return thing.Null, fmt.Errorf("failed to remove balance: %w", err)
+	}
+
+	return newValue.Data, nil
+}
+
+func (p *EconomyProvider) Transfer(ctx context.Context, currencyID string, fromScope, toScope null.String, amount thing.Thing, allowNegative bool) (provider.EconomyTransferResult, error) {
+	from, to, err := p.variableValueStore.TransferVariableValue(ctx, currencyID, fromScope, toScope, amount, allowNegative)
+	if err != nil {
+		if errors.Is(err, store.ErrInsufficientFunds) {
+			return provider.EconomyTransferResult{}, provider.ErrInsufficientFunds
+		}
+		return provider.EconomyTransferResult{}, fmt.Errorf("failed to transfer balance: %w", err)
+	}
+
+	return provider.EconomyTransferResult{
+		FromBalance: from.Data,
+		ToBalance:   to.Data,
+	}, nil
+}
+
+func (p *EconomyProvider) Leaderboard(ctx context.Context, currencyID string, limit int) ([]provider.EconomyLeaderboardEntry, error) {
+	rows, err := p.variableValueStore.VariableValuesTop(ctx, currencyID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get leaderboard: %w", err)
+	}
+
+	entries := make([]provider.EconomyLeaderboardEntry, len(rows))
+	for i, row := range rows {
+		entries[i] = provider.EconomyLeaderboardEntry{
+			Scope:   row.Scope.String,
+			Balance: row.Data,
+		}
+	}
+
+	return entries, nil
+}
+
 type MessageTemplateProvider struct {
 	messageStore         store.MessageStore
 	messageInstanceStore store.MessageInstanceStore
@@ -754,75 +848,4 @@ func (p *ValueProvider) DeleteValue(ctx context.Context, key string) error {
 	}
 
 	return nil
-}
-
-type RobloxProvider struct {
-	client *http.Client
-}
-
-func NewRobloxProvider(client *http.Client) *RobloxProvider {
-	return &RobloxProvider{
-		client: client,
-	}
-}
-
-func (p *RobloxProvider) UserByID(ctx context.Context, id int64) (*thing.RobloxUserValue, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("https://users.roblox.com/v1/users/%d", id), nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create roblox user request: %w", err)
-	}
-
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := p.client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get roblox user: %w", err)
-	}
-
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, provider.ErrNotFound
-	}
-
-	var v thing.RobloxUserValue
-	if err := json.NewDecoder(resp.Body).Decode(&v); err != nil {
-		return nil, fmt.Errorf("failed to decode roblox user: %w", err)
-	}
-
-	return &v, nil
-}
-
-func (p *RobloxProvider) UsersByUsername(ctx context.Context, username string) ([]thing.RobloxUserValue, error) {
-	data := struct {
-		Usernames []string `json:"usernames"`
-	}{
-		Usernames: []string{username},
-	}
-
-	body, err := json.Marshal(data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal roblox users request: %w", err)
-	}
-
-	req, err := http.NewRequestWithContext(ctx, "POST", "https://users.roblox.com/v1/usernames/users", bytes.NewReader(body))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create roblox users request: %w", err)
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := p.client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get roblox users: %w", err)
-	}
-
-	var v struct {
-		Data []thing.RobloxUserValue `json:"data"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&v); err != nil {
-		return nil, fmt.Errorf("failed to decode roblox users: %w", err)
-	}
-
-	return v.Data, nil
 }

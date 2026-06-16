@@ -79,7 +79,6 @@ const (
 	FlowNodeTypeActionRoleGet               FlowNodeType = "action_role_get"
 	FlowNodeTypeActionGuildGet              FlowNodeType = "action_guild_get"
 	FlowNodeTypeActionMessageGet            FlowNodeType = "action_message_get"
-	FlowNodeTypeActionRobloxUserGet         FlowNodeType = "action_roblox_user_get"
 	FlowNodeTypeActionHTTPRequest           FlowNodeType = "action_http_request"
 	FlowNodeTypeActionAIChatCompletion      FlowNodeType = "action_ai_chat_completion"
 	FlowNodeTypeActionAISearchWeb           FlowNodeType = "action_ai_web_search"
@@ -89,6 +88,12 @@ const (
 	FlowNodeTypeActionVariableSet           FlowNodeType = "action_variable_set"
 	FlowNodeTypeActionVariableDelete        FlowNodeType = "action_variable_delete"
 	FlowNodeTypeActionVariableGet           FlowNodeType = "action_variable_get"
+	FlowNodeTypeActionBalanceGet            FlowNodeType = "action_balance_get"
+	FlowNodeTypeActionBalanceAdd            FlowNodeType = "action_balance_add"
+	FlowNodeTypeActionBalanceRemove         FlowNodeType = "action_balance_remove"
+	FlowNodeTypeActionBalanceSet            FlowNodeType = "action_balance_set"
+	FlowNodeTypeActionBalanceTransfer       FlowNodeType = "action_balance_transfer"
+	FlowNodeTypeActionBalanceLeaderboard    FlowNodeType = "action_balance_leaderboard"
 
 	FlowNodeTypeControlConditionCompare     FlowNodeType = "control_condition_compare"
 	FlowNodeTypeControlConditionItemCompare FlowNodeType = "control_condition_item_compare"
@@ -189,15 +194,19 @@ type FlowNodeData struct {
 	RoleTarget string    `json:"role_target,omitempty"`
 	RoleData   *RoleData `json:"role_data,omitempty"`
 
-	// Roblox User Get
-	RobloxUserTarget string           `json:"roblox_user_target,omitempty"`
-	RobloxLookupMode RobloxLookupType `json:"roblox_lookup_mode,omitempty"`
-
 	// Variable Set, Delete
 	VariableID        string                     `json:"variable_id,omitempty"`
 	VariableScope     string                     `json:"variable_scope,omitempty"`
 	VariableValue     string                     `json:"variable_value,omitempty"`
 	VariableOperation provider.VariableOperation `json:"variable_operation,omitempty"`
+
+	// Economy Balance Get, Add, Remove, Set, Transfer, Leaderboard
+	EconomyCurrencyID    string `json:"economy_currency_id,omitempty"`    // variable_id of the currency
+	EconomyUserTarget    string `json:"economy_user_target,omitempty"`    // template resolving to the scope (usually a user id)
+	EconomyRecipient     string `json:"economy_recipient,omitempty"`      // template resolving to the recipient scope (transfer)
+	EconomyAmount        string `json:"economy_amount,omitempty"`         // template resolving to the amount
+	EconomyLimit         string `json:"economy_limit,omitempty"`          // template resolving to the leaderboard size
+	EconomyAllowNegative bool   `json:"economy_allow_negative,omitempty"` // allow balances to drop below zero
 
 	// HTTP Request
 	HTTPRequestData *HTTPRequestData `json:"http_request_data,omitempty"`
@@ -341,13 +350,6 @@ const (
 	EventFilterTypeUserID         EventFilterTarget = "user_id"
 	EventFilterTypeGuildID        EventFilterTarget = "guild_id"
 	EventFilterTypeChannelID      EventFilterTarget = "channel_id"
-)
-
-type RobloxLookupType string
-
-const (
-	RobloxLookupTypeID   RobloxLookupType = "id"
-	RobloxLookupTypeName RobloxLookupType = "username"
 )
 
 type CommandArgumentChoiceData struct {

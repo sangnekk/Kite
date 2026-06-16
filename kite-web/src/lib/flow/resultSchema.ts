@@ -76,20 +76,3 @@ export const nodeActionChannelEditResultSchema = channelResultSchema;
 export const nodeActionThreadCreateResultSchema = channelResultSchema;
 
 export const nodeActionForumPostCreateResultSchema = channelResultSchema;
-
-export const nodeActionRobloxUserGetResultSchema = z.object({
-  description: z.string().describe("The description of the Roblox user"),
-  created: z
-    .string()
-    .describe("The datetime when the Roblox account was created"),
-  is_banned: z.boolean().describe("Whether the Roblox user is banned"),
-  external_app_display_Name: z
-    .string()
-    .describe("The display name shown in external applications"),
-  has_verified_badge: z
-    .boolean()
-    .describe("Whether the Roblox user has a verified badge"),
-  id: z.number().describe("The ID of the Roblox user"),
-  name: z.string().describe("The username of the Roblox user"),
-  display_name: z.string().describe("The display name of the Roblox user"),
-});

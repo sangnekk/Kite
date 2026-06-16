@@ -33,7 +33,6 @@ import {
   nodeActionResponseDeferDataSchema,
   nodeActionResponseDeleteDataSchema,
   nodeActionResponseEditDataSchema,
-  nodeActionRobloxUserGetDataSchema,
   nodeActionRoleGetDataSchema,
   nodeActionThreadCreateDataSchema,
   nodeActionThreadMemberAddDataSchema,
@@ -70,7 +69,6 @@ import {
   nodeActionPrivateMessageCreateResultSchema,
   nodeActionResponseCreateResultSchema,
   nodeActionResponseEditResultSchema,
-  nodeActionRobloxUserGetResultSchema,
   nodeActionRoleGetResultSchema,
 } from "./resultSchema";
 
@@ -526,21 +524,6 @@ export const nodeTypes: Record<string, NodeValues> = {
     dataSchema: nodeActionMessageGetDataSchema,
     resultSchema: nodeActionMessageGetResultSchema,
     dataFields: ["message_target", "temporary_name", "custom_label"],
-    creditsCost: 1,
-  },
-  action_roblox_user_get: {
-    color: actionColor,
-    icon: "gamepad",
-    defaultTitle: "Lấy người dùng Roblox",
-    defaultDescription: "Lấy người dùng Roblox theo ID hoặc tên",
-    dataSchema: nodeActionRobloxUserGetDataSchema,
-    resultSchema: nodeActionRobloxUserGetResultSchema,
-    dataFields: [
-      "roblox_user_target",
-      "roblox_lookup_mode",
-      "temporary_name",
-      "custom_label",
-    ],
     creditsCost: 1,
   },
   action_variable_set: {

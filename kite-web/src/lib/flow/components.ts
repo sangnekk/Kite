@@ -61,7 +61,6 @@ export const nodeTypes = {
   action_role_get: FlowNodeActionBase,
   action_guild_get: FlowNodeActionBase,
   action_message_get: FlowNodeActionBase,
-  action_roblox_user_get: FlowNodeActionBase,
   action_variable_set: FlowNodeActionBase,
   action_variable_delete: FlowNodeActionBase,
   action_variable_get: FlowNodeActionBase,

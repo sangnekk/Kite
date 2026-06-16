@@ -1142,35 +1142,6 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 		}
 
 		return n.ExecuteChildren(ctx)
-	case FlowNodeTypeActionRobloxUserGet:
-		userID, err := ctx.EvalTemplate(n.Data.RobloxUserTarget)
-		if err != nil {
-			return traceError(n, err)
-		}
-
-		res := thing.Null
-
-		switch n.Data.RobloxLookupMode {
-		case RobloxLookupTypeID:
-			user, err := ctx.Roblox.UserByID(ctx, userID.Int())
-			if err != nil && !errors.Is(err, provider.ErrNotFound) {
-				return traceError(n, err)
-			}
-			if user != nil {
-				res = thing.NewRobloxUser(*user)
-			}
-		case RobloxLookupTypeName:
-			users, err := ctx.Roblox.UsersByUsername(ctx, userID.String())
-			if err != nil && !errors.Is(err, provider.ErrNotFound) {
-				return traceError(n, err)
-			}
-			if len(users) > 0 {
-				res = thing.NewRobloxUser(users[0])
-			}
-		}
-
-		ctx.StoreNodeResult(n, res)
-		return n.ExecuteChildren(ctx)
 	case FlowNodeTypeActionVariableSet:
 		scope, err := ctx.EvalTemplate(n.Data.VariableScope)
 		if err != nil {
@@ -1227,6 +1198,159 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 		}
 
 		ctx.StoreNodeResult(n, val)
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionBalanceGet:
+		user, err := ctx.EvalTemplate(n.Data.EconomyUserTarget)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		balance, err := ctx.Economy.GetBalance(
+			ctx,
+			n.Data.EconomyCurrencyID,
+			null.NewString(user.String(), !user.IsEmpty()),
+		)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		ctx.StoreNodeResult(n, balance)
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionBalanceAdd:
+		user, err := ctx.EvalTemplate(n.Data.EconomyUserTarget)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		amount, err := ctx.EvalTemplate(n.Data.EconomyAmount)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		balance, err := ctx.Economy.AddBalance(
+			ctx,
+			n.Data.EconomyCurrencyID,
+			null.NewString(user.String(), !user.IsEmpty()),
+			amount,
+		)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		ctx.StoreNodeResult(n, balance)
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionBalanceRemove:
+		user, err := ctx.EvalTemplate(n.Data.EconomyUserTarget)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		amount, err := ctx.EvalTemplate(n.Data.EconomyAmount)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		balance, err := ctx.Economy.RemoveBalance(
+			ctx,
+			n.Data.EconomyCurrencyID,
+			null.NewString(user.String(), !user.IsEmpty()),
+			amount,
+			n.Data.EconomyAllowNegative,
+		)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		ctx.StoreNodeResult(n, balance)
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionBalanceSet:
+		user, err := ctx.EvalTemplate(n.Data.EconomyUserTarget)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		amount, err := ctx.EvalTemplate(n.Data.EconomyAmount)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		balance, err := ctx.Economy.SetBalance(
+			ctx,
+			n.Data.EconomyCurrencyID,
+			null.NewString(user.String(), !user.IsEmpty()),
+			amount,
+		)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		ctx.StoreNodeResult(n, balance)
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionBalanceTransfer:
+		from, err := ctx.EvalTemplate(n.Data.EconomyUserTarget)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		to, err := ctx.EvalTemplate(n.Data.EconomyRecipient)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		amount, err := ctx.EvalTemplate(n.Data.EconomyAmount)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		res, err := ctx.Economy.Transfer(
+			ctx,
+			n.Data.EconomyCurrencyID,
+			null.NewString(from.String(), !from.IsEmpty()),
+			null.NewString(to.String(), !to.IsEmpty()),
+			amount,
+			n.Data.EconomyAllowNegative,
+		)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		ctx.StoreNodeResult(n, thing.NewObject(map[string]thing.Thing{
+			"from_balance": res.FromBalance,
+			"to_balance":   res.ToBalance,
+		}))
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionBalanceLeaderboard:
+		limit := 10
+		if n.Data.EconomyLimit != "" {
+			limitValue, err := ctx.EvalTemplate(n.Data.EconomyLimit)
+			if err != nil {
+				return traceError(n, err)
+			}
+			if l := int(limitValue.Int()); l > 0 {
+				limit = l
+			}
+		}
+		// Cap the leaderboard size to keep a single node from loading an unbounded
+		// number of rows into memory.
+		if limit > 100 {
+			limit = 100
+		}
+
+		entries, err := ctx.Economy.Leaderboard(ctx, n.Data.EconomyCurrencyID, limit)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		items := make([]thing.Thing, len(entries))
+		for i, entry := range entries {
+			items[i] = thing.NewObject(map[string]thing.Thing{
+				"rank":    thing.NewInt(i + 1),
+				"scope":   thing.NewString(entry.Scope),
+				"balance": entry.Balance,
+			})
+		}
+
+		ctx.StoreNodeResult(n, thing.NewArray(items))
 		return n.ExecuteChildren(ctx)
 	case FlowNodeTypeActionHTTPRequest:
 		if n.Data.HTTPRequestData == nil {

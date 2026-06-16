@@ -8,11 +8,11 @@ import (
 
 type FlowProviders struct {
 	Discord         provider.DiscordProvider
-	Roblox          provider.RobloxProvider
 	HTTP            provider.HTTPProvider
 	AI              provider.AIProvider
 	Log             provider.LogProvider
 	Variable        provider.VariableProvider
+	Economy         provider.EconomyProvider
 	MessageTemplate provider.MessageTemplateProvider
 	ResumePoint     ResumePointProvider
 }

@@ -551,11 +551,6 @@ export const nodeActionMessageGetDataSchema = nodeBaseDataSchema.extend({
   temporary_name: z.string().optional(),
 });
 
-export const nodeActionRobloxUserGetDataSchema = nodeBaseDataSchema.extend({
-  roblox_user_target: z.string(),
-  roblox_lookup_mode: z.enum(["id", "username"]),
-  custom_label: z.string().optional(),
-});
 
 export const nodeActionVariableSetSchema = nodeBaseDataSchema.extend({
   variable_id: z.string(),
