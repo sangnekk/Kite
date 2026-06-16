@@ -3,6 +3,7 @@ import { getLayoutedElements } from "./layout";
 import { getEdgeId, getNodeId } from "./nodes";
 import { NodeData } from "./dataSchema";
 import {
+  CoinsIcon,
   GavelIcon,
   LucideIcon,
   UserRoundPlusIcon,
@@ -39,7 +40,7 @@ export type Template = {
 };
 
 export function getTemplates() {
-  return [getModerationTemplate(), getWelcomerTemplate()];
+  return [getModerationTemplate(), getWelcomerTemplate(), getEconomyTemplate()];
 }
 
 export function prepareTemplateFlow(flow: {
@@ -527,5 +528,471 @@ export function getWelcomerTemplate(): Template {
         }),
       },
     ],
+  };
+}
+
+export function getEconomyTemplate(): Template {
+  // /balance
+  const balanceEntryNodeId = getNodeId();
+  const balanceErrorHandlerNodeId = getNodeId();
+  const balanceGetNodeId = getNodeId();
+  const balanceResponseNodeId = getNodeId();
+  const balanceErrorResponseNodeId = getNodeId();
+
+  // /daily
+  const dailyEntryNodeId = getNodeId();
+  const dailyErrorHandlerNodeId = getNodeId();
+  const dailyCooldownNodeId = getNodeId();
+  const dailyConditionNodeId = getNodeId();
+  const dailyConditionItemNodeId = getNodeId();
+  const dailyAddNodeId = getNodeId();
+  const dailySuccessResponseNodeId = getNodeId();
+  const dailyConditionElseNodeId = getNodeId();
+  const dailyWaitResponseNodeId = getNodeId();
+  const dailyErrorResponseNodeId = getNodeId();
+
+  // /pay
+  const payEntryNodeId = getNodeId();
+  const payOptionUserNodeId = getNodeId();
+  const payOptionAmountNodeId = getNodeId();
+  const payErrorHandlerNodeId = getNodeId();
+  const payTransferNodeId = getNodeId();
+  const payResponseNodeId = getNodeId();
+  const payErrorResponseNodeId = getNodeId();
+
+  // /top
+  const topEntryNodeId = getNodeId();
+  const topErrorHandlerNodeId = getNodeId();
+  const topLeaderboardNodeId = getNodeId();
+  const topResponseNodeId = getNodeId();
+  const topErrorResponseNodeId = getNodeId();
+
+  return {
+    name: "Kinh tế",
+    description:
+      "Các lệnh kinh tế dựng sẵn: xem số dư, nhận thưởng hằng ngày, chuyển tiền và bảng xếp hạng.",
+    icon: CoinsIcon,
+    inputs: [
+      {
+        key: "currency_variable_id",
+        label: "Biến tiền tệ",
+        description:
+          "ID của một biến (scoped) dùng để lưu số dư của người dùng. Hãy tạo biến này trước.",
+        type: "text",
+        required: true,
+      },
+      {
+        key: "cooldown_variable_id",
+        label: "Biến cooldown (cho /daily)",
+        description:
+          "ID của một biến (scoped) dùng để lưu thời điểm nhận thưởng gần nhất.",
+        type: "text",
+        required: true,
+      },
+      {
+        key: "daily_amount",
+        label: "Thưởng mỗi ngày",
+        description: "Số tiền người dùng nhận được mỗi lần dùng /daily.",
+        type: "text",
+        required: true,
+      },
+    ],
+    commands: [
+      {
+        name: "balance",
+        description: "Xem số dư của bạn.",
+        flowSource: (inputs) => ({
+          nodes: [
+            {
+              id: balanceEntryNodeId,
+              type: "entry_command",
+              data: {
+                name: "balance",
+                description: "Xem số dư của bạn.",
+              },
+            },
+            {
+              id: balanceErrorHandlerNodeId,
+              type: "control_error_handler",
+              data: {},
+            },
+            {
+              id: balanceGetNodeId,
+              type: "action_balance_get",
+              data: {
+                variable_id: inputs.currency_variable_id,
+                economy_user_target: "{{user.id}}",
+                temporary_name: "balance",
+              },
+            },
+            {
+              id: balanceResponseNodeId,
+              type: "action_response_create",
+              data: {
+                message_data: {
+                  content: "💰 Số dư của bạn: **{{var('balance')}}**",
+                },
+              },
+            },
+            {
+              id: balanceErrorResponseNodeId,
+              type: "action_response_create",
+              data: {
+                message_data: {
+                  content:
+                    "❌ Không lấy được số dư. Hãy kiểm tra lại biến tiền tệ.",
+                },
+                message_ephemeral: true,
+              },
+            },
+          ],
+          edges: [
+            {
+              id: getEdgeId(),
+              source: balanceEntryNodeId,
+              target: balanceErrorHandlerNodeId,
+            },
+            {
+              id: getEdgeId(),
+              source: balanceErrorHandlerNodeId,
+              sourceHandle: "default",
+              target: balanceGetNodeId,
+            },
+            {
+              id: getEdgeId(),
+              source: balanceGetNodeId,
+              target: balanceResponseNodeId,
+            },
+            {
+              id: getEdgeId(),
+              source: balanceErrorHandlerNodeId,
+              sourceHandle: "error",
+              target: balanceErrorResponseNodeId,
+            },
+          ],
+        }),
+      },
+      {
+        name: "daily",
+        description: "Nhận thưởng hằng ngày.",
+        flowSource: (inputs) => ({
+          nodes: [
+            {
+              id: dailyEntryNodeId,
+              type: "entry_command",
+              data: {
+                name: "daily",
+                description: "Nhận thưởng hằng ngày.",
+              },
+            },
+            {
+              id: dailyErrorHandlerNodeId,
+              type: "control_error_handler",
+              data: {},
+            },
+            {
+              id: dailyCooldownNodeId,
+              type: "action_cooldown_check",
+              data: {
+                variable_id: inputs.cooldown_variable_id,
+                cooldown_scope: "{{user.id}}",
+                cooldown_duration: "86400",
+                temporary_name: "cd",
+              },
+            },
+            {
+              id: dailyConditionNodeId,
+              type: "control_condition_compare",
+              data: {
+                condition_base_value: "{{var('cd').remaining}}",
+              },
+            },
+            {
+              id: dailyConditionItemNodeId,
+              type: "control_condition_item_compare",
+              data: {
+                condition_item_mode: "less_than_or_equal",
+                condition_item_value: "0",
+              },
+            },
+            {
+              id: dailyAddNodeId,
+              type: "action_balance_add",
+              data: {
+                variable_id: inputs.currency_variable_id,
+                economy_user_target: "{{user.id}}",
+                economy_amount: inputs.daily_amount,
+                temporary_name: "new_balance",
+              },
+            },
+            {
+              id: dailySuccessResponseNodeId,
+              type: "action_response_create",
+              data: {
+                message_data: {
+                  content: `🎉 Bạn đã nhận **${inputs.daily_amount}** 💰! Số dư hiện tại: **{{var('new_balance')}}**`,
+                },
+              },
+            },
+            {
+              id: dailyConditionElseNodeId,
+              type: "control_condition_item_else",
+              data: {},
+            },
+            {
+              id: dailyWaitResponseNodeId,
+              type: "action_response_create",
+              data: {
+                message_data: {
+                  content:
+                    "⏳ Bạn đã nhận thưởng hôm nay rồi. Hãy đợi **{{var('cd').remaining}}** giây nữa.",
+                },
+                message_ephemeral: true,
+              },
+            },
+            {
+              id: dailyErrorResponseNodeId,
+              type: "action_response_create",
+              data: {
+                message_data: {
+                  content: "❌ Có lỗi khi nhận thưởng. Vui lòng thử lại sau.",
+                },
+                message_ephemeral: true,
+              },
+            },
+          ],
+          edges: [
+            {
+              id: getEdgeId(),
+              source: dailyEntryNodeId,
+              target: dailyErrorHandlerNodeId,
+            },
+            {
+              id: getEdgeId(),
+              source: dailyErrorHandlerNodeId,
+              sourceHandle: "default",
+              target: dailyCooldownNodeId,
+            },
+            {
+              id: getEdgeId(),
+              source: dailyCooldownNodeId,
+              target: dailyConditionNodeId,
+            },
+            {
+              id: getEdgeId(),
+              source: dailyConditionNodeId,
+              target: dailyConditionItemNodeId,
+            },
+            {
+              id: getEdgeId(),
+              source: dailyConditionItemNodeId,
+              target: dailyAddNodeId,
+            },
+            {
+              id: getEdgeId(),
+              source: dailyAddNodeId,
+              target: dailySuccessResponseNodeId,
+            },
+            {
+              id: getEdgeId(),
+              source: dailyConditionNodeId,
+              target: dailyConditionElseNodeId,
+            },
+            {
+              id: getEdgeId(),
+              source: dailyConditionElseNodeId,
+              target: dailyWaitResponseNodeId,
+            },
+            {
+              id: getEdgeId(),
+              source: dailyErrorHandlerNodeId,
+              sourceHandle: "error",
+              target: dailyErrorResponseNodeId,
+            },
+          ],
+        }),
+      },
+      {
+        name: "pay",
+        description: "Chuyển tiền cho người dùng khác.",
+        flowSource: (inputs) => ({
+          nodes: [
+            {
+              id: payEntryNodeId,
+              type: "entry_command",
+              data: {
+                name: "pay",
+                description: "Chuyển tiền cho người dùng khác.",
+              },
+            },
+            {
+              id: payOptionUserNodeId,
+              type: "option_command_argument",
+              data: {
+                name: "user",
+                description: "Người nhận tiền.",
+                command_argument_type: "user",
+                command_argument_required: true,
+              },
+            },
+            {
+              id: payOptionAmountNodeId,
+              type: "option_command_argument",
+              data: {
+                name: "amount",
+                description: "Số tiền muốn chuyển.",
+                command_argument_type: "integer",
+                command_argument_required: true,
+              },
+            },
+            {
+              id: payErrorHandlerNodeId,
+              type: "control_error_handler",
+              data: {},
+            },
+            {
+              id: payTransferNodeId,
+              type: "action_balance_transfer",
+              data: {
+                variable_id: inputs.currency_variable_id,
+                economy_user_target: "{{user.id}}",
+                economy_recipient: "{{interaction.command.args.user.id}}",
+                economy_amount: "{{interaction.command.args.amount}}",
+              },
+            },
+            {
+              id: payResponseNodeId,
+              type: "action_response_create",
+              data: {
+                message_data: {
+                  content:
+                    "✅ Đã chuyển **{{interaction.command.args.amount}}** 💰 cho {{interaction.command.args.user.mention}}.",
+                },
+              },
+            },
+            {
+              id: payErrorResponseNodeId,
+              type: "action_response_create",
+              data: {
+                message_data: {
+                  content:
+                    "❌ Chuyển tiền thất bại — có thể bạn không đủ số dư.",
+                },
+                message_ephemeral: true,
+              },
+            },
+          ],
+          edges: [
+            {
+              id: getEdgeId(),
+              source: payOptionUserNodeId,
+              target: payEntryNodeId,
+            },
+            {
+              id: getEdgeId(),
+              source: payOptionAmountNodeId,
+              target: payEntryNodeId,
+            },
+            {
+              id: getEdgeId(),
+              source: payEntryNodeId,
+              target: payErrorHandlerNodeId,
+            },
+            {
+              id: getEdgeId(),
+              source: payErrorHandlerNodeId,
+              sourceHandle: "default",
+              target: payTransferNodeId,
+            },
+            {
+              id: getEdgeId(),
+              source: payTransferNodeId,
+              target: payResponseNodeId,
+            },
+            {
+              id: getEdgeId(),
+              source: payErrorHandlerNodeId,
+              sourceHandle: "error",
+              target: payErrorResponseNodeId,
+            },
+          ],
+        }),
+      },
+      {
+        name: "top",
+        description: "Xem người dùng có số dư cao nhất.",
+        flowSource: (inputs) => ({
+          nodes: [
+            {
+              id: topEntryNodeId,
+              type: "entry_command",
+              data: {
+                name: "top",
+                description: "Xem người dùng có số dư cao nhất.",
+              },
+            },
+            {
+              id: topErrorHandlerNodeId,
+              type: "control_error_handler",
+              data: {},
+            },
+            {
+              id: topLeaderboardNodeId,
+              type: "action_balance_leaderboard",
+              data: {
+                variable_id: inputs.currency_variable_id,
+                economy_limit: "1",
+                temporary_name: "leaderboard",
+              },
+            },
+            {
+              id: topResponseNodeId,
+              type: "action_response_create",
+              data: {
+                message_data: {
+                  content:
+                    "🏆 Người giàu nhất: <@{{var('leaderboard')[0].scope}}> với **{{var('leaderboard')[0].balance}}** 💰",
+                },
+              },
+            },
+            {
+              id: topErrorResponseNodeId,
+              type: "action_response_create",
+              data: {
+                message_data: {
+                  content: "❌ Chưa có dữ liệu bảng xếp hạng.",
+                },
+                message_ephemeral: true,
+              },
+            },
+          ],
+          edges: [
+            {
+              id: getEdgeId(),
+              source: topEntryNodeId,
+              target: topErrorHandlerNodeId,
+            },
+            {
+              id: getEdgeId(),
+              source: topErrorHandlerNodeId,
+              sourceHandle: "default",
+              target: topLeaderboardNodeId,
+            },
+            {
+              id: getEdgeId(),
+              source: topLeaderboardNodeId,
+              target: topResponseNodeId,
+            },
+            {
+              id: getEdgeId(),
+              source: topErrorHandlerNodeId,
+              sourceHandle: "error",
+              target: topErrorResponseNodeId,
+            },
+          ],
+        }),
+      },
+    ],
+    eventListeners: [],
   };
 }
