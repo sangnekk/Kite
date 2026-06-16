@@ -3,12 +3,14 @@ package flow
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"math/rand"
 	"net/http"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/openai/openai-go"
@@ -1207,7 +1209,7 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 
 		balance, err := ctx.Economy.GetBalance(
 			ctx,
-			n.Data.EconomyCurrencyID,
+			n.Data.VariableID,
 			null.NewString(user.String(), !user.IsEmpty()),
 		)
 		if err != nil {
@@ -1229,7 +1231,7 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 
 		balance, err := ctx.Economy.AddBalance(
 			ctx,
-			n.Data.EconomyCurrencyID,
+			n.Data.VariableID,
 			null.NewString(user.String(), !user.IsEmpty()),
 			amount,
 		)
@@ -1252,7 +1254,7 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 
 		balance, err := ctx.Economy.RemoveBalance(
 			ctx,
-			n.Data.EconomyCurrencyID,
+			n.Data.VariableID,
 			null.NewString(user.String(), !user.IsEmpty()),
 			amount,
 			n.Data.EconomyAllowNegative,
@@ -1276,7 +1278,7 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 
 		balance, err := ctx.Economy.SetBalance(
 			ctx,
-			n.Data.EconomyCurrencyID,
+			n.Data.VariableID,
 			null.NewString(user.String(), !user.IsEmpty()),
 			amount,
 		)
@@ -1304,7 +1306,7 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 
 		res, err := ctx.Economy.Transfer(
 			ctx,
-			n.Data.EconomyCurrencyID,
+			n.Data.VariableID,
 			null.NewString(from.String(), !from.IsEmpty()),
 			null.NewString(to.String(), !to.IsEmpty()),
 			amount,
@@ -1336,7 +1338,7 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 			limit = 100
 		}
 
-		entries, err := ctx.Economy.Leaderboard(ctx, n.Data.EconomyCurrencyID, limit)
+		entries, err := ctx.Economy.Leaderboard(ctx, n.Data.VariableID, limit)
 		if err != nil {
 			return traceError(n, err)
 		}
@@ -1351,6 +1353,151 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 		}
 
 		ctx.StoreNodeResult(n, thing.NewArray(items))
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionTimeNow:
+		loc := time.UTC
+		if n.Data.TimeTimezone != "" {
+			l, err := time.LoadLocation(n.Data.TimeTimezone)
+			if err != nil {
+				return traceError(n, err)
+			}
+			loc = l
+		}
+
+		now := time.Now().In(loc)
+
+		var res thing.Thing
+		switch n.Data.TimeFormat {
+		case "", "unix":
+			res = thing.NewInt(now.Unix())
+		case "unix_ms":
+			res = thing.NewInt(now.UnixMilli())
+		case "iso":
+			res = thing.NewString(now.Format(time.RFC3339))
+		case "date":
+			res = thing.NewString(now.Format("2006-01-02"))
+		case "time":
+			res = thing.NewString(now.Format("15:04:05"))
+		case "datetime":
+			res = thing.NewString(now.Format("2006-01-02 15:04:05"))
+		default:
+			// Any other value is treated as a custom Go time layout.
+			res = thing.NewString(now.Format(n.Data.TimeFormat))
+		}
+
+		ctx.StoreNodeResult(n, res)
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionListPick:
+		list, err := ctx.EvalTemplate(n.Data.ListPickInput)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		items := list.AsList()
+		picked := thing.Null
+		if len(items) > 0 {
+			picked = items[rand.Intn(len(items))]
+		}
+
+		ctx.StoreNodeResult(n, picked)
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionTextTransform:
+		text, err := ctx.EvalTemplate(n.Data.TextInput)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		s := text.String()
+
+		var res thing.Thing
+		switch n.Data.TextOperation {
+		case "upper":
+			res = thing.NewString(strings.ToUpper(s))
+		case "lower":
+			res = thing.NewString(strings.ToLower(s))
+		case "trim":
+			res = thing.NewString(strings.TrimSpace(s))
+		case "length":
+			res = thing.NewInt(int64(len([]rune(s))))
+		case "replace":
+			search, err := ctx.EvalTemplate(n.Data.TextArg1)
+			if err != nil {
+				return traceError(n, err)
+			}
+			replacement, err := ctx.EvalTemplate(n.Data.TextArg2)
+			if err != nil {
+				return traceError(n, err)
+			}
+			res = thing.NewString(strings.ReplaceAll(s, search.String(), replacement.String()))
+		case "split":
+			sep, err := ctx.EvalTemplate(n.Data.TextArg1)
+			if err != nil {
+				return traceError(n, err)
+			}
+			parts := strings.Split(s, sep.String())
+			items := make([]thing.Thing, len(parts))
+			for i, p := range parts {
+				items[i] = thing.NewString(p)
+			}
+			res = thing.NewArray(items)
+		default:
+			res = text
+		}
+
+		ctx.StoreNodeResult(n, res)
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionJSONParse:
+		input, err := ctx.EvalTemplate(n.Data.JSONInput)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		var parsed any
+		if err := json.Unmarshal([]byte(input.String()), &parsed); err != nil {
+			return traceError(n, err)
+		}
+
+		ctx.StoreNodeResult(n, thing.FromAny(parsed))
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionJSONBuild:
+		input, err := ctx.EvalTemplate(n.Data.JSONInput)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		encoded, err := json.Marshal(input.ToAny())
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		ctx.StoreNodeResult(n, thing.NewString(string(encoded)))
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionCooldownCheck:
+		scope, err := ctx.EvalTemplate(n.Data.CooldownScope)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		duration, err := ctx.EvalTemplate(n.Data.CooldownDuration)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		res, err := ctx.Cooldown.Check(
+			ctx,
+			n.Data.VariableID,
+			null.NewString(scope.String(), !scope.IsEmpty()),
+			duration.Int(),
+			!n.Data.CooldownPeek,
+		)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		ctx.StoreNodeResult(n, thing.NewObject(map[string]thing.Thing{
+			"allowed":   thing.NewBool(res.Allowed),
+			"remaining": thing.NewInt(res.Remaining),
+		}))
 		return n.ExecuteChildren(ctx)
 	case FlowNodeTypeActionHTTPRequest:
 		if n.Data.HTTPRequestData == nil {

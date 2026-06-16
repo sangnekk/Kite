@@ -639,6 +639,74 @@ export const nodeActionExpressionEvaluateDataSchema = nodeBaseDataSchema.extend(
   }
 );
 
+export const nodeActionTimeNowDataSchema = nodeBaseDataSchema.extend({
+  time_format: z.string().optional(),
+  time_timezone: z.string().optional(),
+});
+
+export const nodeActionListPickDataSchema = nodeBaseDataSchema.extend({
+  list_pick_input: z.string(),
+});
+
+export const nodeActionTextTransformDataSchema = nodeBaseDataSchema.extend({
+  text_input: z.string(),
+  text_operation: z.string(),
+  text_arg1: z.string().optional(),
+  text_arg2: z.string().optional(),
+});
+
+export const nodeActionJSONParseDataSchema = nodeBaseDataSchema.extend({
+  json_input: z.string(),
+});
+
+export const nodeActionJSONBuildDataSchema = nodeBaseDataSchema.extend({
+  json_input: z.string(),
+});
+
+export const nodeActionBalanceGetDataSchema = nodeBaseDataSchema.extend({
+  variable_id: z.string(),
+  economy_user_target: z.string().optional(),
+});
+
+export const nodeActionBalanceAddDataSchema = nodeBaseDataSchema.extend({
+  variable_id: z.string(),
+  economy_user_target: z.string().optional(),
+  economy_amount: z.string(),
+});
+
+export const nodeActionBalanceRemoveDataSchema = nodeBaseDataSchema.extend({
+  variable_id: z.string(),
+  economy_user_target: z.string().optional(),
+  economy_amount: z.string(),
+  economy_allow_negative: z.boolean().optional(),
+});
+
+export const nodeActionBalanceSetDataSchema = nodeBaseDataSchema.extend({
+  variable_id: z.string(),
+  economy_user_target: z.string().optional(),
+  economy_amount: z.string(),
+});
+
+export const nodeActionBalanceTransferDataSchema = nodeBaseDataSchema.extend({
+  variable_id: z.string(),
+  economy_user_target: z.string().optional(),
+  economy_recipient: z.string(),
+  economy_amount: z.string(),
+  economy_allow_negative: z.boolean().optional(),
+});
+
+export const nodeActionBalanceLeaderboardDataSchema = nodeBaseDataSchema.extend({
+  variable_id: z.string(),
+  economy_limit: z.string().optional(),
+});
+
+export const nodeActionCooldownCheckDataSchema = nodeBaseDataSchema.extend({
+  variable_id: z.string(),
+  cooldown_scope: z.string().optional(),
+  cooldown_duration: z.string(),
+  cooldown_peek: z.boolean().optional(),
+});
+
 export const nodeActionRandomGenerateDataSchema = nodeBaseDataSchema.extend({
   random_min: z
     .string()

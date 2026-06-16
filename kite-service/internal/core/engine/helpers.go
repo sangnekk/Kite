@@ -68,6 +68,7 @@ func (s Env) flowProviders(appID string, session *state.State, links entityLinks
 		MessageTemplate: NewMessageTemplateProvider(s.MessageStore, s.MessageInstanceStore),
 		Variable:        NewVariableProvider(s.VariableValueStore),
 		Economy:         NewEconomyProvider(s.VariableValueStore),
+		Cooldown:        NewCooldownProvider(s.VariableValueStore),
 		ResumePoint: NewResumePointProvider(
 			s.ResumePointStore,
 			appID,

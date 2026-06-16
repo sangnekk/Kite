@@ -78,6 +78,10 @@ func (s *fakeVariableValueStore) VariableValuesTop(ctx context.Context, variable
 	return s.topValues, nil
 }
 
+func (s *fakeVariableValueStore) ConsumeCooldown(ctx context.Context, variableID string, scope null.String, nowUnix, durationSeconds int64, consume bool) (bool, int64, error) {
+	return true, 0, nil
+}
+
 func TestEconomyProviderAddBalanceUsesIncrement(t *testing.T) {
 	fake := &fakeVariableValueStore{}
 	p := NewEconomyProvider(fake)

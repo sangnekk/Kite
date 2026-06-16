@@ -536,6 +536,72 @@ func (w Thing) Array() []Thing {
 	}
 }
 
+// FromAny converts an arbitrary decoded JSON value (as produced by
+// json.Unmarshal into an any) into a Thing, recursively turning objects into
+// TypeObject and arrays into TypeArray so they can be traversed natively.
+func FromAny(v any) Thing {
+	switch vv := v.(type) {
+	case map[string]any:
+		m := make(map[string]Thing, len(vv))
+		for k, e := range vv {
+			m[k] = FromAny(e)
+		}
+		return NewObject(m)
+	case []any:
+		arr := make([]Thing, len(vv))
+		for i, e := range vv {
+			arr[i] = FromAny(e)
+		}
+		return NewArray(arr)
+	default:
+		return NewGuessTypeWithFallback(v)
+	}
+}
+
+// ToAny converts a Thing back into a plain Go value suitable for json.Marshal,
+// recursively unwrapping objects and arrays. Unlike marshalling the Thing
+// directly (which emits the internal {t, v} envelope), this produces ordinary
+// JSON.
+func (w Thing) ToAny() any {
+	switch w.Type {
+	case TypeObject:
+		m := make(map[string]any, len(w.Object()))
+		for k, v := range w.Object() {
+			m[k] = v.ToAny()
+		}
+		return m
+	case TypeArray:
+		arr := make([]any, len(w.Array()))
+		for i, v := range w.Array() {
+			arr[i] = v.ToAny()
+		}
+		return arr
+	default:
+		return w.Value
+	}
+}
+
+// AsList returns the value as a slice of Things. Unlike Array, it also handles
+// values whose underlying Go type is a slice (e.g. arrays that round-tripped
+// through the eval engine as []any), so callers can treat any list-like value
+// uniformly.
+func (w Thing) AsList() []Thing {
+	if w.Type == TypeArray {
+		return w.Array()
+	}
+
+	rv := reflect.ValueOf(w.Value)
+	if rv.Kind() != reflect.Slice {
+		return nil
+	}
+
+	out := make([]Thing, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		out[i] = NewGuessTypeWithFallback(rv.Index(i).Interface())
+	}
+	return out
+}
+
 func (w Thing) DiscordMessage() discord.Message {
 	if w.Type == TypeDiscordMessage {
 		return w.Value.(discord.Message)

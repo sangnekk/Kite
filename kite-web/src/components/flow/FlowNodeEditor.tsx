@@ -119,6 +119,22 @@ const intputs: Record<string, any> = {
   expression: ExpressionInput,
   random_min: RandomMinInput,
   random_max: RandomMaxInput,
+  time_format: TimeFormatInput,
+  time_timezone: TimeTimezoneInput,
+  list_pick_input: ListPickInput,
+  text_input: TextInput,
+  text_operation: TextOperationInput,
+  text_arg1: TextArg1Input,
+  text_arg2: TextArg2Input,
+  json_input: JSONInput,
+  cooldown_scope: CooldownScopeInput,
+  cooldown_duration: CooldownDurationInput,
+  cooldown_peek: CooldownPeekInput,
+  economy_user_target: EconomyUserTargetInput,
+  economy_recipient: EconomyRecipientInput,
+  economy_amount: EconomyAmountInput,
+  economy_limit: EconomyLimitInput,
+  economy_allow_negative: EconomyAllowNegativeInput,
   audit_log_reason: AuditLogReasonInput,
   user_target: UserTargetInput,
   guild_target: GuildTargetInput,
@@ -1032,6 +1048,231 @@ function RandomMaxInput({ data, updateData, errors }: InputProps) {
       title="Tối đa"
       value={data.random_max || ""}
       updateValue={(v) => updateData({ random_max: v || undefined })}
+      errors={errors}
+    />
+  );
+}
+
+function TimeFormatInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="time_format"
+      title="Định dạng"
+      type="select"
+      options={[
+        { value: "unix", label: "Unix (giây)" },
+        { value: "unix_ms", label: "Unix (mili giây)" },
+        { value: "iso", label: "ISO 8601" },
+        { value: "date", label: "Ngày (2006-01-02)" },
+        { value: "time", label: "Giờ (15:04:05)" },
+        { value: "datetime", label: "Ngày giờ (2006-01-02 15:04:05)" },
+      ]}
+      value={data.time_format || "unix"}
+      updateValue={(v) => updateData({ time_format: v || undefined })}
+      errors={errors}
+    />
+  );
+}
+
+function TimeTimezoneInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="time_timezone"
+      title="Múi giờ (tùy chọn)"
+      value={data.time_timezone || ""}
+      updateValue={(v) => updateData({ time_timezone: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function ListPickInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="list_pick_input"
+      title="Danh sách"
+      value={data.list_pick_input || ""}
+      updateValue={(v) => updateData({ list_pick_input: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function TextInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="text_input"
+      title="Văn bản"
+      value={data.text_input || ""}
+      updateValue={(v) => updateData({ text_input: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function TextOperationInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="text_operation"
+      title="Thao tác"
+      type="select"
+      options={[
+        { value: "upper", label: "IN HOA" },
+        { value: "lower", label: "in thường" },
+        { value: "trim", label: "Cắt khoảng trắng" },
+        { value: "length", label: "Độ dài" },
+        { value: "replace", label: "Thay thế" },
+        { value: "split", label: "Tách thành danh sách" },
+      ]}
+      value={data.text_operation || ""}
+      updateValue={(v) => updateData({ text_operation: v || undefined })}
+      errors={errors}
+    />
+  );
+}
+
+function TextArg1Input({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="text_arg1"
+      title="Tham số 1 (chuỗi tìm / ký tự tách)"
+      value={data.text_arg1 || ""}
+      updateValue={(v) => updateData({ text_arg1: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function TextArg2Input({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="text_arg2"
+      title="Tham số 2 (chuỗi thay thế)"
+      value={data.text_arg2 || ""}
+      updateValue={(v) => updateData({ text_arg2: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function JSONInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      type="textarea"
+      field="json_input"
+      title="JSON / Giá trị"
+      value={data.json_input || ""}
+      updateValue={(v) => updateData({ json_input: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function CooldownScopeInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="cooldown_scope"
+      title="Phạm vi (để trống = toàn cục)"
+      value={data.cooldown_scope ?? "{{user.id}}"}
+      updateValue={(v) => updateData({ cooldown_scope: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function CooldownDurationInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="cooldown_duration"
+      title="Thời gian chờ (giây)"
+      value={data.cooldown_duration || ""}
+      updateValue={(v) => updateData({ cooldown_duration: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function CooldownPeekInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseCheckbox
+      field="cooldown_peek"
+      title="Chỉ kiểm tra (không đặt lại)"
+      description="Nếu bật, chỉ kiểm tra thời gian chờ mà không cập nhật mốc thời gian. Dùng khi bạn muốn đặt lại thủ công sau khi hành động thành công."
+      value={!!data.cooldown_peek}
+      updateValue={(v) => updateData({ cooldown_peek: v || undefined })}
+      errors={errors}
+    />
+  );
+}
+
+function EconomyUserTargetInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="economy_user_target"
+      title="Người dùng"
+      value={data.economy_user_target ?? "{{user.id}}"}
+      updateValue={(v) => updateData({ economy_user_target: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function EconomyRecipientInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="economy_recipient"
+      title="Người nhận"
+      value={data.economy_recipient || ""}
+      updateValue={(v) => updateData({ economy_recipient: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function EconomyAmountInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="economy_amount"
+      title="Số tiền"
+      value={data.economy_amount || ""}
+      updateValue={(v) => updateData({ economy_amount: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function EconomyLimitInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="economy_limit"
+      title="Số lượng (mặc định 10)"
+      value={data.economy_limit || ""}
+      updateValue={(v) => updateData({ economy_limit: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function EconomyAllowNegativeInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseCheckbox
+      field="economy_allow_negative"
+      title="Cho phép số dư âm"
+      description="Nếu bật, số dư có thể xuống dưới 0. Nếu tắt, thao tác sẽ báo lỗi khi không đủ tiền."
+      value={!!data.economy_allow_negative}
+      updateValue={(v) => updateData({ economy_allow_negative: v || undefined })}
       errors={errors}
     />
   );

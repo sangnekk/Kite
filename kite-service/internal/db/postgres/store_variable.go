@@ -413,6 +413,53 @@ LIMIT $2
 	return values, rows.Err()
 }
 
+func (c *Client) ConsumeCooldown(ctx context.Context, variableID string, scope null.String, nowUnix, durationSeconds int64, consume bool) (bool, int64, error) {
+	tx, err := c.DB.Begin(ctx)
+	if err != nil {
+		return false, 0, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	var lastUsed int64
+	current, err := c.variableValueWithTx(ctx, tx, variableID, scope)
+	if err != nil {
+		if !errors.Is(err, store.ErrNotFound) {
+			return false, 0, fmt.Errorf("failed to get cooldown value: %w", err)
+		}
+	} else {
+		lastUsed = current.Data.Int()
+	}
+
+	elapsed := nowUnix - lastUsed
+	allowed := lastUsed == 0 || elapsed >= durationSeconds
+	if !allowed {
+		remaining := durationSeconds - elapsed
+		if remaining < 0 {
+			remaining = 0
+		}
+		return false, remaining, nil
+	}
+
+	if consume {
+		now := time.Now().UTC()
+		if _, err := c.setVariableValueWithTx(ctx, tx, model.VariableValue{
+			VariableID: variableID,
+			Scope:      scope,
+			Data:       thing.NewInt(nowUnix),
+			CreatedAt:  now,
+			UpdatedAt:  now,
+		}); err != nil {
+			return false, 0, fmt.Errorf("failed to set cooldown value: %w", err)
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return false, 0, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return true, 0, nil
+}
+
 // scopeKey returns a stable string key for a nullable scope so it can be used in
 // maps and ordering. A NULL scope sorts before any real scope.
 func scopeKey(scope null.String) string {

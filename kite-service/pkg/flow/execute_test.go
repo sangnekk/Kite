@@ -2,6 +2,7 @@ package flow
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -182,7 +183,7 @@ func TestFlowExecuteBalanceAdd(t *testing.T) {
 		ID:   "0",
 		Type: FlowNodeTypeActionBalanceAdd,
 		Data: FlowNodeData{
-			EconomyCurrencyID: "var_coins",
+			VariableID:        "var_coins",
 			EconomyUserTarget: "123",
 			EconomyAmount:     "100",
 		},
@@ -210,7 +211,7 @@ func TestFlowExecuteBalanceRemoveAllowNegative(t *testing.T) {
 		ID:   "0",
 		Type: FlowNodeTypeActionBalanceRemove,
 		Data: FlowNodeData{
-			EconomyCurrencyID:    "var_coins",
+			VariableID:           "var_coins",
 			EconomyUserTarget:    "123",
 			EconomyAmount:        "100",
 			EconomyAllowNegative: true,
@@ -235,7 +236,7 @@ func TestFlowExecuteBalanceTransfer(t *testing.T) {
 		ID:   "0",
 		Type: FlowNodeTypeActionBalanceTransfer,
 		Data: FlowNodeData{
-			EconomyCurrencyID: "var_coins",
+			VariableID:        "var_coins",
 			EconomyUserTarget: "111",
 			EconomyRecipient:  "222",
 			EconomyAmount:     "100",
@@ -267,8 +268,8 @@ func TestFlowExecuteBalanceLeaderboard(t *testing.T) {
 		ID:   "0",
 		Type: FlowNodeTypeActionBalanceLeaderboard,
 		Data: FlowNodeData{
-			EconomyCurrencyID: "var_coins",
-			EconomyLimit:      "5",
+			VariableID:   "var_coins",
+			EconomyLimit: "5",
 		},
 	}
 
@@ -283,6 +284,202 @@ func TestFlowExecuteBalanceLeaderboard(t *testing.T) {
 	assert.Equal(t, "111", items[0].Object()["scope"].String())
 	assert.Equal(t, int64(900), items[0].Object()["balance"].Int())
 	assert.Equal(t, int64(2), items[1].Object()["rank"].Int())
+}
+
+func TestFlowExecuteTimeNowUnix(t *testing.T) {
+	c := newEconomyTestContext(t, &TestEconomyProvider{})
+	defer c.Cancel()
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionTimeNow,
+		Data: FlowNodeData{TimeFormat: "unix"},
+	}
+
+	require.NoError(t, node.Execute(c))
+	// Sanity: a real unix timestamp is well past 1 January 2023.
+	assert.Greater(t, c.GetNodeResult("0").Int(), int64(1_672_531_200))
+}
+
+func TestFlowExecuteTimeNowDate(t *testing.T) {
+	c := newEconomyTestContext(t, &TestEconomyProvider{})
+	defer c.Cancel()
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionTimeNow,
+		Data: FlowNodeData{TimeFormat: "date", TimeTimezone: "Asia/Ho_Chi_Minh"},
+	}
+
+	require.NoError(t, node.Execute(c))
+	// Format "2006-01-02" is always 10 characters long.
+	assert.Len(t, c.GetNodeResult("0").String(), 10)
+}
+
+func TestFlowExecuteListPick(t *testing.T) {
+	c := newEconomyTestContext(t, &TestEconomyProvider{})
+	defer c.Cancel()
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionListPick,
+		Data: FlowNodeData{ListPickInput: `{{["a", "b", "c"]}}`},
+	}
+
+	require.NoError(t, node.Execute(c))
+	assert.Contains(t, []string{"a", "b", "c"}, c.GetNodeResult("0").String())
+}
+
+func TestFlowExecuteListPickEmpty(t *testing.T) {
+	c := newEconomyTestContext(t, &TestEconomyProvider{})
+	defer c.Cancel()
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionListPick,
+		Data: FlowNodeData{ListPickInput: `{{[]}}`},
+	}
+
+	require.NoError(t, node.Execute(c))
+	assert.True(t, c.GetNodeResult("0").IsNil())
+}
+
+func TestFlowExecuteTextTransform(t *testing.T) {
+	cases := []struct {
+		op   string
+		in   string
+		arg1 string
+		arg2 string
+		want string
+	}{
+		{op: "upper", in: "abc", want: "ABC"},
+		{op: "lower", in: "ABC", want: "abc"},
+		{op: "trim", in: "  hi  ", want: "hi"},
+		{op: "length", in: "hello", want: "5"},
+		{op: "replace", in: "a-b-c", arg1: "-", arg2: "+", want: "a+b+c"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.op, func(t *testing.T) {
+			c := newEconomyTestContext(t, &TestEconomyProvider{})
+			defer c.Cancel()
+
+			node := &CompiledFlowNode{
+				ID:   "0",
+				Type: FlowNodeTypeActionTextTransform,
+				Data: FlowNodeData{
+					TextInput:     tc.in,
+					TextOperation: tc.op,
+					TextArg1:      tc.arg1,
+					TextArg2:      tc.arg2,
+				},
+			}
+
+			require.NoError(t, node.Execute(c))
+			assert.Equal(t, tc.want, c.GetNodeResult("0").String())
+		})
+	}
+}
+
+func TestFlowExecuteTextTransformSplit(t *testing.T) {
+	c := newEconomyTestContext(t, &TestEconomyProvider{})
+	defer c.Cancel()
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionTextTransform,
+		Data: FlowNodeData{TextInput: "a,b,c", TextOperation: "split", TextArg1: ","},
+	}
+
+	require.NoError(t, node.Execute(c))
+	items := c.GetNodeResult("0").Array()
+	require.Len(t, items, 3)
+	assert.Equal(t, "b", items[1].String())
+}
+
+func TestFlowExecuteJSONParse(t *testing.T) {
+	c := newEconomyTestContext(t, &TestEconomyProvider{})
+	defer c.Cancel()
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionJSONParse,
+		Data: FlowNodeData{JSONInput: `{"name": "kite", "count": 7}`},
+	}
+
+	require.NoError(t, node.Execute(c))
+	obj := c.GetNodeResult("0").Object()
+	require.NotNil(t, obj)
+	assert.Equal(t, "kite", obj["name"].String())
+	assert.Equal(t, int64(7), obj["count"].Int())
+}
+
+func TestFlowExecuteJSONBuild(t *testing.T) {
+	c := newEconomyTestContext(t, &TestEconomyProvider{})
+	defer c.Cancel()
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionJSONBuild,
+		Data: FlowNodeData{JSONInput: `{{ {"a": 1, "b": "x"} }}`},
+	}
+
+	require.NoError(t, node.Execute(c))
+	// Re-parse to avoid depending on key ordering.
+	var out map[string]any
+	require.NoError(t, json.Unmarshal([]byte(c.GetNodeResult("0").String()), &out))
+	assert.EqualValues(t, 1, out["a"])
+	assert.Equal(t, "x", out["b"])
+}
+
+type testCooldownProvider struct {
+	provider.MockCooldownProvider
+	gotCooldownID string
+	gotDuration   int64
+	gotConsume    bool
+	result        provider.CooldownResult
+}
+
+func (p *testCooldownProvider) Check(ctx context.Context, cooldownID string, scope null.String, durationSeconds int64, consume bool) (provider.CooldownResult, error) {
+	p.gotCooldownID = cooldownID
+	p.gotDuration = durationSeconds
+	p.gotConsume = consume
+	return p.result, nil
+}
+
+func TestFlowExecuteCooldownCheck(t *testing.T) {
+	cd := &testCooldownProvider{result: provider.CooldownResult{Allowed: false, Remaining: 42}}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	c := NewContext(
+		ctx,
+		5*time.Second,
+		&TestContextData{},
+		FlowProviders{Cooldown: cd, Log: &provider.MockLogProvider{}},
+		FlowContextLimits{MaxStackDepth: 10, MaxOperations: 1000, MaxCredits: 1000},
+		eval.NewContext(eval.Env{}),
+		nil,
+	)
+	defer c.Cancel()
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionCooldownCheck,
+		Data: FlowNodeData{
+			VariableID:       "daily_cd",
+			CooldownScope:    "123",
+			CooldownDuration: "86400",
+		},
+	}
+
+	require.NoError(t, node.Execute(c))
+	assert.Equal(t, "daily_cd", cd.gotCooldownID)
+	assert.Equal(t, int64(86400), cd.gotDuration)
+	assert.True(t, cd.gotConsume) // peek defaults to false → consume true
+
+	result := c.GetNodeResult("0")
+	assert.False(t, result.Object()["allowed"].Bool())
+	assert.Equal(t, int64(42), result.Object()["remaining"].Int())
 }
 
 type TestContextData struct{}

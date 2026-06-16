@@ -13,6 +13,7 @@ type FlowProviders struct {
 	Log             provider.LogProvider
 	Variable        provider.VariableProvider
 	Economy         provider.EconomyProvider
+	Cooldown        provider.CooldownProvider
 	MessageTemplate provider.MessageTemplateProvider
 	ResumePoint     ResumePointProvider
 }

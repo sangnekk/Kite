@@ -705,6 +705,29 @@ func (p *EconomyProvider) Leaderboard(ctx context.Context, currencyID string, li
 	return entries, nil
 }
 
+type CooldownProvider struct {
+	variableValueStore store.VariableValueStore
+}
+
+func NewCooldownProvider(variableValueStore store.VariableValueStore) *CooldownProvider {
+	return &CooldownProvider{
+		variableValueStore: variableValueStore,
+	}
+}
+
+func (p *CooldownProvider) Check(ctx context.Context, cooldownID string, scope null.String, durationSeconds int64, consume bool) (provider.CooldownResult, error) {
+	now := time.Now().Unix()
+	allowed, remaining, err := p.variableValueStore.ConsumeCooldown(ctx, cooldownID, scope, now, durationSeconds, consume)
+	if err != nil {
+		return provider.CooldownResult{}, fmt.Errorf("failed to check cooldown: %w", err)
+	}
+
+	return provider.CooldownResult{
+		Allowed:   allowed,
+		Remaining: remaining,
+	}, nil
+}
+
 type MessageTemplateProvider struct {
 	messageStore         store.MessageStore
 	messageInstanceStore store.MessageInstanceStore

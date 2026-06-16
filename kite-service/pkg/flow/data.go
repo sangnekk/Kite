@@ -94,6 +94,12 @@ const (
 	FlowNodeTypeActionBalanceSet            FlowNodeType = "action_balance_set"
 	FlowNodeTypeActionBalanceTransfer       FlowNodeType = "action_balance_transfer"
 	FlowNodeTypeActionBalanceLeaderboard    FlowNodeType = "action_balance_leaderboard"
+	FlowNodeTypeActionTimeNow               FlowNodeType = "action_time_now"
+	FlowNodeTypeActionListPick              FlowNodeType = "action_list_pick"
+	FlowNodeTypeActionTextTransform         FlowNodeType = "action_text_transform"
+	FlowNodeTypeActionJSONParse             FlowNodeType = "action_json_parse"
+	FlowNodeTypeActionJSONBuild             FlowNodeType = "action_json_build"
+	FlowNodeTypeActionCooldownCheck         FlowNodeType = "action_cooldown_check"
 
 	FlowNodeTypeControlConditionCompare     FlowNodeType = "control_condition_compare"
 	FlowNodeTypeControlConditionItemCompare FlowNodeType = "control_condition_item_compare"
@@ -201,12 +207,33 @@ type FlowNodeData struct {
 	VariableOperation provider.VariableOperation `json:"variable_operation,omitempty"`
 
 	// Economy Balance Get, Add, Remove, Set, Transfer, Leaderboard
-	EconomyCurrencyID    string `json:"economy_currency_id,omitempty"`    // variable_id of the currency
+	// (the currency is the variable_id field above)
 	EconomyUserTarget    string `json:"economy_user_target,omitempty"`    // template resolving to the scope (usually a user id)
 	EconomyRecipient     string `json:"economy_recipient,omitempty"`      // template resolving to the recipient scope (transfer)
 	EconomyAmount        string `json:"economy_amount,omitempty"`         // template resolving to the amount
 	EconomyLimit         string `json:"economy_limit,omitempty"`          // template resolving to the leaderboard size
 	EconomyAllowNegative bool   `json:"economy_allow_negative,omitempty"` // allow balances to drop below zero
+
+	// Time Now
+	TimeFormat   string `json:"time_format,omitempty"`   // unix | unix_ms | iso | date | time | datetime | custom Go layout
+	TimeTimezone string `json:"time_timezone,omitempty"` // IANA timezone name, empty = UTC
+
+	// List Pick
+	ListPickInput string `json:"list_pick_input,omitempty"` // template resolving to a list
+
+	// Text Transform
+	TextInput     string `json:"text_input,omitempty"`     // template resolving to the source text
+	TextOperation string `json:"text_operation,omitempty"` // upper | lower | trim | length | replace | split
+	TextArg1      string `json:"text_arg1,omitempty"`      // replace: search, split: separator
+	TextArg2      string `json:"text_arg2,omitempty"`      // replace: replacement
+
+	// JSON Parse / Build
+	JSONInput string `json:"json_input,omitempty"` // parse: JSON string to decode; build: value to encode
+
+	// Cooldown Check (stores the last-use unix timestamp in the variable_id above)
+	CooldownScope    string `json:"cooldown_scope,omitempty"`    // template resolving to the scope, default {{user.id}}
+	CooldownDuration string `json:"cooldown_duration,omitempty"` // template resolving to the cooldown length in seconds
+	CooldownPeek     bool   `json:"cooldown_peek,omitempty"`     // only check, don't reset the cooldown
 
 	// HTTP Request
 	HTTPRequestData *HTTPRequestData `json:"http_request_data,omitempty"`

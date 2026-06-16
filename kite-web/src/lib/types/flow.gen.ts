@@ -56,6 +56,18 @@ export const FlowNodeTypeActionLog: FlowNodeType = "action_log";
 export const FlowNodeTypeActionVariableSet: FlowNodeType = "action_variable_set";
 export const FlowNodeTypeActionVariableDelete: FlowNodeType = "action_variable_delete";
 export const FlowNodeTypeActionVariableGet: FlowNodeType = "action_variable_get";
+export const FlowNodeTypeActionBalanceGet: FlowNodeType = "action_balance_get";
+export const FlowNodeTypeActionBalanceAdd: FlowNodeType = "action_balance_add";
+export const FlowNodeTypeActionBalanceRemove: FlowNodeType = "action_balance_remove";
+export const FlowNodeTypeActionBalanceSet: FlowNodeType = "action_balance_set";
+export const FlowNodeTypeActionBalanceTransfer: FlowNodeType = "action_balance_transfer";
+export const FlowNodeTypeActionBalanceLeaderboard: FlowNodeType = "action_balance_leaderboard";
+export const FlowNodeTypeActionTimeNow: FlowNodeType = "action_time_now";
+export const FlowNodeTypeActionListPick: FlowNodeType = "action_list_pick";
+export const FlowNodeTypeActionTextTransform: FlowNodeType = "action_text_transform";
+export const FlowNodeTypeActionJSONParse: FlowNodeType = "action_json_parse";
+export const FlowNodeTypeActionJSONBuild: FlowNodeType = "action_json_build";
+export const FlowNodeTypeActionCooldownCheck: FlowNodeType = "action_cooldown_check";
 export const FlowNodeTypeControlConditionCompare: FlowNodeType = "control_condition_compare";
 export const FlowNodeTypeControlConditionItemCompare: FlowNodeType = "control_condition_item_compare";
 export const FlowNodeTypeControlConditionUser: FlowNodeType = "control_condition_user";
@@ -160,6 +172,14 @@ export interface FlowNodeData {
   variable_value?: string;
   variable_operation?: any /* provider.VariableOperation */;
   /**
+   * Economy Balance Get, Add, Remove, Set, Transfer, Leaderboard
+   */
+  economy_user_target?: string;
+  economy_recipient?: string;
+  economy_amount?: string;
+  economy_limit?: string;
+  economy_allow_negative?: boolean;
+  /**
    * HTTP Request
    */
   http_request_data?: HTTPRequestData;
@@ -172,6 +192,32 @@ export interface FlowNodeData {
    */
   random_min?: string;
   random_max?: string;
+  /**
+   * Time Now
+   */
+  time_format?: string;
+  time_timezone?: string;
+  /**
+   * List Pick
+   */
+  list_pick_input?: string;
+  /**
+   * Text Transform
+   */
+  text_input?: string;
+  text_operation?: string;
+  text_arg1?: string;
+  text_arg2?: string;
+  /**
+   * JSON Parse / Build
+   */
+  json_input?: string;
+  /**
+   * Cooldown Check
+   */
+  cooldown_scope?: string;
+  cooldown_duration?: string;
+  cooldown_peek?: boolean;
   /**
    * Event Entry
    */

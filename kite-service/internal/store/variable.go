@@ -37,4 +37,11 @@ type VariableValueStore interface {
 	// VariableValuesTop returns up to limit values for a variable ordered by their
 	// numeric value, highest first. Non-numeric values are skipped.
 	VariableValuesTop(ctx context.Context, variableID string, limit int) ([]*model.VariableValue, error)
+
+	// ConsumeCooldown atomically checks a cooldown stored as a unix timestamp in a
+	// variable value. It returns whether the action is allowed (enough time has
+	// elapsed since the stored timestamp, or none exists) and how many seconds
+	// remain otherwise. When allowed and consume is true, it writes nowUnix as the
+	// new timestamp within the same transaction.
+	ConsumeCooldown(ctx context.Context, variableID string, scope null.String, nowUnix, durationSeconds int64, consume bool) (allowed bool, remaining int64, err error)
 }
