@@ -15,11 +15,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "./DatePicker";
 import { CircleAlertIcon } from "lucide-react";
 import ImageUploadButton from "./ImageUploadButton";
+import PlaceholderInput, {
+  PlaceholderSuggestion,
+  PlaceholderTextarea,
+} from "@/components/common/PlaceholderInput";
 
 export type BaseInputProps = {
   label: string;
   description?: string;
   error?: string;
+  // When provided, text/textarea inputs get an inline "{{" autocomplete.
+  suggestions?: PlaceholderSuggestion[];
 } & (
   | {
       type: "text" | "url" | "email" | "textarea";
@@ -77,24 +83,44 @@ export default function BaseInput(props: BaseInputProps) {
       <div>
         {type === "text" || type === "url" || type === "email" ? (
           <div className="flex space-x-2">
-            <Input
-              type={type}
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              maxLength={props.maxLength}
-              placeholder={props.placeholder}
-            />
+            {props.suggestions && type === "text" ? (
+              <PlaceholderInput
+                value={value}
+                onChange={onChange}
+                placeholder={props.placeholder}
+                suggestions={props.suggestions}
+              />
+            ) : (
+              <Input
+                type={type}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                maxLength={props.maxLength}
+                placeholder={props.placeholder}
+              />
+            )}
             {props.imageUpload && (
               <ImageUploadButton onImageUploaded={onChange} />
             )}
           </div>
         ) : type === "textarea" ? (
-          <Textarea
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            minRows={3}
-            maxRows={15}
-          />
+          props.suggestions ? (
+            <PlaceholderTextarea
+              value={value}
+              onChange={onChange}
+              placeholder={props.placeholder}
+              suggestions={props.suggestions}
+              minRows={3}
+              maxRows={15}
+            />
+          ) : (
+            <Textarea
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              minRows={3}
+              maxRows={15}
+            />
+          )
         ) : type === "select" ? (
           <Select value={value} onValueChange={onChange}>
             <SelectTrigger>

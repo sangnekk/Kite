@@ -1,6 +1,27 @@
 import { useMemo, useState } from "react";
 import PlaceholderExplorer from "../common/PlaceholderExplorer";
+import { PlaceholderSuggestion } from "../common/PlaceholderInput";
 import { VariableIcon } from "lucide-react";
+
+// useMessagePlaceholderSuggestions returns a flat list for the inline "{{"
+// autocomplete in message fields (covers both interaction and event contexts).
+export function useMessagePlaceholderSuggestions(): PlaceholderSuggestion[] {
+  const interaction = useGlobalPlaceholders("interaction");
+  const event = useGlobalPlaceholders("event");
+
+  return useMemo(() => {
+    const seen = new Set<string>();
+    const out: PlaceholderSuggestion[] = [];
+    for (const group of [...interaction, ...event]) {
+      for (const p of group.placeholders) {
+        if (seen.has(p.value)) continue;
+        seen.add(p.value);
+        out.push({ label: p.label, value: p.value, group: group.label });
+      }
+    }
+    return out;
+  }, [interaction, event]);
+}
 
 export default function MessagePlaceholderExplorer({
   onSelect,

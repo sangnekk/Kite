@@ -6,6 +6,25 @@ import { VariableIcon } from "lucide-react";
 import { useMemo } from "react";
 import PlaceholderExplorer from "../common/PlaceholderExplorer";
 
+export interface FlowPlaceholderGroup {
+  label: string;
+  placeholders: { label: string; value: string }[];
+}
+
+// useFlowPlaceholders computes the placeholder groups available in the current
+// flow context (global, command args, parent node results, temp variables...).
+// Shared between the explorer button and the inline autocomplete.
+export function useFlowPlaceholders(): FlowPlaceholderGroup[] {
+  const nodePlaceholders = useNodePlaceholders();
+  const commandPlaceholders = useCommandPlaceholders();
+  const globalPlaceholders = useGlobalPlaceholders();
+
+  return useMemo(
+    () => [...commandPlaceholders, ...globalPlaceholders, ...nodePlaceholders],
+    [commandPlaceholders, globalPlaceholders, nodePlaceholders]
+  );
+}
+
 export default function FlowPlaceholderExplorer({
   onSelect,
   hideBrackets,
@@ -13,15 +32,7 @@ export default function FlowPlaceholderExplorer({
   onSelect: (value: string) => void;
   hideBrackets?: boolean;
 }) {
-  // TODO: only compute when explorer is open
-  const nodePlaceholders = useNodePlaceholders();
-  const commandPlaceholders = useCommandPlaceholders();
-  const globalPlaceholders = useGlobalPlaceholders();
-
-  const placeholders = useMemo(
-    () => [...commandPlaceholders, ...globalPlaceholders, ...nodePlaceholders],
-    [commandPlaceholders, globalPlaceholders, nodePlaceholders]
-  );
+  const placeholders = useFlowPlaceholders();
 
   return (
     <div className="absolute top-1.5 right-1.5 z-20">

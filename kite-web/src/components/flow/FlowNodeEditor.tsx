@@ -27,13 +27,15 @@ import {
   XIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { forwardRef, useCallback, useEffect, useMemo, useRef } from "react";
 import { NodeData, NodeProps } from "../../lib/flow/dataSchema";
 import MessageCreateDialog from "../app/MessageCreateDialog";
 import VariableCreateDialog from "../app/VariableCreateDialog";
 import EmojiPicker from "../common/EmojiPicker";
 import JsonEditor from "../common/JsonEditor";
-import PlaceholderInput from "../common/PlaceholderInput";
+import PlaceholderInput, {
+  PlaceholderTextarea,
+} from "../common/PlaceholderInput";
 import Twemoji from "../common/Twemoji";
 import MessageEditorDialog from "../message/MessageEditorDialog";
 import { Button } from "../ui/button";
@@ -64,7 +66,9 @@ import {
 import { Switch } from "../ui/switch";
 import { Textarea } from "../ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
-import FlowPlaceholderExplorer from "./FlowPlaceholderExplorer";
+import FlowPlaceholderExplorer, {
+  useFlowPlaceholders,
+} from "./FlowPlaceholderExplorer";
 import env from "@/lib/env/client";
 import { ScrollArea } from "../ui/scroll-area";
 
@@ -2617,6 +2621,65 @@ function ControlSleepDurationInput({ data, updateData, errors }: InputProps) {
   );
 }
 
+// FlowPlaceholderInput wires the flow's available placeholders into the text
+// input so typing "{{" shows an inline autocomplete of users, command args,
+// previous node results and temp variables.
+const FlowPlaceholderInput = forwardRef<
+  HTMLInputElement,
+  {
+    value: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+  }
+>((props, ref) => {
+  const groups = useFlowPlaceholders();
+
+  const suggestions = useMemo(
+    () =>
+      groups.flatMap((g) =>
+        g.placeholders.map((p) => ({
+          label: p.label,
+          value: p.value,
+          group: g.label,
+        }))
+      ),
+    [groups]
+  );
+
+  return <PlaceholderInput {...props} ref={ref} suggestions={suggestions} />;
+});
+
+FlowPlaceholderInput.displayName = "FlowPlaceholderInput";
+
+const FlowPlaceholderTextarea = forwardRef<
+  HTMLTextAreaElement,
+  {
+    value: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+  }
+>((props, ref) => {
+  const groups = useFlowPlaceholders();
+
+  const suggestions = useMemo(
+    () =>
+      groups.flatMap((g) =>
+        g.placeholders.map((p) => ({
+          label: p.label,
+          value: p.value,
+          group: g.label,
+        }))
+      ),
+    [groups]
+  );
+
+  return (
+    <PlaceholderTextarea {...props} ref={ref} suggestions={suggestions} />
+  );
+});
+
+FlowPlaceholderTextarea.displayName = "FlowPlaceholderTextarea";
+
 function BaseInput({
   type,
   field,
@@ -2681,12 +2744,21 @@ function BaseInput({
       ) : null}
       <div className="relative mt-2">
         {type === "textarea" ? (
-          <Textarea
-            value={value}
-            onChange={(e) => updateValue(e.target.value)}
-            ref={textareaRef}
-            placeholder={placeholder}
-          />
+          placeholders ? (
+            <FlowPlaceholderTextarea
+              value={value}
+              onChange={(v) => updateValue(v)}
+              ref={textareaRef}
+              placeholder={placeholder}
+            />
+          ) : (
+            <Textarea
+              value={value}
+              onChange={(e) => updateValue(e.target.value)}
+              ref={textareaRef}
+              placeholder={placeholder}
+            />
+          )
         ) : type === "select" ? (
           <Select value={value} onValueChange={(v) => updateValue(v)}>
             <SelectTrigger>
@@ -2716,7 +2788,7 @@ function BaseInput({
             </SelectContent>
           </Select>
         ) : placeholders ? (
-          <PlaceholderInput
+          <FlowPlaceholderInput
             value={value}
             onChange={(v) => updateValue(v)}
             ref={inputRef}

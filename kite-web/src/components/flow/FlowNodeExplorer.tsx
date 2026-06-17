@@ -1,11 +1,17 @@
 import { useFlowContext } from "@/lib/flow/context";
 import { NodeValues, createNode, getNodeValues } from "@/lib/flow/nodes";
 import { useReactFlow } from "@xyflow/react";
-import { SearchIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronRightIcon, SearchIcon } from "lucide-react";
 import { DragEvent, useMemo, useState } from "react";
 import DynamicIcon from "../icons/DynamicIcon";
 import { Input } from "../ui/input";
 import { ScrollArea } from "../ui/scroll-area";
+
+const categoryLabels: Record<string, string> = {
+  action: "Hành động",
+  control_flow: "Điều khiển",
+  option: "Tùy chọn",
+};
 
 const nodeCategories = {
   option: [
@@ -81,7 +87,7 @@ const nodeCategories = {
     },
 
     {
-      title: "Servers",
+      title: "Máy chủ",
       nodeTypes: ["action_guild_get"],
       contextTypes: null,
     },
@@ -92,9 +98,16 @@ const nodeCategories = {
         "action_channel_edit",
         "action_channel_delete",
         "action_channel_get",
+      ],
+      contextTypes: null,
+    },
+    {
+      title: "Luồng & Diễn đàn",
+      nodeTypes: [
         "action_thread_create",
         "action_thread_member_add",
         "action_thread_member_remove",
+        "action_forum_post_create",
       ],
       contextTypes: null,
     },
@@ -108,7 +121,7 @@ const nodeCategories = {
       contextTypes: null,
     },
     {
-      title: "Kinh tế",
+      title: "Số dư (Kinh tế)",
       nodeTypes: [
         "action_balance_get",
         "action_balance_add",
@@ -116,23 +129,46 @@ const nodeCategories = {
         "action_balance_set",
         "action_balance_transfer",
         "action_balance_leaderboard",
-        "action_cooldown_check",
       ],
       contextTypes: null,
     },
     {
-      title: "Hành động khác",
+      title: "Cooldown",
+      nodeTypes: ["action_cooldown_check"],
+      contextTypes: null,
+    },
+    {
+      title: "Văn bản",
+      nodeTypes: ["action_text_transform"],
+      contextTypes: null,
+    },
+    {
+      title: "Danh sách & JSON",
       nodeTypes: [
-        "action_expression_evaluate",
-        "action_http_request",
-        "action_random_generate",
-        "action_time_now",
         "action_list_pick",
-        "action_text_transform",
         "action_json_parse",
         "action_json_build",
-        "action_log",
       ],
+      contextTypes: null,
+    },
+    {
+      title: "Thời gian",
+      nodeTypes: ["action_time_now"],
+      contextTypes: null,
+    },
+    {
+      title: "Ngẫu nhiên & Biểu thức",
+      nodeTypes: ["action_random_generate", "action_expression_evaluate"],
+      contextTypes: null,
+    },
+    {
+      title: "Tích hợp (HTTP)",
+      nodeTypes: ["action_http_request"],
+      contextTypes: null,
+    },
+    {
+      title: "Nhật ký",
+      nodeTypes: ["action_log"],
       contextTypes: null,
     },
   ],
@@ -158,7 +194,7 @@ const nodeCategories = {
       contextTypes: null,
     },
     {
-      title: "Khác",
+      title: "Tạm dừng",
       nodeTypes: ["control_sleep"],
       contextTypes: null,
     },
@@ -175,22 +211,29 @@ export default function FlowNodeExplorer({
   const contextType = useFlowContext((c) => c.type);
 
   const [search, setSearch] = useState("");
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
+  const normalizedSearch = search.toLowerCase().trim();
+  const isSearching = normalizedSearch.length > 0;
+
+  // When searching we look across every category so a block is never "missing"
+  // just because it lives in another tab. When browsing we stay in the current tab.
   const sections = useMemo(() => {
-    return nodeCategories[category].map((s) => ({
-      ...s,
-      nodes: s.nodeTypes.map((t) => {
-        const nodeValues = getNodeValues(t);
-        return {
-          values: nodeValues,
-          type: t,
-        };
-      }),
-    }));
-  }, [category]);
+    const cats = isSearching
+      ? (Object.keys(nodeCategories) as NodeCategory[])
+      : [category];
+
+    return cats.flatMap((cat) =>
+      nodeCategories[cat].map((s) => ({
+        ...s,
+        category: cat,
+        key: `${cat}:${s.title}`,
+        nodes: s.nodeTypes.map((t) => ({ values: getNodeValues(t), type: t })),
+      }))
+    );
+  }, [category, isSearching]);
 
   const filteredSections = useMemo(() => {
-    const normalizedSearch = search.toLowerCase().trim();
     return sections
       .map((s) => ({
         ...s,
@@ -205,7 +248,7 @@ export default function FlowNodeExplorer({
           s.nodes.length > 0 &&
           (!s.contextTypes || s.contextTypes.includes(contextType))
       );
-  }, [sections, contextType, search]);
+  }, [sections, contextType, normalizedSearch]);
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -236,23 +279,57 @@ export default function FlowNodeExplorer({
         </div>
       </div>
       <ScrollArea className="flex-auto mr-1">
-        <div className="space-y-3 pl-3 pr-1 pb-5">
-          {filteredSections.map((section, i) => (
-            <div key={i}>
-              <div className="text-foreground font-medium mb-2 px-2">
-                {section.title}
-              </div>
-              <div className="space-y-2">
-                {section.nodes.map((node) => (
-                  <AvailableNode
-                    key={node.type}
-                    type={node.type}
-                    values={node.values}
-                  />
-                ))}
-              </div>
+        <div className="space-y-1 pl-3 pr-1 pb-5">
+          {filteredSections.length === 0 && (
+            <div className="text-sm text-muted-foreground px-2 py-4 text-center">
+              Không tìm thấy khối nào.
             </div>
-          ))}
+          )}
+          {filteredSections.map((section) => {
+            const isOpen = isSearching || !collapsed[section.key];
+            return (
+              <div key={section.key}>
+                <button
+                  type="button"
+                  className="w-full flex items-center gap-1.5 text-foreground font-medium mb-1 px-2 py-1.5 rounded-md hover:bg-muted/60 select-none"
+                  onClick={() =>
+                    !isSearching &&
+                    setCollapsed((c) => ({
+                      ...c,
+                      [section.key]: !c[section.key],
+                    }))
+                  }
+                >
+                  {!isSearching &&
+                    (isOpen ? (
+                      <ChevronDownIcon className="size-4 flex-none text-muted-foreground" />
+                    ) : (
+                      <ChevronRightIcon className="size-4 flex-none text-muted-foreground" />
+                    ))}
+                  <span className="flex-auto text-left">{section.title}</span>
+                  {isSearching && (
+                    <span className="flex-none text-xs font-normal text-muted-foreground">
+                      {categoryLabels[section.category]}
+                    </span>
+                  )}
+                  <span className="flex-none text-xs font-normal text-muted-foreground tabular-nums">
+                    {section.nodes.length}
+                  </span>
+                </button>
+                {isOpen && (
+                  <div className="space-y-2 mb-3">
+                    {section.nodes.map((node) => (
+                      <AvailableNode
+                        key={node.type}
+                        type={node.type}
+                        values={node.values}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </ScrollArea>
     </div>
