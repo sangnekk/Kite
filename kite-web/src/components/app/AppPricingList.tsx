@@ -18,7 +18,7 @@ import { useAppId } from "@/lib/hooks/params";
 import { useEffect, useMemo, useState } from "react";
 import { useBillingCheckout } from "@/lib/hooks/lemonsqueezy";
 import { BillingCheckoutResponse } from "@/lib/types/wire.gen";
-import { formatNumber } from "@/lib/utils";
+import { formatBillingPeriod, formatNumber } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -151,7 +151,10 @@ export default function AppPricingList() {
                 <span className="text-3xl font-bold">
                   {pricing.price.toLocaleString()}đ
                 </span>
-                <span className="text-muted-foreground"> /month</span>
+                <span className="text-muted-foreground">
+                  {" "}
+                  {formatBillingPeriod(pricing.premium_duration_days)}
+                </span>
               </div>
 
               <CardDescription>{pricing.description}</CardDescription>

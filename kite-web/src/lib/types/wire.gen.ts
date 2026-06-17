@@ -230,6 +230,8 @@ export interface BillingPlan {
   title: string;
   description: string;
   price: number /* float32 */;
+  payment_amount: number /* int */;
+  premium_duration_days: number /* int */;
   default: boolean;
   popular: boolean;
   hidden: boolean;
