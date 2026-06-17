@@ -721,6 +721,54 @@ export const nodeActionListLengthDataSchema = nodeBaseDataSchema.extend({
   list_input: z.string(),
 });
 
+export const nodeActionMessagePinDataSchema = nodeBaseDataSchema.extend({
+  channel_target: z
+    .string()
+    .regex(numericRegex)
+    .or(z.string().regex(placeholderRegex)),
+  message_target: z
+    .string()
+    .regex(numericRegex)
+    .or(z.string().regex(placeholderRegex)),
+  audit_log_reason: auditLogReasonSchema,
+});
+
+export const nodeActionMessageUnpinDataSchema = nodeBaseDataSchema.extend({
+  channel_target: z
+    .string()
+    .regex(numericRegex)
+    .or(z.string().regex(placeholderRegex)),
+  message_target: z
+    .string()
+    .regex(numericRegex)
+    .or(z.string().regex(placeholderRegex)),
+  audit_log_reason: auditLogReasonSchema,
+});
+
+export const nodeActionMessagePurgeDataSchema = nodeBaseDataSchema.extend({
+  channel_target: z
+    .string()
+    .regex(numericRegex)
+    .or(z.string().regex(placeholderRegex)),
+  message_purge_count: z
+    .string()
+    .regex(numericRegex)
+    .or(z.string().regex(placeholderRegex)),
+  audit_log_reason: auditLogReasonSchema,
+});
+
+export const nodeActionChannelSlowmodeDataSchema = nodeBaseDataSchema.extend({
+  channel_target: z
+    .string()
+    .regex(numericRegex)
+    .or(z.string().regex(placeholderRegex)),
+  channel_slowmode_seconds: z
+    .string()
+    .regex(numericRegex)
+    .or(z.string().regex(placeholderRegex)),
+  audit_log_reason: auditLogReasonSchema,
+});
+
 export const nodeActionCooldownCheckDataSchema = nodeBaseDataSchema.extend({
   variable_id: z.string(),
   cooldown_scope: z.string().optional(),

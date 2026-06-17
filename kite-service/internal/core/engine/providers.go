@@ -272,6 +272,48 @@ func (p *DiscordProvider) DeleteMessageReaction(ctx context.Context, channelID d
 	return nil
 }
 
+func (p *DiscordProvider) PinMessage(ctx context.Context, channelID discord.ChannelID, messageID discord.MessageID, reason api.AuditLogReason) error {
+	if err := p.session.PinMessage(channelID, messageID, reason); err != nil {
+		return fmt.Errorf("failed to pin message: %w", err)
+	}
+
+	return nil
+}
+
+func (p *DiscordProvider) UnpinMessage(ctx context.Context, channelID discord.ChannelID, messageID discord.MessageID, reason api.AuditLogReason) error {
+	if err := p.session.UnpinMessage(channelID, messageID, reason); err != nil {
+		return fmt.Errorf("failed to unpin message: %w", err)
+	}
+
+	return nil
+}
+
+func (p *DiscordProvider) BulkDeleteMessages(ctx context.Context, channelID discord.ChannelID, count int, reason api.AuditLogReason) (int, error) {
+	if count <= 0 {
+		return 0, nil
+	}
+	// Discord's bulk delete endpoint accepts at most 100 messages per call.
+	if count > 100 {
+		count = 100
+	}
+
+	messages, err := p.session.Messages(channelID, uint(count))
+	if err != nil {
+		return 0, fmt.Errorf("failed to fetch messages: %w", err)
+	}
+
+	ids := make([]discord.MessageID, len(messages))
+	for i, m := range messages {
+		ids[i] = m.ID
+	}
+
+	if err := p.session.DeleteMessages(channelID, ids, reason); err != nil {
+		return 0, fmt.Errorf("failed to bulk delete messages: %w", err)
+	}
+
+	return len(ids), nil
+}
+
 func (p *DiscordProvider) BanMember(ctx context.Context, guildID discord.GuildID, userID discord.UserID, data api.BanData) error {
 	err := p.session.Ban(guildID, userID, data)
 	if err != nil {

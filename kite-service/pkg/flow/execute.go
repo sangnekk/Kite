@@ -1598,6 +1598,93 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 
 		ctx.StoreNodeResult(n, thing.NewInt(len(list.AsList())))
 		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionMessagePin, FlowNodeTypeActionMessageUnpin:
+		channelTarget, err := ctx.EvalTemplate(n.Data.ChannelTarget)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		messageTarget, err := ctx.EvalTemplate(n.Data.MessageTarget)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		auditLogReason, err := ctx.EvalTemplate(n.Data.AuditLogReason)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		channelID := discord.ChannelID(channelTarget.Snowflake())
+		messageID := discord.MessageID(messageTarget.Snowflake())
+		reason := api.AuditLogReason(auditLogReason.String())
+
+		if n.Type == FlowNodeTypeActionMessagePin {
+			err = ctx.Discord.PinMessage(ctx, channelID, messageID, reason)
+		} else {
+			err = ctx.Discord.UnpinMessage(ctx, channelID, messageID, reason)
+		}
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionMessagePurge:
+		channelTarget, err := ctx.EvalTemplate(n.Data.ChannelTarget)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		countValue, err := ctx.EvalTemplate(n.Data.MessagePurgeCount)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		auditLogReason, err := ctx.EvalTemplate(n.Data.AuditLogReason)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		deleted, err := ctx.Discord.BulkDeleteMessages(
+			ctx,
+			discord.ChannelID(channelTarget.Snowflake()),
+			int(countValue.Int()),
+			api.AuditLogReason(auditLogReason.String()),
+		)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		ctx.StoreNodeResult(n, thing.NewInt(deleted))
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionChannelSlowmode:
+		channelTarget, err := ctx.EvalTemplate(n.Data.ChannelTarget)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		secondsValue, err := ctx.EvalTemplate(n.Data.ChannelSlowmodeSeconds)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		auditLogReason, err := ctx.EvalTemplate(n.Data.AuditLogReason)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		err = ctx.Discord.EditChannel(
+			ctx,
+			discord.ChannelID(channelTarget.Snowflake()),
+			api.ModifyChannelData{
+				UserRateLimit:  option.NewNullableUint(uint(secondsValue.Int())),
+				AuditLogReason: api.AuditLogReason(auditLogReason.String()),
+			},
+		)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		return n.ExecuteChildren(ctx)
 	case FlowNodeTypeActionHTTPRequest:
 		if n.Data.HTTPRequestData == nil {
 			return &FlowError{

@@ -69,6 +69,10 @@ export const FlowNodeTypeActionNumberFormat: FlowNodeType = "action_number_forma
 export const FlowNodeTypeActionListFormat: FlowNodeType = "action_list_format";
 export const FlowNodeTypeActionListJoin: FlowNodeType = "action_list_join";
 export const FlowNodeTypeActionListLength: FlowNodeType = "action_list_length";
+export const FlowNodeTypeActionMessagePin: FlowNodeType = "action_message_pin";
+export const FlowNodeTypeActionMessageUnpin: FlowNodeType = "action_message_unpin";
+export const FlowNodeTypeActionMessagePurge: FlowNodeType = "action_message_purge";
+export const FlowNodeTypeActionChannelSlowmode: FlowNodeType = "action_channel_slowmode";
 export const FlowNodeTypeActionJSONParse: FlowNodeType = "action_json_parse";
 export const FlowNodeTypeActionJSONBuild: FlowNodeType = "action_json_build";
 export const FlowNodeTypeActionCooldownCheck: FlowNodeType = "action_cooldown_check";
@@ -224,6 +228,11 @@ export interface FlowNodeData {
   list_input?: string;
   list_item_template?: string;
   list_joiner?: string;
+  /**
+   * Message Purge / Channel Slowmode
+   */
+  message_purge_count?: string;
+  channel_slowmode_seconds?: string;
   /**
    * JSON Parse / Build
    */

@@ -11,6 +11,7 @@ import (
 	"github.com/diamondburned/arikawa/v3/gateway"
 	"github.com/diamondburned/arikawa/v3/state"
 	"github.com/kitecloud/kite/kite-service/internal/model"
+	"github.com/kitecloud/kite/kite-service/pkg/eval"
 	"github.com/kitecloud/kite/kite-service/pkg/flow"
 	"gopkg.in/guregu/null.v4"
 )
@@ -75,10 +76,14 @@ func (a *App) handlePrefixCommand(appID string, session *state.State, e *gateway
 		return
 	}
 
-	args := parseTextArgs(cmd.flow, argsText)
 	links := entityLinks{CommandID: null.NewString(cmd.cmd.ID, true)}
 
-	go a.env.executeTextCommand(context.Background(), appID, cmd.flow, session, e, args, links)
+	// Resolve args and run the flow off the gateway goroutine; entity resolution
+	// may hit the Discord API on a cache miss.
+	go func() {
+		args := parseTextArgs(cmd.flow, argsText, session, e.GuildID)
+		a.env.executeTextCommand(context.Background(), appID, cmd.flow, session, e, args, links)
+	}()
 }
 
 // prefixSettings returns the app's settings, cached for a short TTL to avoid a
@@ -121,7 +126,7 @@ func splitFirstToken(s string) (string, string) {
 
 // parseTextArgs maps positional text tokens to the command's declared arguments,
 // coercing primitive types and extracting snowflake IDs from mentions.
-func parseTextArgs(node *flow.CompiledFlowNode, text string) map[string]any {
+func parseTextArgs(node *flow.CompiledFlowNode, text string, session *state.State, guildID discord.GuildID) map[string]any {
 	args := make(map[string]any)
 
 	options := node.CommandArguments()
@@ -143,10 +148,64 @@ func parseTextArgs(node *flow.CompiledFlowNode, text string) map[string]any {
 			raw = strings.Join(tokens[i:], " ")
 		}
 
-		args[opt.Name()] = coerceArg(raw, opt.Type())
+		args[opt.Name()] = resolveTextArg(raw, opt.Type(), session, guildID)
 	}
 
 	return args
+}
+
+// resolveTextArg turns a raw prefix token into the same value a slash command
+// would produce. Entity arguments (user/role/channel/mentionable) are resolved
+// into the matching eval env object so .id/.mention work identically across
+// slash and prefix; on failure it falls back to the bare snowflake string.
+func resolveTextArg(raw string, t discord.CommandOptionType, session *state.State, guildID discord.GuildID) any {
+	switch t {
+	case discord.UserOptionType, discord.MentionableOptionType, discord.RoleOptionType, discord.ChannelOptionType:
+		id := extractSnowflake(raw)
+		sf, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			return id
+		}
+		if env := resolveEntityArg(t, sf, session, guildID); env != nil {
+			return env
+		}
+		return id
+	default:
+		return coerceArg(raw, t)
+	}
+}
+
+func resolveEntityArg(t discord.CommandOptionType, sf int64, session *state.State, guildID discord.GuildID) any {
+	switch t {
+	case discord.UserOptionType, discord.MentionableOptionType:
+		// Prefer a full guild member, fall back to a bare user.
+		if guildID.IsValid() {
+			if m, err := session.Member(guildID, discord.UserID(sf)); err == nil {
+				return eval.NewMemberEnv(*m)
+			}
+		}
+		if u, err := session.User(discord.UserID(sf)); err == nil {
+			return eval.NewUserEnv(*u)
+		}
+		// A mentionable can also be a role.
+		if t == discord.MentionableOptionType && guildID.IsValid() {
+			if r, err := session.Role(guildID, discord.RoleID(sf)); err == nil {
+				return eval.NewRoleEnv(*r)
+			}
+		}
+	case discord.RoleOptionType:
+		if guildID.IsValid() {
+			if r, err := session.Role(guildID, discord.RoleID(sf)); err == nil {
+				return eval.NewRoleEnv(*r)
+			}
+		}
+	case discord.ChannelOptionType:
+		if c, err := session.Channel(discord.ChannelID(sf)); err == nil {
+			return eval.NewChannelEnv(*c)
+		}
+	}
+
+	return nil
 }
 
 func coerceArg(raw string, t discord.CommandOptionType) any {

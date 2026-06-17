@@ -82,3 +82,18 @@ func TestCoerceArg(t *testing.T) {
 		t.Errorf("string coercion = %v, want hello", v)
 	}
 }
+
+func TestResolveTextArgFallbacks(t *testing.T) {
+	// Primitive types delegate to coerceArg and never touch the session.
+	if v := resolveTextArg("42", discord.IntegerOptionType, nil, 0); v != int64(42) {
+		t.Errorf("integer = %v (%T), want int64(42)", v, v)
+	}
+	if v := resolveTextArg("hello world", discord.StringOptionType, nil, 0); v != "hello world" {
+		t.Errorf("string = %v, want 'hello world'", v)
+	}
+	// An unparseable entity token falls back to the raw id before any session
+	// lookup, so a nil session is safe here.
+	if v := resolveTextArg("notanid", discord.UserOptionType, nil, 0); v != "notanid" {
+		t.Errorf("user fallback = %v, want 'notanid'", v)
+	}
+}

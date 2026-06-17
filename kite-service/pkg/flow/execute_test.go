@@ -104,11 +104,35 @@ type TestDiscordProvider struct {
 	provider.MockDiscordProvider
 
 	response api.InteractionResponse
+
+	pinnedChannel  discord.ChannelID
+	pinnedMessage  discord.MessageID
+	purgeChannel   discord.ChannelID
+	purgeCount     int
+	purgeReturn    int
+	slowmodeEdited api.ModifyChannelData
 }
 
 func (p *TestDiscordProvider) CreateInteractionResponse(ctx context.Context, interactionID discord.InteractionID, interactionToken string, response api.InteractionResponse) (*provider.InteractionResponseResource, error) {
 	p.response = response
 	return nil, nil
+}
+
+func (p *TestDiscordProvider) PinMessage(ctx context.Context, channelID discord.ChannelID, messageID discord.MessageID, reason api.AuditLogReason) error {
+	p.pinnedChannel = channelID
+	p.pinnedMessage = messageID
+	return nil
+}
+
+func (p *TestDiscordProvider) BulkDeleteMessages(ctx context.Context, channelID discord.ChannelID, count int, reason api.AuditLogReason) (int, error) {
+	p.purgeChannel = channelID
+	p.purgeCount = count
+	return p.purgeReturn, nil
+}
+
+func (p *TestDiscordProvider) EditChannel(ctx context.Context, channelID discord.ChannelID, data api.ModifyChannelData) error {
+	p.slowmodeEdited = data
+	return nil
 }
 
 type recordedEconomyCall struct {
@@ -554,6 +578,71 @@ func TestFlowExecuteListJoinAndLength(t *testing.T) {
 	}
 	require.NoError(t, length.Execute(c))
 	assert.Equal(t, int64(3), c.GetNodeResult("len").Int())
+}
+
+func newDiscordTestContext(t *testing.T, d provider.DiscordProvider) *FlowContext {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	t.Cleanup(cancel)
+
+	return NewContext(
+		ctx,
+		5*time.Second,
+		&TestContextData{},
+		FlowProviders{Discord: d, Log: &provider.MockLogProvider{}},
+		FlowContextLimits{MaxStackDepth: 10, MaxOperations: 1000, MaxCredits: 1000},
+		eval.NewContext(eval.Env{}),
+		nil,
+	)
+}
+
+func TestFlowExecuteMessagePin(t *testing.T) {
+	d := &TestDiscordProvider{}
+	c := newDiscordTestContext(t, d)
+	defer c.Cancel()
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionMessagePin,
+		Data: FlowNodeData{ChannelTarget: "111", MessageTarget: "222"},
+	}
+
+	require.NoError(t, node.Execute(c))
+	assert.Equal(t, discord.ChannelID(111), d.pinnedChannel)
+	assert.Equal(t, discord.MessageID(222), d.pinnedMessage)
+}
+
+func TestFlowExecuteMessagePurge(t *testing.T) {
+	d := &TestDiscordProvider{purgeReturn: 7}
+	c := newDiscordTestContext(t, d)
+	defer c.Cancel()
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionMessagePurge,
+		Data: FlowNodeData{ChannelTarget: "111", MessagePurgeCount: "7"},
+	}
+
+	require.NoError(t, node.Execute(c))
+	assert.Equal(t, discord.ChannelID(111), d.purgeChannel)
+	assert.Equal(t, 7, d.purgeCount)
+	assert.Equal(t, int64(7), c.GetNodeResult("0").Int())
+}
+
+func TestFlowExecuteChannelSlowmode(t *testing.T) {
+	d := &TestDiscordProvider{}
+	c := newDiscordTestContext(t, d)
+	defer c.Cancel()
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionChannelSlowmode,
+		Data: FlowNodeData{ChannelTarget: "111", ChannelSlowmodeSeconds: "30"},
+	}
+
+	require.NoError(t, node.Execute(c))
+	require.NotNil(t, d.slowmodeEdited.UserRateLimit)
+	assert.Equal(t, uint(30), d.slowmodeEdited.UserRateLimit.Val)
 }
 
 type TestContextData struct{}

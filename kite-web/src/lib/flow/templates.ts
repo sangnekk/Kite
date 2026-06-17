@@ -139,8 +139,8 @@ export function getModerationTemplate(): Template {
               id: moderationBanActionMemberBanNodeId,
               type: "action_member_ban",
               data: {
-                user_target: "{{interaction.command.args.user}}",
-                audit_log_reason: "{{interaction.command.args.reason}}",
+                user_target: "{{arg('user')}}",
+                audit_log_reason: "{{arg('reason')}}",
                 member_ban_delete_message_duration_seconds: "3600",
               },
             },
@@ -150,7 +150,7 @@ export function getModerationTemplate(): Template {
               data: {
                 message_data: {
                   content:
-                    "Người dùng {{interaction.command.args.user.mention}} đã bị cấm.",
+                    "Người dùng {{arg('user').mention}} đã bị cấm.",
                 },
                 message_ephemeral: true,
               },
@@ -229,8 +229,8 @@ export function getModerationTemplate(): Template {
               id: moderationUnbanActionMemberUnbanNodeId,
               type: "action_member_unban",
               data: {
-                user_target: "{{interaction.command.args.user}}",
-                audit_log_reason: "{{interaction.command.args.reason}}",
+                user_target: "{{arg('user')}}",
+                audit_log_reason: "{{arg('reason')}}",
               },
             },
             {
@@ -239,7 +239,7 @@ export function getModerationTemplate(): Template {
               data: {
                 message_data: {
                   content:
-                    "Người dùng {{interaction.command.args.user.mention}} đã được bỏ cấm.",
+                    "Người dùng {{arg('user').mention}} đã được bỏ cấm.",
                 },
                 message_ephemeral: true,
               },
@@ -318,8 +318,8 @@ export function getModerationTemplate(): Template {
               id: moderationKickActionMemberKickNodeId,
               type: "action_member_kick",
               data: {
-                user_target: "{{interaction.command.args.user}}",
-                audit_log_reason: "{{interaction.command.args.reason}}",
+                user_target: "{{arg('user')}}",
+                audit_log_reason: "{{arg('reason')}}",
               },
             },
             {
@@ -328,7 +328,7 @@ export function getModerationTemplate(): Template {
               data: {
                 message_data: {
                   content:
-                    "Người dùng {{interaction.command.args.user.mention}} đã bị đuổi.",
+                    "Người dùng {{arg('user').mention}} đã bị đuổi.",
                 },
                 message_ephemeral: true,
               },
@@ -417,10 +417,10 @@ export function getModerationTemplate(): Template {
               id: moderationMuteActionMemberTimeoutNodeId,
               type: "action_member_timeout",
               data: {
-                user_target: "{{interaction.command.args.user}}",
+                user_target: "{{arg('user')}}",
                 member_timeout_duration_seconds:
-                  "{{interaction.command.args.duration}}",
-                audit_log_reason: "{{interaction.command.args.reason}}",
+                  "{{arg('duration')}}",
+                audit_log_reason: "{{arg('reason')}}",
               },
             },
             {
@@ -429,7 +429,7 @@ export function getModerationTemplate(): Template {
               data: {
                 message_data: {
                   content:
-                    "Người dùng {{interaction.command.args.user.mention}} đã bị tắt tiếng trong `{{interaction.command.args.duration}}` giây.",
+                    "Người dùng {{arg('user').mention}} đã bị tắt tiếng trong `{{arg('duration')}}` giây.",
                 },
                 message_ephemeral: true,
               },
@@ -856,8 +856,8 @@ export function getEconomyTemplate(): Template {
               data: {
                 variable_id: inputs.currency_variable_id,
                 economy_user_target: "{{user.id}}",
-                economy_recipient: "{{interaction.command.args.user.id}}",
-                economy_amount: "{{interaction.command.args.amount}}",
+                economy_recipient: "{{arg('user').id}}",
+                economy_amount: "{{arg('amount')}}",
               },
             },
             {
@@ -866,7 +866,7 @@ export function getEconomyTemplate(): Template {
               data: {
                 message_data: {
                   content:
-                    "✅ Đã chuyển **{{interaction.command.args.amount}}** 💰 cho {{interaction.command.args.user.mention}}.",
+                    "✅ Đã chuyển **{{arg('amount')}}** 💰 cho {{arg('user').mention}}.",
                 },
               },
             },

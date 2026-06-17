@@ -104,6 +104,10 @@ const (
 	FlowNodeTypeActionListFormat            FlowNodeType = "action_list_format"
 	FlowNodeTypeActionListJoin              FlowNodeType = "action_list_join"
 	FlowNodeTypeActionListLength            FlowNodeType = "action_list_length"
+	FlowNodeTypeActionMessagePin            FlowNodeType = "action_message_pin"
+	FlowNodeTypeActionMessageUnpin          FlowNodeType = "action_message_unpin"
+	FlowNodeTypeActionMessagePurge          FlowNodeType = "action_message_purge"
+	FlowNodeTypeActionChannelSlowmode       FlowNodeType = "action_channel_slowmode"
 
 	FlowNodeTypeControlConditionCompare     FlowNodeType = "control_condition_compare"
 	FlowNodeTypeControlConditionItemCompare FlowNodeType = "control_condition_item_compare"
@@ -234,6 +238,10 @@ type FlowNodeData struct {
 	ListInput        string `json:"list_input,omitempty"`         // template resolving to a list
 	ListItemTemplate string `json:"list_item_template,omitempty"` // per-item template, with {{item}} and {{index}} bound
 	ListJoiner       string `json:"list_joiner,omitempty"`        // separator template, default newline
+
+	// Message Purge / Channel Slowmode (pin/unpin reuse channel_target + message_target)
+	MessagePurgeCount      string `json:"message_purge_count,omitempty"`      // template resolving to how many messages to delete
+	ChannelSlowmodeSeconds string `json:"channel_slowmode_seconds,omitempty"` // template resolving to the slowmode in seconds
 
 	// Text Transform
 	TextInput     string `json:"text_input,omitempty"`     // template resolving to the source text

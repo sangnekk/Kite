@@ -133,6 +133,8 @@ const intputs: Record<string, any> = {
   number_input: NumberInput,
   number_style: NumberStyleInput,
   number_decimals: NumberDecimalsInput,
+  message_purge_count: MessagePurgeCountInput,
+  channel_slowmode_seconds: ChannelSlowmodeSecondsInput,
   list_input: ListInputField,
   list_item_template: ListItemTemplateInput,
   list_joiner: ListJoinerInput,
@@ -1164,6 +1166,36 @@ function TextArg2Input({ data, updateData, errors }: InputProps) {
       title="Tham số 2 (chuỗi thay thế)"
       value={data.text_arg2 || ""}
       updateValue={(v) => updateData({ text_arg2: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function MessagePurgeCountInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="message_purge_count"
+      title="Số tin nhắn"
+      description="Số tin nhắn gần nhất cần xóa (tối đa 100, không xóa được tin quá 14 ngày)."
+      value={data.message_purge_count || ""}
+      updateValue={(v) => updateData({ message_purge_count: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function ChannelSlowmodeSecondsInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="channel_slowmode_seconds"
+      title="Slowmode (giây)"
+      description="Thời gian chờ giữa các tin nhắn. Đặt 0 để tắt."
+      value={data.channel_slowmode_seconds || ""}
+      updateValue={(v) =>
+        updateData({ channel_slowmode_seconds: v || undefined })
+      }
       errors={errors}
       placeholders
     />
