@@ -66,11 +66,29 @@ Kết quả của các khối đã chạy trước đó có thể được dùng
 - [Tính biểu thức](./actions/action_expression_evaluate.md) - Tính toán biểu thức và giá trị
 - [Tạo số ngẫu nhiên](./actions/action_random_generate.md) - Tạo số ngẫu nhiên
 - [Gửi yêu cầu API](./actions/action_http_request.md) - Gửi HTTP request
+- [Lấy thời gian hiện tại](./actions/action_time_now.md) - Lấy thời gian hiện tại theo định dạng
+- [Biến đổi văn bản](./actions/action_text_transform.md) - Hoa/thường, cắt, thay thế, tách văn bản
+- [Định dạng số](./actions/action_number_format.md) - Dấu phẩy nghìn, rút gọn K/M, thập phân
 - [Ghi log](./actions/action_log.md) - Ghi log phục vụ debug
 
-## Khối Roblox
+## Khối danh sách và JSON
 
-- [Lấy người dùng Roblox](./actions/action_roblox_user_get.md) - Lấy thông tin người dùng Roblox
+- [Chọn ngẫu nhiên từ danh sách](./actions/action_list_pick.md) - Chọn ngẫu nhiên một phần tử
+- [Định dạng danh sách](./actions/action_list_format.md) - Render mỗi phần tử theo mẫu rồi nối lại
+- [Nối danh sách](./actions/action_list_join.md) - Nối các phần tử thành chuỗi
+- [Độ dài danh sách](./actions/action_list_length.md) - Đếm số phần tử
+- [Phân tích JSON](./actions/action_json_parse.md) - Chuỗi JSON thành đối tượng
+- [Tạo JSON](./actions/action_json_build.md) - Giá trị thành chuỗi JSON
+
+## Khối kinh tế
+
+- [Xem số dư](./actions/action_balance_get.md) - Lấy số dư của một người dùng
+- [Cộng số dư](./actions/action_balance_add.md) - Cộng tiền vào số dư
+- [Trừ số dư](./actions/action_balance_remove.md) - Trừ tiền khỏi số dư
+- [Đặt số dư](./actions/action_balance_set.md) - Đặt số dư thành giá trị cố định
+- [Chuyển tiền](./actions/action_balance_transfer.md) - Chuyển tiền giữa hai người dùng
+- [Bảng xếp hạng số dư](./actions/action_balance_leaderboard.md) - Người có số dư cao nhất
+- [Kiểm tra cooldown](./actions/action_cooldown_check.md) - Thời gian chờ cho lệnh (vd /daily)
 
 ## Khối điều khiển luồng
 
