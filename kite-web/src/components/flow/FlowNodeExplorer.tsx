@@ -111,6 +111,8 @@ const nodeCategories = {
       ],
       contextTypes: null,
     },
+  ],
+  data: [
     {
       title: "Biến lưu trữ",
       nodeTypes: [
@@ -143,9 +145,17 @@ const nodeCategories = {
       contextTypes: null,
     },
     {
+      title: "Số",
+      nodeTypes: ["action_number_format"],
+      contextTypes: null,
+    },
+    {
       title: "Danh sách & JSON",
       nodeTypes: [
         "action_list_pick",
+        "action_list_format",
+        "action_list_join",
+        "action_list_length",
         "action_json_parse",
         "action_json_build",
       ],
@@ -257,13 +267,17 @@ export default function FlowNodeExplorer({
           Khối{" "}
           {category === "action"
             ? "Hành động"
+            : category === "data"
+            ? "Dữ liệu & Tiện ích"
             : category === "control_flow"
             ? "Điều khiển"
             : "Tùy chọn"}
         </div>
         <div className="text-muted-foreground mb-5">
           {category === "action"
-            ? "Khối Hành động giúp bạn thực hiện các thao tác với ứng dụng."
+            ? "Khối Hành động giúp bạn thực hiện các thao tác trên Discord."
+            : category === "data"
+            ? "Khối Dữ liệu & Tiện ích giúp bạn lưu trữ, tính toán và biến đổi dữ liệu."
             : category === "control_flow"
             ? "Khối Điều khiển giúp bạn định nghĩa cách ứng dụng hoạt động."
             : "Khối Tùy chọn giúp bạn thêm tùy chọn cho các khối khác."}

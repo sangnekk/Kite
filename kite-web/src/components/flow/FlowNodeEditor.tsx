@@ -130,6 +130,12 @@ const intputs: Record<string, any> = {
   text_operation: TextOperationInput,
   text_arg1: TextArg1Input,
   text_arg2: TextArg2Input,
+  number_input: NumberInput,
+  number_style: NumberStyleInput,
+  number_decimals: NumberDecimalsInput,
+  list_input: ListInputField,
+  list_item_template: ListItemTemplateInput,
+  list_joiner: ListJoinerInput,
   json_input: JSONInput,
   cooldown_scope: CooldownScopeInput,
   cooldown_duration: CooldownDurationInput,
@@ -1160,6 +1166,91 @@ function TextArg2Input({ data, updateData, errors }: InputProps) {
       updateValue={(v) => updateData({ text_arg2: v || undefined })}
       errors={errors}
       placeholders
+    />
+  );
+}
+
+function NumberInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="number_input"
+      title="Số"
+      value={data.number_input || ""}
+      updateValue={(v) => updateData({ number_input: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function NumberStyleInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="number_style"
+      title="Kiểu định dạng"
+      type="select"
+      options={[
+        { value: "thousands", label: "Dấu phẩy nghìn (1,234,567)" },
+        { value: "compact", label: "Rút gọn (1.2M)" },
+        { value: "decimal", label: "Thập phân cố định (3.14)" },
+      ]}
+      value={data.number_style || "thousands"}
+      updateValue={(v) => updateData({ number_style: v || undefined })}
+      errors={errors}
+    />
+  );
+}
+
+function NumberDecimalsInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="number_decimals"
+      title="Số chữ số thập phân (tùy chọn)"
+      value={data.number_decimals || ""}
+      updateValue={(v) => updateData({ number_decimals: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function ListInputField({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="list_input"
+      title="Danh sách"
+      value={data.list_input || ""}
+      updateValue={(v) => updateData({ list_input: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function ListItemTemplateInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      type="textarea"
+      field="list_item_template"
+      title="Mẫu mỗi phần tử"
+      description="Dùng {{item}} cho phần tử và {{index}} cho vị trí (bắt đầu từ 0)."
+      value={data.list_item_template || ""}
+      updateValue={(v) => updateData({ list_item_template: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function ListJoinerInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="list_joiner"
+      title="Ký tự nối (tùy chọn)"
+      description="Mặc định xuống dòng. Dùng \\n cho xuống dòng, \\t cho tab."
+      value={data.list_joiner || ""}
+      updateValue={(v) => updateData({ list_joiner: v || undefined })}
+      errors={errors}
     />
   );
 }

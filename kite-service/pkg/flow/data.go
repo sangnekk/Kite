@@ -100,6 +100,10 @@ const (
 	FlowNodeTypeActionJSONParse             FlowNodeType = "action_json_parse"
 	FlowNodeTypeActionJSONBuild             FlowNodeType = "action_json_build"
 	FlowNodeTypeActionCooldownCheck         FlowNodeType = "action_cooldown_check"
+	FlowNodeTypeActionNumberFormat          FlowNodeType = "action_number_format"
+	FlowNodeTypeActionListFormat            FlowNodeType = "action_list_format"
+	FlowNodeTypeActionListJoin              FlowNodeType = "action_list_join"
+	FlowNodeTypeActionListLength            FlowNodeType = "action_list_length"
 
 	FlowNodeTypeControlConditionCompare     FlowNodeType = "control_condition_compare"
 	FlowNodeTypeControlConditionItemCompare FlowNodeType = "control_condition_item_compare"
@@ -220,6 +224,16 @@ type FlowNodeData struct {
 
 	// List Pick
 	ListPickInput string `json:"list_pick_input,omitempty"` // template resolving to a list
+
+	// Number Format
+	NumberInput    string `json:"number_input,omitempty"`    // template resolving to a number
+	NumberStyle    string `json:"number_style,omitempty"`    // thousands | compact | decimal
+	NumberDecimals string `json:"number_decimals,omitempty"` // template resolving to the decimal places
+
+	// List Format / Join / Length
+	ListInput        string `json:"list_input,omitempty"`         // template resolving to a list
+	ListItemTemplate string `json:"list_item_template,omitempty"` // per-item template, with {{item}} and {{index}} bound
+	ListJoiner       string `json:"list_joiner,omitempty"`        // separator template, default newline
 
 	// Text Transform
 	TextInput     string `json:"text_input,omitempty"`     // template resolving to the source text

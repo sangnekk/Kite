@@ -7,9 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"math/rand"
 	"net/http"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -1499,6 +1501,103 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 			"remaining": thing.NewInt(res.Remaining),
 		}))
 		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionNumberFormat:
+		input, err := ctx.EvalTemplate(n.Data.NumberInput)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		decimals := -1
+		if n.Data.NumberDecimals != "" {
+			d, err := ctx.EvalTemplate(n.Data.NumberDecimals)
+			if err != nil {
+				return traceError(n, err)
+			}
+			decimals = int(d.Int())
+		}
+
+		ctx.StoreNodeResult(n, thing.NewString(formatNumber(input.Float(), n.Data.NumberStyle, decimals)))
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionListFormat:
+		list, err := ctx.EvalTemplate(n.Data.ListInput)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		joiner := "\n"
+		if n.Data.ListJoiner != "" {
+			joiner = expandSeparator(n.Data.ListJoiner)
+		}
+
+		items := list.AsList()
+
+		rendered, err := func() (string, error) {
+			// Temporarily bind {{item}} and {{index}} for the per-item template,
+			// restoring any previous values afterwards.
+			prevItem, hadItem := ctx.EvalCtx.Env["item"]
+			prevIndex, hadIndex := ctx.EvalCtx.Env["index"]
+			defer func() {
+				if hadItem {
+					ctx.EvalCtx.Env["item"] = prevItem
+				} else {
+					delete(ctx.EvalCtx.Env, "item")
+				}
+				if hadIndex {
+					ctx.EvalCtx.Env["index"] = prevIndex
+				} else {
+					delete(ctx.EvalCtx.Env, "index")
+				}
+			}()
+
+			parts := make([]string, 0, len(items))
+			for i, item := range items {
+				if i >= 200 {
+					break
+				}
+				ctx.EvalCtx.Env["item"] = eval.NewThingEnv(item)
+				ctx.EvalCtx.Env["index"] = i
+
+				r, err := ctx.EvalTemplate(n.Data.ListItemTemplate)
+				if err != nil {
+					return "", err
+				}
+				parts = append(parts, r.String())
+			}
+			return strings.Join(parts, joiner), nil
+		}()
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		ctx.StoreNodeResult(n, thing.NewString(rendered))
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionListJoin:
+		list, err := ctx.EvalTemplate(n.Data.ListInput)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		joiner := ", "
+		if n.Data.ListJoiner != "" {
+			joiner = expandSeparator(n.Data.ListJoiner)
+		}
+
+		items := list.AsList()
+		parts := make([]string, len(items))
+		for i, item := range items {
+			parts[i] = item.String()
+		}
+
+		ctx.StoreNodeResult(n, thing.NewString(strings.Join(parts, joiner)))
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionListLength:
+		list, err := ctx.EvalTemplate(n.Data.ListInput)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		ctx.StoreNodeResult(n, thing.NewInt(len(list.AsList())))
+		return n.ExecuteChildren(ctx)
 	case FlowNodeTypeActionHTTPRequest:
 		if n.Data.HTTPRequestData == nil {
 			return &FlowError{
@@ -2236,4 +2335,92 @@ func createDefaultErrorResponse(fCtx *FlowContext, err error) {
 			Data: &respData,
 		})
 	}
+}
+
+// formatNumber renders a number according to a display style:
+//   - "thousands" (default): 1234567 -> "1,234,567"
+//   - "compact": 1234567 -> "1.2M"
+//   - "decimal": fixed number of decimal places
+//
+// decimals < 0 means "use the style's default".
+func formatNumber(v float64, style string, decimals int) string {
+	switch style {
+	case "compact":
+		if decimals < 0 {
+			decimals = 1
+		}
+		return formatCompact(v, decimals)
+	case "decimal":
+		if decimals < 0 {
+			decimals = 2
+		}
+		return strconv.FormatFloat(v, 'f', decimals, 64)
+	default:
+		if decimals < 0 {
+			decimals = 0
+		}
+		return formatThousands(v, decimals)
+	}
+}
+
+func formatThousands(v float64, decimals int) string {
+	s := strconv.FormatFloat(v, 'f', decimals, 64)
+	neg := strings.HasPrefix(s, "-")
+	if neg {
+		s = strings.TrimPrefix(s, "-")
+	}
+
+	intPart, frac := s, ""
+	if i := strings.IndexByte(s, '.'); i >= 0 {
+		intPart, frac = s[:i], s[i:]
+	}
+
+	var b strings.Builder
+	n := len(intPart)
+	for i := 0; i < n; i++ {
+		if i > 0 && (n-i)%3 == 0 {
+			b.WriteByte(',')
+		}
+		b.WriteByte(intPart[i])
+	}
+
+	res := b.String() + frac
+	if neg {
+		res = "-" + res
+	}
+	return res
+}
+
+func formatCompact(v float64, decimals int) string {
+	abs := math.Abs(v)
+	units := []struct {
+		threshold float64
+		suffix    string
+	}{
+		{1e12, "T"}, {1e9, "B"}, {1e6, "M"}, {1e3, "K"},
+	}
+
+	for _, u := range units {
+		if abs >= u.threshold {
+			return trimTrailingZeros(strconv.FormatFloat(v/u.threshold, 'f', decimals, 64)) + u.suffix
+		}
+	}
+	return trimTrailingZeros(strconv.FormatFloat(v, 'f', decimals, 64))
+}
+
+func trimTrailingZeros(s string) string {
+	if !strings.Contains(s, ".") {
+		return s
+	}
+	s = strings.TrimRight(s, "0")
+	return strings.TrimSuffix(s, ".")
+}
+
+// expandSeparator turns the literal escape sequences a user can type in a
+// single-line input ("\n", "\t") into real whitespace, without trimming the
+// surrounding spaces the way template evaluation would.
+func expandSeparator(s string) string {
+	s = strings.ReplaceAll(s, "\\n", "\n")
+	s = strings.ReplaceAll(s, "\\t", "\t")
+	return s
 }

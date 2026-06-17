@@ -65,6 +65,10 @@ export const FlowNodeTypeActionBalanceLeaderboard: FlowNodeType = "action_balanc
 export const FlowNodeTypeActionTimeNow: FlowNodeType = "action_time_now";
 export const FlowNodeTypeActionListPick: FlowNodeType = "action_list_pick";
 export const FlowNodeTypeActionTextTransform: FlowNodeType = "action_text_transform";
+export const FlowNodeTypeActionNumberFormat: FlowNodeType = "action_number_format";
+export const FlowNodeTypeActionListFormat: FlowNodeType = "action_list_format";
+export const FlowNodeTypeActionListJoin: FlowNodeType = "action_list_join";
+export const FlowNodeTypeActionListLength: FlowNodeType = "action_list_length";
 export const FlowNodeTypeActionJSONParse: FlowNodeType = "action_json_parse";
 export const FlowNodeTypeActionJSONBuild: FlowNodeType = "action_json_build";
 export const FlowNodeTypeActionCooldownCheck: FlowNodeType = "action_cooldown_check";
@@ -208,6 +212,18 @@ export interface FlowNodeData {
   text_operation?: string;
   text_arg1?: string;
   text_arg2?: string;
+  /**
+   * Number Format
+   */
+  number_input?: string;
+  number_style?: string;
+  number_decimals?: string;
+  /**
+   * List Format / Join / Length
+   */
+  list_input?: string;
+  list_item_template?: string;
+  list_joiner?: string;
   /**
    * JSON Parse / Build
    */

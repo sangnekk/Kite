@@ -482,6 +482,80 @@ func TestFlowExecuteCooldownCheck(t *testing.T) {
 	assert.Equal(t, int64(42), result.Object()["remaining"].Int())
 }
 
+func TestFlowExecuteNumberFormat(t *testing.T) {
+	cases := []struct {
+		style    string
+		decimals string
+		in       string
+		want     string
+	}{
+		{style: "thousands", in: "1234567", want: "1,234,567"},
+		{style: "thousands", in: "-1000", want: "-1,000"},
+		{style: "compact", in: "1500000", want: "1.5M"},
+		{style: "compact", in: "2000", want: "2K"},
+		{style: "decimal", decimals: "2", in: "3.14159", want: "3.14"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.style+"_"+tc.in, func(t *testing.T) {
+			c := newEconomyTestContext(t, &TestEconomyProvider{})
+			defer c.Cancel()
+
+			node := &CompiledFlowNode{
+				ID:   "0",
+				Type: FlowNodeTypeActionNumberFormat,
+				Data: FlowNodeData{
+					NumberInput:    tc.in,
+					NumberStyle:    tc.style,
+					NumberDecimals: tc.decimals,
+				},
+			}
+
+			require.NoError(t, node.Execute(c))
+			assert.Equal(t, tc.want, c.GetNodeResult("0").String())
+		})
+	}
+}
+
+func TestFlowExecuteListFormat(t *testing.T) {
+	c := newEconomyTestContext(t, &TestEconomyProvider{})
+	defer c.Cancel()
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionListFormat,
+		Data: FlowNodeData{
+			ListInput:        `{{["x", "y", "z"]}}`,
+			ListItemTemplate: "{{index}}={{item}}",
+			ListJoiner:       ",",
+		},
+	}
+
+	require.NoError(t, node.Execute(c))
+	assert.Equal(t, "0=x,1=y,2=z", c.GetNodeResult("0").String())
+}
+
+func TestFlowExecuteListJoinAndLength(t *testing.T) {
+	c := newEconomyTestContext(t, &TestEconomyProvider{})
+	defer c.Cancel()
+
+	join := &CompiledFlowNode{
+		ID:   "join",
+		Type: FlowNodeTypeActionListJoin,
+		Data: FlowNodeData{ListInput: `{{["a", "b", "c"]}}`, ListJoiner: " - "},
+	}
+	require.NoError(t, join.Execute(c))
+	assert.Equal(t, "a - b - c", c.GetNodeResult("join").String())
+
+	length := &CompiledFlowNode{
+		ID:   "len",
+		Type: FlowNodeTypeActionListLength,
+		Data: FlowNodeData{ListInput: `{{["a", "b", "c"]}}`},
+	}
+	require.NoError(t, length.Execute(c))
+	assert.Equal(t, int64(3), c.GetNodeResult("len").Int())
+}
+
 type TestContextData struct{}
 
 func (d *TestContextData) Interaction() *discord.InteractionEvent {

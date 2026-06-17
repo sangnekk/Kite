@@ -700,6 +700,27 @@ export const nodeActionBalanceLeaderboardDataSchema = nodeBaseDataSchema.extend(
   economy_limit: z.string().optional(),
 });
 
+export const nodeActionNumberFormatDataSchema = nodeBaseDataSchema.extend({
+  number_input: z.string(),
+  number_style: z.string().optional(),
+  number_decimals: z.string().optional(),
+});
+
+export const nodeActionListFormatDataSchema = nodeBaseDataSchema.extend({
+  list_input: z.string(),
+  list_item_template: z.string(),
+  list_joiner: z.string().optional(),
+});
+
+export const nodeActionListJoinDataSchema = nodeBaseDataSchema.extend({
+  list_input: z.string(),
+  list_joiner: z.string().optional(),
+});
+
+export const nodeActionListLengthDataSchema = nodeBaseDataSchema.extend({
+  list_input: z.string(),
+});
+
 export const nodeActionCooldownCheckDataSchema = nodeBaseDataSchema.extend({
   variable_id: z.string(),
   cooldown_scope: z.string().optional(),

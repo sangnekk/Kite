@@ -2,6 +2,7 @@ import { LogEntry } from "@/lib/types/wire.gen";
 import { cn } from "@/lib/utils";
 import {
   BoxIcon,
+  DatabaseIcon,
   GitCompareIcon,
   LucideIcon,
   MessageSquareWarningIcon,
@@ -14,7 +15,7 @@ import FlowNodeEditor from "./FlowNodeEditor";
 import FlowNodeExplorer from "./FlowNodeExplorer";
 import { useStoreApi } from "@xyflow/react";
 
-type Tab = "action" | "control_flow" | "option" | "logs";
+type Tab = "action" | "data" | "control_flow" | "option" | "logs";
 
 export default function FlowMenu({
   selectedNodeId,
@@ -47,6 +48,13 @@ export default function FlowMenu({
             setTab={wrappedSetTab}
           />
           <Tab
+            id="data"
+            icon={DatabaseIcon}
+            title="Khối dữ liệu & tiện ích"
+            tab={tab}
+            setTab={wrappedSetTab}
+          />
+          <Tab
             id="control_flow"
             icon={GitCompareIcon}
             title="Khối điều khiển"
@@ -72,9 +80,10 @@ export default function FlowMenu({
         </div>
       </div>
       <div className="flex-none relative w-96 bg-muted/30">
-        {(tab === "action" || tab === "control_flow" || tab === "option") && (
-          <FlowNodeExplorer category={tab} />
-        )}
+        {(tab === "action" ||
+          tab === "data" ||
+          tab === "control_flow" ||
+          tab === "option") && <FlowNodeExplorer category={tab} />}
 
         {tab === "logs" && <FlowLogList logs={logs} />}
 
