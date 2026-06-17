@@ -22,7 +22,7 @@ export default function MessageEmbedFields({
 
   return (
     <CollapsibleSection
-      title="Fields"
+      title="Trường"
       size="md"
       valiationPathPrefix={`embeds.${embedIndex}.fields`}
       className="space-y-3"
@@ -47,14 +47,14 @@ export default function MessageEmbedFields({
           }
           size="sm"
         >
-          Add Field
+          Thêm trường
         </Button>
         <Button
           onClick={() => clearFields(embedIndex)}
           variant="destructive"
           size="sm"
         >
-          Clear Fields
+          Xóa tất cả trường
         </Button>
       </div>
     </CollapsibleSection>

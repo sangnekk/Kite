@@ -18,7 +18,7 @@ export default function ImageUploadButton({
       const file = e.target.files?.[0];
       if (!file) return;
 
-      const toastId = toast.loading("Uploading attachment...");
+      const toastId = toast.loading("Đang tải tệp lên...");
 
       createMutation.mutateAsync(file, {
         onSuccess: (res) => {

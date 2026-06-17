@@ -37,14 +37,14 @@ export default function AppVariablesPage() {
   );
 
   return (
-    <AppLayout title={variable?.name || "unknown"} breadcrumbs={breadcrumbs}>
+    <AppLayout title={variable?.name || "không xác định"} breadcrumbs={breadcrumbs}>
       <div>
         <h1 className="text-lg font-semibold md:text-2xl mb-1">
-          <span className="text-muted-foreground">Variable:</span>{" "}
-          {variable?.name || "unknown"}
+          <span className="text-muted-foreground">Biến:</span>{" "}
+          {variable?.name || "không xác định"}
         </h1>
         <p className="text-muted-foreground text-sm">
-          Configure your stored variable and define what data it stores.
+          Cấu hình biến lưu trữ của bạn và xác định dữ liệu mà nó lưu giữ.
         </p>
       </div>
       <Separator className="my-8" />

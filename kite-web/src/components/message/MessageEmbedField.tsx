@@ -56,7 +56,7 @@ export default function MessageEmbedField({
   return (
     <Card className="p-3">
       <MessageCollapsibleSection
-        title={`Field ${fieldIndex + 1}`}
+        title={`Trường ${fieldIndex + 1}`}
         size="md"
         valiationPathPrefix={`embeds.${embedIndex}.fields.${fieldIndex}`}
         className="space-y-3"
@@ -94,7 +94,7 @@ export default function MessageEmbedField({
         <div className="flex space-x-3">
           <MessageInput
             type="text"
-            label="Name"
+            label="Tên"
             maxLength={256}
             value={name}
             onChange={(v) => setName(embedIndex, fieldIndex, v)}
@@ -103,7 +103,7 @@ export default function MessageEmbedField({
           />
           <MessageInput
             type="toggle"
-            label="Inline"
+            label="Cùng hàng"
             value={inline || false}
             onChange={(v) => setInline(embedIndex, fieldIndex, v || undefined)}
             validationPath={`embeds.${embedIndex}.fields.${fieldIndex}.inline`}
@@ -111,7 +111,7 @@ export default function MessageEmbedField({
         </div>
         <MessageInput
           type="textarea"
-          label="Value"
+          label="Giá trị"
           maxLength={1024}
           value={value}
           onChange={(v) => setValue(embedIndex, fieldIndex, v)}

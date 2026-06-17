@@ -25,7 +25,7 @@ export default function MessageEmbedImages({
 
   return (
     <CollapsibleSection
-      title="Images"
+      title="Hình ảnh"
       size="md"
       valiationPathPrefix={[
         `embeds.${embedIndex}.image`,
@@ -35,7 +35,7 @@ export default function MessageEmbedImages({
     >
       <MessageInput
         type="url"
-        label="Image URL"
+        label="URL hình ảnh"
         value={imageUrl || ""}
         onChange={(v) => setImageUrl(embedIndex, v || undefined)}
         validationPath={`embeds.${embedIndex}.image.url`}
@@ -43,7 +43,7 @@ export default function MessageEmbedImages({
       />
       <MessageInput
         type="url"
-        label="Thumbnail URL"
+        label="URL hình thu nhỏ"
         value={thumbnailUrl || ""}
         onChange={(v) => setThumbnailUrl(embedIndex, v || undefined)}
         validationPath={`embeds.${embedIndex}.thumbnail.url`}

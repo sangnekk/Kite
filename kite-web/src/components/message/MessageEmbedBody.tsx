@@ -35,7 +35,7 @@ export default function MessageEmbedBody({
 
   return (
     <CollapsibleSection
-      title="Body"
+      title="Nội dung"
       size="md"
       valiationPathPrefix={[
         `embeds.${embedIndex}.title`,
@@ -47,7 +47,7 @@ export default function MessageEmbedBody({
     >
       <MessageInput
         type="text"
-        label="Title"
+        label="Tiêu đề"
         maxLength={256}
         value={title || ""}
         onChange={(v) => setTitle(embedIndex, v || undefined)}
@@ -56,7 +56,7 @@ export default function MessageEmbedBody({
       />
       <MessageInput
         type="textarea"
-        label="Description"
+        label="Mô tả"
         maxLength={4000}
         value={description || ""}
         onChange={(v) => setDescription(embedIndex, v || undefined)}
@@ -74,7 +74,7 @@ export default function MessageEmbedBody({
         />
         <MessageInput
           type="color"
-          label="Color"
+          label="Màu sắc"
           value={color}
           onChange={(v) => setColor(embedIndex, v)}
           validationPath={`embeds.${embedIndex}.color`}

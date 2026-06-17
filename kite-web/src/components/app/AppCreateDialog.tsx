@@ -87,7 +87,7 @@ export default function AppCreateDialog({ children }: { children: ReactNode }) {
               name="discord_token"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Bot Token</FormLabel>
+                  <FormLabel>Token Bot</FormLabel>
                   <FormControl>
                     <Input type="password" {...field} />
                   </FormControl>

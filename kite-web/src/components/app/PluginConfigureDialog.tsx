@@ -93,7 +93,7 @@ export function PluginConfigureDialog({
         </DialogHeader>
         <div className="mb-3 mt-2 space-y-5">
           <div>
-            <div className="font-medium mb-2">Enabled</div>
+            <div className="font-medium mb-2">Bật</div>
             <Switch checked={enabled} onCheckedChange={setEnabled} />
           </div>
 
@@ -111,10 +111,10 @@ export function PluginConfigureDialog({
                             </div>
                             <div className="text-xs text-muted-foreground">
                               {field.required ? (
-                                <span className="text-red-500">required</span>
+                                <span className="text-red-500">bắt buộc</span>
                               ) : (
                                 <span className="text-muted-foreground">
-                                  optional
+                                  tùy chọn
                                 </span>
                               )}
                             </div>
@@ -143,9 +143,9 @@ export function PluginConfigureDialog({
           {!!plugin.commands.length && (
             <div>
               <div className="mb-3">
-                <div className="font-medium mb-0.5">Commands</div>
+                <div className="font-medium mb-0.5">Lệnh</div>
                 <div className="text-sm text-muted-foreground">
-                  Select the commands you want to import.
+                  Chọn các lệnh bạn muốn nhập.
                 </div>
               </div>
               <div className="flex flex-col gap-3">
@@ -221,9 +221,9 @@ export function PluginConfigureDialog({
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline">Cancel</Button>
+            <Button variant="outline">Hủy</Button>
           </DialogClose>
-          <Button onClick={handleSave}>Save</Button>
+          <Button onClick={handleSave}>Lưu</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

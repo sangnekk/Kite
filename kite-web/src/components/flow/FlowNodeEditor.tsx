@@ -417,7 +417,7 @@ function CommandTypesInput({ data, updateData, errors }: InputProps) {
       <div className="space-y-2">
         <BaseCheckbox
           field="command_disable_slash"
-          title="Slash command (/tên)"
+          title="Lệnh slash (/tên)"
           value={!data.command_disable_slash}
           updateValue={(v) =>
             updateData({ command_disable_slash: v ? undefined : true })
@@ -426,7 +426,7 @@ function CommandTypesInput({ data, updateData, errors }: InputProps) {
         />
         <BaseCheckbox
           field="command_enable_prefix"
-          title="Prefix / mention (@bot tên hoặc !tên)"
+          title="Tiền tố / nhắc tên (@bot tên hoặc !tên)"
           value={!!data.command_enable_prefix}
           updateValue={(v) =>
             updateData({ command_enable_prefix: v || undefined })
@@ -1025,7 +1025,7 @@ function ExpressionInput({ data, updateData, errors }: InputProps) {
       type="textarea"
       field="expression"
       title="Biểu thức"
-      description="Biểu thức để đánh giá không có dấu ngoặc kép"
+      description="Biểu thức cần tính, viết trực tiếp không cần dấu ngoặc kép"
       value={data.expression || ""}
       updateValue={(v) =>
         updateData({

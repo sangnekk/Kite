@@ -49,7 +49,7 @@ export default function AppSettingsCollaborators() {
           <TableHeader>
             <TableRow>
               <TableHead>Tên</TableHead>
-              <TableHead>Discord ID</TableHead>
+              <TableHead>ID Discord</TableHead>
               <TableHead>Vai trò</TableHead>
               <TableHead className="text-right">Hành động</TableHead>
             </TableRow>

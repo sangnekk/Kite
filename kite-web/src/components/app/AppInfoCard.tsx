@@ -43,7 +43,7 @@ export default function AppInfoCard() {
               onClick={copyAppId}
             >
               <CopyIcon className="h-3 w-3" />
-              <span className="sr-only">Copy App ID</span>
+              <span className="sr-only">Sao chép App ID</span>
             </Button>
           </CardDescription>
         </div>
@@ -70,7 +70,7 @@ export default function AppInfoCard() {
               </span>
             </li>
             <li className="flex items-center justify-between">
-              <span className="text-muted-foreground">Discord App ID</span>
+              <span className="text-muted-foreground">ID ứng dụng Discord</span>
               <span>{app?.discord_id}</span>
             </li>
             <li className="flex items-center justify-between">
@@ -79,8 +79,8 @@ export default function AppInfoCard() {
                 {appStatus === undefined
                   ? "-"
                   : appStatus.online
-                  ? "Online"
-                  : "Offline"}
+                  ? "Trực tuyến"
+                  : "Ngoại tuyến"}
               </span>
             </li>
           </ul>
@@ -89,7 +89,7 @@ export default function AppInfoCard() {
         <div className="grid gap-3">
           <div className="font-semibold">Gói đăng ký</div>
           <div>
-            <Badge className="px-3 py-1">Open Beta</Badge>
+            <Badge className="px-3 py-1">Bản Beta</Badge>
           </div>
         </div>
       </CardContent>

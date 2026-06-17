@@ -19,7 +19,7 @@ export default function MessageBody() {
     <div className="space-y-5">
       {/* <div className="flex space-x-3">
         <MessageInput
-          label="Username"
+          label="Tên người dùng"
           type="text"
           value={username || ""}
           onChange={(v) => setUsername(v || undefined)}
@@ -27,7 +27,7 @@ export default function MessageBody() {
           validationPath="username"
         />
         <MessageInput
-          label="Avatar URL"
+          label="URL ảnh đại diện"
           type="url"
           value={avatarUrl || ""}
           onChange={(v) => setAvatarUrl(v || undefined)}
@@ -35,7 +35,7 @@ export default function MessageBody() {
         />
       </div> */}
       <MessageInput
-        label="Content"
+        label="Nội dung"
         type="textarea"
         value={content}
         onChange={setContent}

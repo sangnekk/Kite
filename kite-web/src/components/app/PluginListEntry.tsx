@@ -55,7 +55,7 @@ export function PluginListEntry({
       </CardHeader>
       <CardFooter className="p-4 pt-1 flex items-center justify-end">
         <PluginConfigureDialog plugin={plugin} instance={instance}>
-          <Button variant="outline">Configure</Button>
+          <Button variant="outline">Cấu hình</Button>
         </PluginConfigureDialog>
       </CardFooter>
     </Card>

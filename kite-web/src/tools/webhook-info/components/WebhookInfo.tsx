@@ -25,7 +25,7 @@ export default function WebhookInfo({ data }: { data: WebhookData }) {
         <img
           src={userAvatar(data)}
           className="rounded-full h-24 w-24 float float-end mt-5 ml-5"
-          alt="Webhook avatar"
+          alt="Ảnh đại diện webhook"
         />
         <CardHeader className="mt-5">
           <CardTitle>{data.name}</CardTitle>

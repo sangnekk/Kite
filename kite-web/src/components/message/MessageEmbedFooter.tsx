@@ -31,14 +31,14 @@ export default function MessageEmbedFooter({
 
   return (
     <CollapsibleSection
-      title="Footer"
+      title="Chân trang"
       size="md"
       valiationPathPrefix={`embeds.${embedIndex}.footer`}
       className="space-y-3"
     >
       <MessageInput
         type="text"
-        label="Footer"
+        label="Chân trang"
         maxLength={2048}
         value={text || ""}
         onChange={(v) => setText(embedIndex, v || undefined)}
@@ -48,7 +48,7 @@ export default function MessageEmbedFooter({
       <div className="flex space-x-3">
         <MessageInput
           type="url"
-          label="Footer Icon URL"
+          label="URL biểu tượng chân trang"
           value={iconUrl || ""}
           onChange={(v) => setIconUrl(embedIndex, v || undefined)}
           validationPath={`embeds.${embedIndex}.footer.icon_url`}
@@ -56,7 +56,7 @@ export default function MessageEmbedFooter({
         />
         <MessageInput
           type="date"
-          label="Timestamp"
+          label="Dấu thời gian"
           value={timestamp}
           onChange={(v) => setTimestamp(embedIndex, v)}
           validationPath={`embeds.${embedIndex}.timestamp`}

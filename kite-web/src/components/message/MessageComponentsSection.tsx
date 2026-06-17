@@ -40,13 +40,13 @@ export default function MessageComponentsSection({
 
   return (
     <CollapsibleSection
-      title="Components"
+      title="Thành phần"
       valiationPathPrefix="components"
       className="space-y-4"
     >
       <MessageInput
         type="toggle"
-        label="Use Components V2 (layout, containers, ...)"
+        label="Dùng Components V2 (bố cục, khung chứa, ...)"
         value={isV2}
         onChange={(v) => setV2Enabled(v)}
       />
@@ -64,9 +64,9 @@ export default function MessageComponentsSection({
             />
           ))}
           <div className="space-x-3">
-            <Button onClick={addButtonRow}>Add Button Row</Button>
+            <Button onClick={addButtonRow}>Thêm hàng nút</Button>
             <Button onClick={clearComponents} variant="outline">
-              Clear Components
+              Xóa thành phần
             </Button>
           </div>
         </>

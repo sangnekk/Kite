@@ -23,7 +23,7 @@ export default function MessageAttachmentSection() {
       const file = e.target.files?.[0];
       if (!file) return;
 
-      const toastId = toast.loading("Uploading attachment...");
+      const toastId = toast.loading("Đang tải tệp lên...");
 
       createMutation.mutateAsync(file, {
         onSuccess: (res) => {
@@ -48,7 +48,7 @@ export default function MessageAttachmentSection() {
 
   return (
     <CollapsibleSection
-      title="Attachments"
+      title="Tệp đính kèm"
       valiationPathPrefix="attachments"
       className="space-y-4"
     >

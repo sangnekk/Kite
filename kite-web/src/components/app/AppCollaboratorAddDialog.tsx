@@ -89,7 +89,7 @@ export default function AppCollaboratorAddDialog({
               name="discord_user_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Discord User ID</FormLabel>
+                  <FormLabel>ID người dùng Discord</FormLabel>
                   <FormControl>
                     <Input type="text" {...field} />
                   </FormControl>

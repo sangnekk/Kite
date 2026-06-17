@@ -40,14 +40,14 @@ const initialButtonFlow = {
 
 // Components that can be added at the top level / inside a container.
 const ADDABLE: { label: string; type: number }[] = [
-  { label: "Text", type: 10 },
-  { label: "Section", type: 9 },
-  { label: "Media Gallery", type: 12 },
-  { label: "Separator", type: 14 },
-  { label: "Button Row", type: 1 },
+  { label: "Văn bản", type: 10 },
+  { label: "Phần", type: 9 },
+  { label: "Thư viện ảnh/video", type: 12 },
+  { label: "Đường phân cách", type: 14 },
+  { label: "Hàng nút", type: 1 },
 ];
 
-const TOP_LEVEL_ADDABLE = [{ label: "Container", type: 17 }, ...ADDABLE];
+const TOP_LEVEL_ADDABLE = [{ label: "Khung chứa", type: 17 }, ...ADDABLE];
 
 function newComponent(type: number): any {
   const id = getUniqueId();
@@ -69,7 +69,7 @@ function newComponent(type: number): any {
           id: getUniqueId(),
           type: 2,
           style: 2,
-          label: "Button",
+          label: "Nút",
           flow_source_id: getUniqueId().toString(),
         },
       };
@@ -123,7 +123,7 @@ function AddComponentMenu({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button size="sm" variant="outline">
-          <PlusIcon className="h-4 w-4 mr-1" /> Add Component
+          <PlusIcon className="h-4 w-4 mr-1" /> Thêm thành phần
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent>
@@ -264,18 +264,18 @@ function ContainerEditor({
           : undefined,
       }}
     >
-      <ComponentHeader path={path} title="Container" />
+      <ComponentHeader path={path} title="Khung chứa" />
       <div className="flex gap-3 mb-3">
         <MessageInput
           type="color"
-          label="Accent Color"
+          label="Màu nhấn"
           value={component.accent_color}
           onChange={(v) => update(path, { accent_color: v })}
         />
         <div className="flex-none">
           <MessageInput
             type="toggle"
-            label="Spoiler"
+            label="Ẩn nội dung"
             value={!!component.spoiler}
             onChange={(v) => update(path, { spoiler: v || undefined })}
           />
@@ -305,10 +305,10 @@ function TextDisplayEditor({
   const update = useCurrentMessage((s) => s.updateComponentAtPath);
   return (
     <Card className="p-3">
-      <ComponentHeader path={path} title="Text" />
+      <ComponentHeader path={path} title="Văn bản" />
       <MessageInput
         type="textarea"
-        label="Content"
+        label="Nội dung"
         value={component.content || ""}
         onChange={(v) => update(path, { content: v })}
         validationPath={`${validationPathFor(path)}.content`}
@@ -328,23 +328,23 @@ function SeparatorEditor({
   const update = useCurrentMessage((s) => s.updateComponentAtPath);
   return (
     <Card className="p-3">
-      <ComponentHeader path={path} title="Separator" />
+      <ComponentHeader path={path} title="Đường phân cách" />
       <div className="flex gap-3">
         <MessageInput
           type="select"
-          label="Spacing"
-          placeholder="Spacing"
+          label="Khoảng cách"
+          placeholder="Khoảng cách"
           value={(component.spacing ?? 1).toString()}
           options={[
-            { label: "Small", value: "1" },
-            { label: "Large", value: "2" },
+            { label: "Nhỏ", value: "1" },
+            { label: "Lớn", value: "2" },
           ]}
           onChange={(v) => update(path, { spacing: parseInt(v) })}
         />
         <div className="flex-none">
           <MessageInput
             type="toggle"
-            label="Divider"
+            label="Hiển thị vạch kẻ"
             value={component.divider !== false}
             onChange={(v) => update(path, { divider: v })}
           />
@@ -364,7 +364,7 @@ function ThumbnailEditor({
   const update = useCurrentMessage((s) => s.updateComponentAtPath);
   return (
     <Card className="p-3">
-      <ComponentHeader path={path} title="Thumbnail" />
+      <ComponentHeader path={path} title="Hình thu nhỏ" />
       <MediaInput
         media={component.media}
         onChange={(media) => update(path, { media })}
@@ -372,14 +372,14 @@ function ThumbnailEditor({
       <div className="flex gap-3 mt-3">
         <MessageInput
           type="text"
-          label="Description (alt text)"
+          label="Mô tả (văn bản thay thế)"
           value={component.description || ""}
           onChange={(v) => update(path, { description: v || undefined })}
         />
         <div className="flex-none">
           <MessageInput
             type="toggle"
-            label="Spoiler"
+            label="Ẩn nội dung"
             value={!!component.spoiler}
             onChange={(v) => update(path, { spoiler: v || undefined })}
           />
@@ -408,12 +408,12 @@ function MediaGalleryEditor({
 
   return (
     <Card className="p-3">
-      <ComponentHeader path={path} title="Media Gallery" />
+      <ComponentHeader path={path} title="Thư viện ảnh/video" />
       <div className="space-y-3">
         {items.map((item, k) => (
           <Card key={k} className="p-3">
             <div className="flex items-center justify-between mb-2">
-              <div className="text-sm text-muted-foreground">Item {k + 1}</div>
+              <div className="text-sm text-muted-foreground">Mục {k + 1}</div>
               <div className="flex items-center gap-2 text-muted-foreground">
                 {k > 0 && (
                   <ChevronUpIcon
@@ -443,7 +443,7 @@ function MediaGalleryEditor({
             <div className="flex gap-3 mt-3">
               <MessageInput
                 type="text"
-                label="Description"
+                label="Mô tả"
                 value={item.description || ""}
                 onChange={(v) =>
                   updateItem(path, k, { description: v || undefined })
@@ -452,7 +452,7 @@ function MediaGalleryEditor({
               <div className="flex-none">
                 <MessageInput
                   type="toggle"
-                  label="Spoiler"
+                  label="Ẩn nội dung"
                   value={!!item.spoiler}
                   onChange={(v) =>
                     updateItem(path, k, { spoiler: v || undefined })
@@ -468,7 +468,7 @@ function MediaGalleryEditor({
             variant="outline"
             onClick={() => addItem(path, { media: { url: "" } })}
           >
-            <PlusIcon className="h-4 w-4 mr-1" /> Add Item
+            <PlusIcon className="h-4 w-4 mr-1" /> Thêm mục
           </Button>
         )}
       </div>
@@ -500,7 +500,7 @@ function SectionEditor({
           id: getUniqueId(),
           type: 2,
           style: 2,
-          label: "Button",
+          label: "Nút",
           flow_source_id: getUniqueId().toString(),
         } as any);
       } else {
@@ -516,7 +516,7 @@ function SectionEditor({
 
   return (
     <Card className="p-3">
-      <ComponentHeader path={path} title="Section" />
+      <ComponentHeader path={path} title="Phần" />
       <div className="flex gap-4">
         <div className="flex-1 space-y-3 min-w-0">
           {textIds.map((id, i) => (
@@ -534,7 +534,7 @@ function SectionEditor({
                 })
               }
             >
-              <PlusIcon className="h-4 w-4 mr-1" /> Add Text
+              <PlusIcon className="h-4 w-4 mr-1" /> Thêm văn bản
             </Button>
           )}
         </div>
@@ -545,14 +545,14 @@ function SectionEditor({
               variant={accessory?.type === 2 ? "default" : "outline"}
               onClick={() => switchAccessory("button")}
             >
-              Button
+              Nút
             </Button>
             <Button
               size="sm"
               variant={accessory?.type === 11 ? "default" : "outline"}
               onClick={() => switchAccessory("thumbnail")}
             >
-              Thumbnail
+              Hình thu nhỏ
             </Button>
           </div>
           {accessory?.type === 2 ? (
@@ -607,7 +607,7 @@ function ActionRowEditor({
 
   return (
     <Card className="p-3">
-      <ComponentHeader path={path} title="Button Row" />
+      <ComponentHeader path={path} title="Hàng nút" />
       <div className="space-y-3">
         {buttonIds.map((id, i) => (
           <V2ButtonChildEditor
@@ -625,12 +625,12 @@ function ActionRowEditor({
                 id: getUniqueId(),
                 type: 2,
                 style: 2,
-                label: "Button",
+                label: "Nút",
                 flow_source_id: getUniqueId().toString(),
               })
             }
           >
-            <PlusIcon className="h-4 w-4 mr-1" /> Add Button
+            <PlusIcon className="h-4 w-4 mr-1" /> Thêm nút
           </Button>
         )}
       </div>
@@ -722,15 +722,15 @@ function ButtonEditor({
       <div className="flex gap-3">
         <MessageInput
           type="select"
-          label="Style"
-          placeholder="Style"
+          label="Kiểu"
+          placeholder="Kiểu"
           value={(button.style ?? 2).toString()}
           options={[
-            { label: "Blurple", value: "1" },
-            { label: "Gray", value: "2" },
-            { label: "Green", value: "3" },
-            { label: "Red", value: "4" },
-            { label: "Direct Link", value: "5" },
+            { label: "Xanh tím", value: "1" },
+            { label: "Xám", value: "2" },
+            { label: "Xanh lá", value: "3" },
+            { label: "Đỏ", value: "4" },
+            { label: "Liên kết", value: "5" },
           ]}
           onChange={(v) =>
             patch(parseInt(v) === 5 ? { style: 5, url: "" } : { style: parseInt(v) })
@@ -739,7 +739,7 @@ function ButtonEditor({
         <div className="flex-none">
           <MessageInput
             type="toggle"
-            label="Disabled"
+            label="Vô hiệu hóa"
             value={!!button.disabled}
             onChange={(v) => patch({ disabled: v || undefined })}
           />
@@ -752,7 +752,7 @@ function ButtonEditor({
         />
         <MessageInput
           type="text"
-          label="Label"
+          label="Nhãn"
           maxLength={80}
           value={button.label || ""}
           onChange={(v) => patch({ label: v })}

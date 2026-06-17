@@ -31,14 +31,14 @@ export default function MessageEmbedAuthor({
 
   return (
     <CollapsibleSection
-      title="Author"
+      title="Tác giả"
       size="md"
       valiationPathPrefix={`embeds.${embedIndex}.author`}
       className="space-y-3"
     >
       <MessageInput
         type="text"
-        label="Name"
+        label="Tên"
         maxLength={256}
         value={name || ""}
         onChange={(v) => setName(embedIndex, v)}
@@ -56,7 +56,7 @@ export default function MessageEmbedAuthor({
         />
         <MessageInput
           type="url"
-          label="Icon URL"
+          label="URL biểu tượng"
           value={iconUrl || ""}
           onChange={(v) => setIconUrl(embedIndex, v || undefined)}
           validationPath={`embeds.${embedIndex}.author.icon_url`}

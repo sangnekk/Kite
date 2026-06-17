@@ -35,7 +35,7 @@ export default function AppSubscriptionListEntry({
               {new Date(subscription.created_at).toLocaleDateString()}
               {subscription.ends_at
                 ? ` - ${new Date(subscription.ends_at).toLocaleDateString()}`
-                : " - renews at " +
+                : " - gia hạn vào " +
                   new Date(subscription.renews_at).toLocaleDateString()}
             </CardDescription>
           </div>
@@ -51,10 +51,10 @@ export default function AppSubscriptionListEntry({
       {subscription.manageable && (
         <CardFooter className="gap-3">
           <Button variant="outline" onClick={() => updatePaymentMethod()}>
-            Update Billing
+            Cập nhật thanh toán
           </Button>
           <Button variant="outline" onClick={() => openCustomerPortal()}>
-            Manage
+            Quản lý
           </Button>
         </CardFooter>
       )}

@@ -130,7 +130,7 @@ export default function MessageComponentButton({
       }}
     >
       <MessageCollapsibleSection
-        title={`Button ${compIndex + 1}`}
+        title={`Nút ${compIndex + 1}`}
         size="md"
         valiationPathPrefix={`components.${rowIndex}.components.${compIndex}`}
         className="space-y-3"
@@ -171,16 +171,16 @@ export default function MessageComponentButton({
           <div className="w-full">
             <MessageInput
               type="select"
-              label="Style"
+              label="Kiểu"
               value={style.toString()}
               options={[
-                { label: "Blurple", value: "1" },
-                { label: "Gray", value: "2" },
-                { label: "Green", value: "3" },
-                { label: "Red", value: "4" },
-                { label: "Direct Link", value: "5" },
+                { label: "Xanh tím", value: "1" },
+                { label: "Xám", value: "2" },
+                { label: "Xanh lá", value: "3" },
+                { label: "Đỏ", value: "4" },
+                { label: "Liên kết", value: "5" },
               ]}
-              placeholder="Select a button style"
+              placeholder="Chọn kiểu nút"
               onChange={(v) =>
                 setStyle(rowIndex, compIndex, parseInt(v) as any)
               }
@@ -190,7 +190,7 @@ export default function MessageComponentButton({
           <div className="flex-none">
             <MessageInput
               type="toggle"
-              label="Disabled"
+              label="Vô hiệu hóa"
               value={disabled || false}
               onChange={(v) => setDisabled(rowIndex, compIndex, v || undefined)}
               validationPath={`components.${rowIndex}.components.${compIndex}.disabled`}
@@ -204,7 +204,7 @@ export default function MessageComponentButton({
           />
           <MessageInput
             type="text"
-            label="Label"
+            label="Nhãn"
             maxLength={80}
             value={label}
             onChange={(v) => setLabel(rowIndex, compIndex, v)}

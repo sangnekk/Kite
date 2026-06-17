@@ -259,8 +259,8 @@ export const nodeTypes: Record<string, NodeValues> = {
   action_message_reaction_create: {
     color: actionColor,
     icon: "smile-plus",
-    defaultTitle: "Tạo biểu tượng cảm xúc",
-    defaultDescription: "Bot thêm biểu tượng cảm xúc vào tin nhắn",
+    defaultTitle: "Thả cảm xúc",
+    defaultDescription: "Bot thả biểu tượng cảm xúc (reaction) vào tin nhắn",
     dataSchema: nodeActionMessageReactionCreateDataSchema,
     dataFields: [
       "channel_target",
@@ -273,8 +273,8 @@ export const nodeTypes: Record<string, NodeValues> = {
   action_message_reaction_delete: {
     color: actionColor,
     icon: "frown",
-    defaultTitle: "Xóa biểu tượng cảm xúc",
-    defaultDescription: "Bot xóa biểu tượng cảm xúc khỏi tin nhắn",
+    defaultTitle: "Gỡ cảm xúc",
+    defaultDescription: "Bot gỡ biểu tượng cảm xúc (reaction) khỏi tin nhắn",
     dataSchema: nodeActionMessageReactionDeleteDataSchema,
     dataFields: [
       "channel_target",
@@ -334,7 +334,7 @@ export const nodeTypes: Record<string, NodeValues> = {
     color: actionColor,
     icon: "user-round-pen",
     defaultTitle: "Sửa biệt danh thành viên",
-    defaultDescription: "Sửa thông tin thành viên trong server",
+    defaultDescription: "Sửa biệt danh của thành viên trong server",
     dataSchema: nodeActionMemberEditDataSchema,
     dataFields: [
       "user_target",

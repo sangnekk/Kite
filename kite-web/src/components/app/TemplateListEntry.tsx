@@ -23,7 +23,7 @@ export function TemplateListEntry({ template }: { template: Template }) {
       </CardHeader>
       <CardFooter className="p-4 pt-1 flex justify-end">
         <TemplateImportDialog template={template}>
-          <Button variant="outline">View details</Button>
+          <Button variant="outline">Xem chi tiết</Button>
         </TemplateImportDialog>
       </CardFooter>
     </Card>

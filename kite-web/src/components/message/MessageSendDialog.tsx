@@ -67,7 +67,7 @@ export default function MessageSendDialog({
           <DialogTitle>Gửi tin nhắn</DialogTitle>
           <DialogDescription>
             Gửi tin nhắn đến kênh đã chọn. Bot phải ở trong server và có
-            quyền &quot;Manage Webhooks&quot;.
+            quyền &quot;Quản lý Webhook&quot;.
           </DialogDescription>
         </DialogHeader>
 
