@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 from os import makedirs
-
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
 from utils.log import setup_logger, LOGGING_CONFIG
 from utils.auth import load_users
@@ -30,6 +30,7 @@ async def lifespan(app: FastAPI):
 class Application(FastAPI):
     def __init__(self, *args, **kwargs):
         super().__init__(lifespan=lifespan, *args, **kwargs)
+        self.add_middleware(CORSMiddleware, allow_origins=["*"]) 
         self.add_api_route("/health", self.health_check, methods=["GET"])
         self.include_router(auth_router)
         self.include_router(revenue_router)
