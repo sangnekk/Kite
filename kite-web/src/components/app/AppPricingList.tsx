@@ -216,6 +216,12 @@ export default function AppPricingList() {
                       : "Hỗ trợ cộng đồng"}
                   </h3>
                 </span>
+                {pricing.feature_custom_bot_status && (
+                  <span className="flex">
+                    <CheckIcon className="text-green-500" />{" "}
+                    <h3 className="ml-2">Trạng thái bot tùy chỉnh</h3>
+                  </span>
+                )}
               </div>
             </CardFooter>
           </Card>
