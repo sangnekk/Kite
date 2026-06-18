@@ -15,7 +15,7 @@ export function Login() {
     try {
       await login(username, password)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed")
+      setError(err instanceof Error ? err.message : "Đăng nhập thất bại")
     } finally {
       setLoading(false)
     }
@@ -30,7 +30,7 @@ export function Login() {
         <h1 className="text-xl font-semibold">Kite Admin</h1>
 
         <div className="space-y-1">
-          <label className="text-sm font-medium">Username</label>
+          <label className="text-sm font-medium">Tên đăng nhập</label>
           <input
             className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
             value={username}
@@ -41,7 +41,7 @@ export function Login() {
         </div>
 
         <div className="space-y-1">
-          <label className="text-sm font-medium">Password</label>
+          <label className="text-sm font-medium">Mật khẩu</label>
           <input
             type="password"
             className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
@@ -59,7 +59,7 @@ export function Login() {
           disabled={loading}
           className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
         >
-          {loading ? "Signing in…" : "Sign in"}
+          {loading ? "Đang đăng nhập…" : "Đăng nhập"}
         </button>
       </form>
     </div>

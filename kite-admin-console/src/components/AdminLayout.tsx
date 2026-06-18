@@ -43,12 +43,12 @@ interface AdminLayoutProps {
 }
 
 const navItems: { id: Page; label: string; icon: React.ElementType }[] = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "users", label: "Users", icon: Users },
-  { id: "apps", label: "Apps", icon: Bot },
-  { id: "logs", label: "Logs Explorer", icon: ScrollText },
-  { id: "billing", label: "Billing", icon: CreditCard },
-  { id: "revenue", label: "Revenue", icon: DollarSign },
+  { id: "dashboard", label: "Bảng điều khiển", icon: LayoutDashboard },
+  { id: "users", label: "Người dùng", icon: Users },
+  { id: "apps", label: "Ứng dụng", icon: Bot },
+  { id: "logs", label: "Trình xem nhật ký", icon: ScrollText },
+  { id: "billing", label: "Thanh toán", icon: CreditCard },
+  { id: "revenue", label: "Doanh thu", icon: DollarSign },
 ]
 
 export function AdminLayout({ children }: AdminLayoutProps) {
@@ -72,7 +72,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel>System</SidebarGroupLabel>
+            <SidebarGroupLabel>Hệ thống</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {navItems.map((item) => (

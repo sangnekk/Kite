@@ -58,6 +58,12 @@ class PaymentSessionListResponse(BaseModel):
     page_size: int
 
 
+class GrantEntitlementRequest(BaseModel):
+    app_id: str
+    plan_id: str
+    duration_days: int | None = None  # None hoặc 0 = vĩnh viễn
+
+
 class UpdateSubscriptionRequest(BaseModel):
     status: str | None = None
 

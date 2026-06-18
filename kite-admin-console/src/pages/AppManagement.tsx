@@ -139,7 +139,7 @@ export function AppManagement() {
       <div className="p-6 space-y-6">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => { setSelectedId(null); setDetail(null) }}>
-            <ChevronLeft className="size-4" /> Back
+            <ChevronLeft className="size-4" /> Quay lại
           </Button>
           <Separator orientation="vertical" className="h-4" />
           {detail && (
@@ -148,16 +148,16 @@ export function AppManagement() {
                 <h1 className="text-xl font-bold">{detail.name}</h1>
                 <span className={`size-2 rounded-full ${discordStatusColor[getDiscordStatusLabel(detail.discord_status)]}`} />
                 <Badge variant={detail.enabled ? "outline" : "destructive"}>
-                  {detail.enabled ? "enabled" : "disabled"}
+                  {detail.enabled ? "Bật" : "Tắt"}
                 </Badge>
               </div>
               <div className="ml-auto flex gap-2">
                 <Button
                   variant={detail.enabled ? "destructive" : "default"}
                   size="sm"
-                  onClick={() => updateApp(detail.id, { enabled: !detail.enabled, disabled_reason: detail.enabled ? (disabledReason || "Disabled by admin") : null })}
+                  onClick={() => updateApp(detail.id, { enabled: !detail.enabled, disabled_reason: detail.enabled ? (disabledReason || "Bị quản trị viên tắt") : null })}
                 >
-                  {detail.enabled ? <><PowerOff className="size-3.5" /> Disable</> : <><Power className="size-3.5" /> Enable</>}
+                  {detail.enabled ? <><PowerOff className="size-3.5" /> Tắt</> : <><Power className="size-3.5" /> Bật</>}
                 </Button>
               </div>
             </>
@@ -171,9 +171,9 @@ export function AppManagement() {
         ) : detail ? (
           <Tabs defaultValue="overview">
             <TabsList>
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="runtime">Runtime</TabsTrigger>
-              <TabsTrigger value="usage">Usage</TabsTrigger>
+              <TabsTrigger value="overview">Tổng quan</TabsTrigger>
+              <TabsTrigger value="runtime">Thời gian chạy</TabsTrigger>
+              <TabsTrigger value="usage">Mức sử dụng</TabsTrigger>
             </TabsList>
 
             {/* Overview */}
@@ -181,19 +181,19 @@ export function AppManagement() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Metadata</CardTitle>
+                    <CardTitle className="text-sm">Siêu dữ liệu</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">App ID</span>
+                      <span className="text-muted-foreground">Mã ứng dụng</span>
                       <span className="font-mono text-xs">{detail.id}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Owner</span>
+                      <span className="text-muted-foreground">Chủ sở hữu</span>
                       <span>{detail.owner_email ?? detail.owner_id}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Created</span>
+                      <span className="text-muted-foreground">Ngày tạo</span>
                       <span>{new Date(detail.created_at).toLocaleDateString()}</span>
                     </div>
                     <div className="flex justify-between">
@@ -204,11 +204,11 @@ export function AppManagement() {
                       </div>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Collaborators</span>
+                      <span className="text-muted-foreground">Cộng tác viên</span>
                       <span>{detail.collaborators.length}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Resume Points</span>
+                      <span className="text-muted-foreground">Điểm khôi phục</span>
                       <span>{detail.resume_points_count}</span>
                     </div>
                   </CardContent>
@@ -216,13 +216,13 @@ export function AppManagement() {
 
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Disable Settings</CardTitle>
+                    <CardTitle className="text-sm">Cài đặt tắt</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Disabled Reason</Label>
+                      <Label className="text-xs">Lý do tắt</Label>
                       <Textarea
-                        placeholder="Reason for disabling..."
+                        placeholder="Lý do tắt ứng dụng..."
                         value={disabledReason}
                         onChange={(e) => setDisabledReason(e.target.value)}
                         className="min-h-[80px] text-sm"
@@ -234,7 +234,7 @@ export function AppManagement() {
                       className="w-full"
                       onClick={() => handleRotateToken(detail.id)}
                     >
-                      <RotateCcw className="size-3.5" /> Rotate Bot Token
+                      <RotateCcw className="size-3.5" /> Xoay vòng Token Bot
                     </Button>
                   </CardContent>
                 </Card>
@@ -245,24 +245,24 @@ export function AppManagement() {
             <TabsContent value="runtime" className="space-y-4 mt-4">
               <div className="flex gap-2">
                 <Button variant="destructive" size="sm" onClick={() => handleKillFlows(detail.id)}>
-                  <Skull className="size-3.5" /> Kill All Flows
+                  <Skull className="size-3.5" /> Dừng tất cả luồng
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => handleKillFlows(detail.id)}>
-                  <Trash2 className="size-3.5" /> Clear Resume Points
+                  <Trash2 className="size-3.5" /> Xóa điểm khôi phục
                 </Button>
               </div>
 
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">Resume Points ({detail.resume_points_count})</CardTitle>
-                  <CardDescription>Suspended flow states</CardDescription>
+                  <CardTitle className="text-sm">Điểm khôi phục ({detail.resume_points_count})</CardTitle>
+                  <CardDescription>Trạng thái luồng đang tạm dừng</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {detail.resume_points_count === 0 ? (
-                    <p className="text-sm text-muted-foreground">No active resume points</p>
+                    <p className="text-sm text-muted-foreground">Không có điểm khôi phục đang hoạt động</p>
                   ) : (
                     <p className="text-sm text-muted-foreground">
-                      {detail.resume_points_count} resume point(s) exist. Use the buttons above to clear them.
+                      Tồn tại {detail.resume_points_count} điểm khôi phục. Sử dụng các nút phía trên để xóa.
                     </p>
                   )}
                 </CardContent>
@@ -273,8 +273,8 @@ export function AppManagement() {
             <TabsContent value="usage" className="space-y-4 mt-4">
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">Total Credits Used</CardTitle>
-                  <CardDescription>{detail.credits_used.toLocaleString()} credits</CardDescription>
+                  <CardTitle className="text-sm">Tổng tín dụng đã dùng</CardTitle>
+                  <CardDescription>{detail.credits_used.toLocaleString()} tín dụng</CardDescription>
                 </CardHeader>
               </Card>
             </TabsContent>
@@ -287,14 +287,14 @@ export function AppManagement() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">App Management</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Control, monitor, and debug Discord bots</p>
+        <h1 className="text-2xl font-bold tracking-tight">Quản lý ứng dụng</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Kiểm soát, giám sát và gỡ lỗi các bot Discord</p>
       </div>
 
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
         <Input
-          placeholder="Search apps by name..."
+          placeholder="Tìm kiếm ứng dụng theo tên..."
           className="pl-9"
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1) }}
@@ -306,13 +306,13 @@ export function AppManagement() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>App Name</TableHead>
-                <TableHead>Owner</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Tên ứng dụng</TableHead>
+                <TableHead>Chủ sở hữu</TableHead>
+                <TableHead>Trạng thái</TableHead>
                 <TableHead>Discord</TableHead>
-                <TableHead className="text-right">Credits</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead className="text-right">Tín dụng</TableHead>
+                <TableHead>Ngày tạo</TableHead>
+                <TableHead>Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -325,7 +325,7 @@ export function AppManagement() {
               ) : apps.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                    No apps found
+                    Không tìm thấy ứng dụng nào
                   </TableCell>
                 </TableRow>
               ) : (
@@ -339,7 +339,7 @@ export function AppManagement() {
                     <TableCell className="text-sm text-muted-foreground">{app.owner_email ?? app.owner_id}</TableCell>
                     <TableCell>
                       <Badge variant={app.enabled ? "outline" : "destructive"}>
-                        {app.enabled ? "enabled" : "disabled"}
+                        {app.enabled ? "Bật" : "Tắt"}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -360,7 +360,7 @@ export function AppManagement() {
                         variant={app.enabled ? "destructive" : "outline"}
                         onClick={() => handleToggle(app)}
                       >
-                        {app.enabled ? "Disable" : "Enable"}
+                        {app.enabled ? "Tắt" : "Bật"}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -380,10 +380,10 @@ export function AppManagement() {
             disabled={page <= 1}
             onClick={() => setPage((p) => p - 1)}
           >
-            Previous
+            Trước
           </Button>
           <span className="text-sm text-muted-foreground py-1.5">
-            Page {page} of {Math.ceil(total / pageSize)}
+            Trang {page} / {Math.ceil(total / pageSize)}
           </span>
           <Button
             variant="outline"
@@ -391,7 +391,7 @@ export function AppManagement() {
             disabled={page >= Math.ceil(total / pageSize)}
             onClick={() => setPage((p) => p + 1)}
           >
-            Next
+            Sau
           </Button>
         </div>
       )}

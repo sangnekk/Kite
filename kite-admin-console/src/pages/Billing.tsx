@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react"
 import { CircleCheck as CheckCircle, Circle as XCircle, Clock, Ban, Loader2 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -81,6 +82,12 @@ export function Billing() {
   const [entsTotal, setEntsTotal] = useState(0)
   const [entsPage, setEntsPage] = useState(1)
 
+  const [grantAppId, setGrantAppId] = useState("")
+  const [grantPlanId, setGrantPlanId] = useState("")
+  const [grantDays, setGrantDays] = useState("")
+  const [granting, setGranting] = useState(false)
+  const [grantError, setGrantError] = useState("")
+
   const [sessions, setSessions] = useState<PaymentSessionItem[]>([])
   const [sessionsLoading, setSessionsLoading] = useState(true)
   const [sessionsTotal, setSessionsTotal] = useState(0)
@@ -148,6 +155,38 @@ export function Billing() {
     if (res.ok) fetchEnts()
   }
 
+  async function grantEntitlement() {
+    if (!grantAppId.trim() || !grantPlanId.trim()) {
+      setGrantError("App ID và Plan ID là bắt buộc")
+      return
+    }
+    setGranting(true)
+    setGrantError("")
+    try {
+      const days = parseInt(grantDays, 10)
+      const res = await apiFetch(`/billing/entitlements`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          app_id: grantAppId.trim(),
+          plan_id: grantPlanId.trim(),
+          duration_days: Number.isFinite(days) && days > 0 ? days : null,
+        }),
+      })
+      if (res.ok) {
+        setGrantAppId("")
+        setGrantPlanId("")
+        setGrantDays("")
+        fetchEnts()
+      } else {
+        const data = await res.json().catch(() => null)
+        setGrantError(data?.detail ?? "Cấp gói thất bại")
+      }
+    } finally {
+      setGranting(false)
+    }
+  }
+
   async function markPaid(id: string) {
     const res = await apiFetch(`/billing/payment-sessions/${id}`, {
       method: "PATCH",
@@ -171,13 +210,13 @@ export function Billing() {
     return (
       <div className="flex justify-center gap-2 mt-4">
         <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-          Previous
+          Trước
         </Button>
         <span className="text-sm text-muted-foreground py-1.5">
-          Page {page} of {Math.ceil(total / pageSize)}
+          Trang {page} / {Math.ceil(total / pageSize)}
         </span>
         <Button variant="outline" size="sm" disabled={page >= Math.ceil(total / pageSize)} onClick={() => setPage((p) => p + 1)}>
-          Next
+          Sau
         </Button>
       </div>
     )
@@ -196,40 +235,40 @@ export function Billing() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Billing & Subscriptions</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Manage plans, entitlements, and fix payment issues</p>
+        <h1 className="text-2xl font-bold tracking-tight">Thanh toán & Đăng ký</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Quản lý gói, quyền lợi và xử lý các vấn đề thanh toán</p>
       </div>
 
       <Tabs defaultValue="subscriptions">
         <TabsList>
-          <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
-          <TabsTrigger value="entitlements">Entitlements</TabsTrigger>
-          <TabsTrigger value="payments">Payment Sessions</TabsTrigger>
+          <TabsTrigger value="subscriptions">Đăng ký</TabsTrigger>
+          <TabsTrigger value="entitlements">Quyền lợi</TabsTrigger>
+          <TabsTrigger value="payments">Phiên thanh toán</TabsTrigger>
         </TabsList>
 
         {/* Subscriptions */}
         <TabsContent value="subscriptions" className="mt-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Subscriptions</CardTitle>
-              <CardDescription>User plan assignments</CardDescription>
+              <CardTitle className="text-sm">Đăng ký</CardTitle>
+              <CardDescription>Gói được gán cho người dùng</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Plan</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Renews At</TableHead>
-                    <TableHead>Source</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>Người dùng</TableHead>
+                    <TableHead>Gói</TableHead>
+                    <TableHead>Trạng thái</TableHead>
+                    <TableHead>Gia hạn vào</TableHead>
+                    <TableHead>Nguồn</TableHead>
+                    <TableHead>Thao tác</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {subsLoading ? renderLoading() : subs.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">No subscriptions</TableCell>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">Không có đăng ký</TableCell>
                     </TableRow>
                   ) : (
                     subs.map((sub) => (
@@ -249,7 +288,7 @@ export function Billing() {
                           <div className="flex gap-1.5">
                             {sub.status === "active" && (
                               <Button size="xs" variant="destructive" onClick={() => cancelSubscription(sub.id)}>
-                                <Ban className="size-3" /> Cancel
+                                <Ban className="size-3" /> Hủy
                               </Button>
                             )}
                           </div>
@@ -265,24 +304,68 @@ export function Billing() {
         </TabsContent>
 
         {/* Entitlements */}
-        <TabsContent value="entitlements" className="mt-4">
+        <TabsContent value="entitlements" className="mt-4 space-y-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Cấp gói thủ công</CardTitle>
+              <CardDescription>
+                Tạo quyền lợi (entitlement) cho một ứng dụng. Để trống số ngày = vĩnh viễn.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-wrap items-end gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-muted-foreground">App ID</label>
+                <Input
+                  className="w-64"
+                  placeholder="ID ứng dụng"
+                  value={grantAppId}
+                  onChange={(e) => setGrantAppId(e.target.value)}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-muted-foreground">Plan ID</label>
+                <Input
+                  className="w-40"
+                  placeholder="vd: premium"
+                  value={grantPlanId}
+                  onChange={(e) => setGrantPlanId(e.target.value)}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-muted-foreground">Số ngày</label>
+                <Input
+                  className="w-28"
+                  type="number"
+                  placeholder="vĩnh viễn"
+                  value={grantDays}
+                  onChange={(e) => setGrantDays(e.target.value)}
+                />
+              </div>
+              <Button onClick={grantEntitlement} disabled={granting}>
+                {granting ? "Đang cấp..." : "Cấp gói"}
+              </Button>
+              {grantError && (
+                <p className="w-full text-sm text-destructive">{grantError}</p>
+              )}
+            </CardContent>
+          </Card>
           <Card>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>App</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Plan ID</TableHead>
-                    <TableHead>Ends At</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>Ứng dụng</TableHead>
+                    <TableHead>Loại</TableHead>
+                    <TableHead>Mã gói</TableHead>
+                    <TableHead>Hết hạn vào</TableHead>
+                    <TableHead>Ngày tạo</TableHead>
+                    <TableHead>Thao tác</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {entsLoading ? renderLoading() : ents.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">No entitlements</TableCell>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">Không có quyền lợi</TableCell>
                     </TableRow>
                   ) : (
                     ents.map((ent) => (
@@ -299,7 +382,7 @@ export function Billing() {
                           {new Date(ent.created_at).toLocaleDateString()}
                         </TableCell>
                         <TableCell>
-                          <Button size="xs" variant="destructive" onClick={() => removeEntitlement(ent.id)}>Remove</Button>
+                          <Button size="xs" variant="destructive" onClick={() => removeEntitlement(ent.id)}>Gỡ</Button>
                         </TableCell>
                       </TableRow>
                     ))
@@ -315,25 +398,25 @@ export function Billing() {
         <TabsContent value="payments" className="mt-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Payment Sessions</CardTitle>
-              <CardDescription>Fix webhook failures manually</CardDescription>
+              <CardTitle className="text-sm">Phiên thanh toán</CardTitle>
+              <CardDescription>Xử lý lỗi webhook thủ công</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>App</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Provider</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>Ứng dụng</TableHead>
+                    <TableHead className="text-right">Số tiền</TableHead>
+                    <TableHead>Trạng thái</TableHead>
+                    <TableHead>Nhà cung cấp</TableHead>
+                    <TableHead>Ngày tạo</TableHead>
+                    <TableHead>Thao tác</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {sessionsLoading ? renderLoading() : sessions.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">No payment sessions</TableCell>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">Không có phiên thanh toán</TableCell>
                     </TableRow>
                   ) : (
                     sessions.map((session) => {
@@ -366,12 +449,12 @@ export function Billing() {
                             <div className="flex gap-1.5">
                               {session.status !== "paid" && (
                                 <Button size="xs" variant="outline" onClick={() => markPaid(session.id)}>
-                                  <CheckCircle className="size-3" /> Mark Paid
+                                  <CheckCircle className="size-3" /> Đánh dấu đã thanh toán
                                 </Button>
                               )}
                               {session.status === "pending" && (
                                 <Button size="xs" variant="destructive" onClick={() => cancelSession(session.id)}>
-                                  <XCircle className="size-3" /> Cancel
+                                  <XCircle className="size-3" /> Hủy
                                 </Button>
                               )}
                             </div>

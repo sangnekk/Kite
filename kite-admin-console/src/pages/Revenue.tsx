@@ -35,7 +35,7 @@ interface SubStats {
 }
 
 const chartConfig = {
-  total: { label: "Revenue", color: "var(--chart-1)" },
+  total: { label: "Doanh thu", color: "var(--chart-1)" },
 }
 
 export function Revenue() {
@@ -74,20 +74,23 @@ export function Revenue() {
     return afterTax - cost
   }, [summary, operatingCost, taxPercent])
 
+  // Amounts are stored in VND (no minor unit), so we format them directly.
+  const formatVnd = (v: number) => `${Math.round(v).toLocaleString("vi-VN")} ₫`
+
   const hasDeductions = operatingCost !== "" || taxPercent !== ""
 
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Revenue</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Income overview and calculation</p>
+        <h1 className="text-2xl font-bold tracking-tight">Doanh thu</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Tổng quan và tính toán lợi nhuận</p>
       </div>
 
       <Tabs value={period} onValueChange={(v) => setPeriod(v as Period)}>
         <TabsList>
-          <TabsTrigger value="day">Day</TabsTrigger>
-          <TabsTrigger value="week">Week</TabsTrigger>
-          <TabsTrigger value="month">Month</TabsTrigger>
+          <TabsTrigger value="day">Ngày</TabsTrigger>
+          <TabsTrigger value="week">Tuần</TabsTrigger>
+          <TabsTrigger value="month">Tháng</TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -96,18 +99,18 @@ export function Revenue() {
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardDescription className="text-xs font-medium uppercase tracking-wide">Total Revenue</CardDescription>
+              <CardDescription className="text-xs font-medium uppercase tracking-wide">Tổng doanh thu</CardDescription>
               <DollarSign className="size-4 text-muted-foreground" />
             </div>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold tracking-tight">
-              {summary ? `$${(summary.total / 100).toLocaleString()}` : "—"}
+              {summary ? formatVnd(summary.total) : "—"}
             </div>
             {trendPercent !== null && (
               <p className={`text-xs mt-1 flex items-center gap-1 ${trendPercent >= 0 ? "text-green-600" : "text-red-600"}`}>
                 {trendPercent >= 0 ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
-                {trendPercent >= 0 ? "+" : ""}{trendPercent}% vs previous
+                {trendPercent >= 0 ? "+" : ""}{trendPercent}% so với kỳ trước
               </p>
             )}
           </CardContent>
@@ -116,7 +119,7 @@ export function Revenue() {
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardDescription className="text-xs font-medium uppercase tracking-wide">Transactions</CardDescription>
+              <CardDescription className="text-xs font-medium uppercase tracking-wide">Giao dịch</CardDescription>
               <Receipt className="size-4 text-muted-foreground" />
             </div>
           </CardHeader>
@@ -124,7 +127,7 @@ export function Revenue() {
             <div className="text-3xl font-bold tracking-tight">{summary?.count ?? "—"}</div>
             {summary && summary.prev_count > 0 && (
               <p className="text-xs mt-1 text-muted-foreground">
-                {summary.prev_count} previous period
+                {summary.prev_count} kỳ trước
               </p>
             )}
           </CardContent>
@@ -133,14 +136,14 @@ export function Revenue() {
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardDescription className="text-xs font-medium uppercase tracking-wide">Active Subs</CardDescription>
+              <CardDescription className="text-xs font-medium uppercase tracking-wide">Gói đang hoạt động</CardDescription>
               <Users className="size-4 text-muted-foreground" />
             </div>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold tracking-tight">{subStats?.active ?? "—"}</div>
             <p className="text-xs mt-1 text-muted-foreground">
-              {subStats ? `${subStats.trial} trial · ${subStats.cancelled} cancelled` : ""}
+              {subStats ? `${subStats.trial} dùng thử · ${subStats.cancelled} đã hủy` : ""}
             </p>
           </CardContent>
         </Card>
@@ -149,23 +152,23 @@ export function Revenue() {
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardDescription className="text-xs font-medium uppercase tracking-wide">
-                {hasDeductions ? "Net Income" : "Gross Income"}
+                {hasDeductions ? "Lợi nhuận ròng" : "Lợi nhuận gộp"}
               </CardDescription>
               <Calculator className="size-4 text-muted-foreground" />
             </div>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold tracking-tight">
-              {summary ? `$${((hasDeductions ? (netIncome ?? 0) : summary.total) / 100).toLocaleString()}` : "—"}
+              {summary ? formatVnd(hasDeductions ? (netIncome ?? 0) : summary.total) : "—"}
             </div>
             {hasDeductions && summary && (
               <p className="text-xs mt-1 text-muted-foreground">
-                After operating costs & tax
+                Sau chi phí vận hành & thuế
               </p>
             )}
             {!hasDeductions && (
               <p className="text-xs mt-1 text-muted-foreground">
-                Before operating costs & tax
+                Trước chi phí vận hành & thuế
               </p>
             )}
           </CardContent>
@@ -175,8 +178,8 @@ export function Revenue() {
       {/* Revenue Chart */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Revenue Over Time</CardTitle>
-          <CardDescription>Paid transactions grouped by {period === "day" ? "hour" : "day"}</CardDescription>
+          <CardTitle className="text-sm">Doanh thu theo thời gian</CardTitle>
+          <CardDescription>Giao dịch đã thanh toán nhóm theo {period === "day" ? "giờ" : "ngày"}</CardDescription>
         </CardHeader>
         <CardContent>
           <ChartContainer config={chartConfig} className="h-75 w-full">
@@ -192,7 +195,7 @@ export function Revenue() {
                 }}
                 className="text-xs"
               />
-              <YAxis tickFormatter={(v) => `$${v / 100}`} className="text-xs" />
+              <YAxis tickFormatter={(v) => formatVnd(v)} className="text-xs" />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Area
                 type="monotone"
@@ -209,13 +212,13 @@ export function Revenue() {
       {/* Income Calculator */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Income Calculator</CardTitle>
-          <CardDescription>Enter operating costs and tax rate to calculate net income</CardDescription>
+          <CardTitle className="text-sm">Máy tính lợi nhuận</CardTitle>
+          <CardDescription>Nhập chi phí vận hành và thuế suất để tính lợi nhuận ròng</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2 max-w-md">
             <div className="space-y-2">
-              <Label htmlFor="operating-cost">Operating Cost ($)</Label>
+              <Label htmlFor="operating-cost">Chi phí vận hành (₫)</Label>
               <Input
                 id="operating-cost"
                 type="number"
@@ -226,7 +229,7 @@ export function Revenue() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="tax-percent">Tax Rate (%)</Label>
+              <Label htmlFor="tax-percent">Thuế suất (%)</Label>
               <Input
                 id="tax-percent"
                 type="number"
@@ -241,24 +244,24 @@ export function Revenue() {
           {hasDeductions && summary && (
             <div className="mt-4 p-4 rounded-md bg-muted/50 max-w-md space-y-1 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Gross Revenue</span>
-                <span className="font-mono">${(summary.total / 100).toLocaleString()}</span>
+                <span className="text-muted-foreground">Doanh thu gộp</span>
+                <span className="font-mono">{formatVnd(summary.total)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Tax ({taxPercent || 0}%)</span>
+                <span className="text-muted-foreground">Thuế ({taxPercent || 0}%)</span>
                 <span className="font-mono text-red-600">
-                  -${((summary.total * (parseFloat(taxPercent) || 0) / 100) / 100).toLocaleString()}
+                  -{formatVnd(summary.total * (parseFloat(taxPercent) || 0) / 100)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Operating Cost</span>
+                <span className="text-muted-foreground">Chi phí vận hành</span>
                 <span className="font-mono text-red-600">
-                  -${(parseFloat(operatingCost) || 0).toLocaleString()}
+                  -{formatVnd(parseFloat(operatingCost) || 0)}
                 </span>
               </div>
               <div className="border-t pt-1 flex justify-between font-medium">
-                <span>Net Income</span>
-                <span className="font-mono">${((netIncome ?? 0) / 100).toLocaleString()}</span>
+                <span>Lợi nhuận ròng</span>
+                <span className="font-mono">{formatVnd(netIncome ?? 0)}</span>
               </div>
             </div>
           )}

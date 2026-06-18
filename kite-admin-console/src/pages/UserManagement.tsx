@@ -108,8 +108,8 @@ export function UserManagement() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">User Management</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Manage users, plans, and sessions</p>
+        <h1 className="text-2xl font-bold tracking-tight">Quản lý người dùng</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Quản lý người dùng, gói và phiên đăng nhập</p>
       </div>
 
       {/* Search */}
@@ -117,7 +117,7 @@ export function UserManagement() {
         <div className="relative flex-1 min-w-48">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
-            placeholder="Search by email or username..."
+            placeholder="Tìm kiếm theo email hoặc tên đăng nhập..."
             className="pl-9"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1) }}
@@ -133,9 +133,9 @@ export function UserManagement() {
               <TableRow>
                 <TableHead>Email</TableHead>
                 <TableHead>Discord</TableHead>
-                <TableHead>Plan</TableHead>
-                <TableHead className="text-right">Apps</TableHead>
-                <TableHead>Joined</TableHead>
+                <TableHead>Gói</TableHead>
+                <TableHead className="text-right">Ứng dụng</TableHead>
+                <TableHead>Ngày tham gia</TableHead>
                 <TableHead />
               </TableRow>
             </TableHeader>
@@ -149,7 +149,7 @@ export function UserManagement() {
               ) : users.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                    No users found
+                    Không tìm thấy người dùng nào
                   </TableCell>
                 </TableRow>
               ) : (
@@ -188,10 +188,10 @@ export function UserManagement() {
             disabled={page <= 1}
             onClick={() => setPage((p) => p - 1)}
           >
-            Previous
+            Trước
           </Button>
           <span className="text-sm text-muted-foreground py-1.5">
-            Page {page} of {Math.ceil(total / pageSize)}
+            Trang {page} / {Math.ceil(total / pageSize)}
           </span>
           <Button
             variant="outline"
@@ -199,7 +199,7 @@ export function UserManagement() {
             disabled={page >= Math.ceil(total / pageSize)}
             onClick={() => setPage((p) => p + 1)}
           >
-            Next
+            Sau
           </Button>
         </div>
       )}
@@ -224,7 +224,7 @@ export function UserManagement() {
               <div className="space-y-4">
                 {/* Subscription */}
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Subscription</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Đăng ký</p>
                   <div className="rounded-md border p-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       {detail.subscription ? (
@@ -232,12 +232,12 @@ export function UserManagement() {
                           <Badge variant="default">{detail.subscription.display_name ?? detail.subscription.status}</Badge>
                           <span className="text-sm text-muted-foreground">
                             {detail.subscription.status === "active" && detail.subscription.renews_at
-                              ? `Renews ${new Date(detail.subscription.renews_at).toLocaleDateString()}`
-                              : `Status: ${detail.subscription.status}`}
+                              ? `Gia hạn ${new Date(detail.subscription.renews_at).toLocaleDateString()}`
+                              : `Trạng thái: ${detail.subscription.status}`}
                           </span>
                         </>
                       ) : (
-                        <span className="text-sm text-muted-foreground">No active subscription</span>
+                        <span className="text-sm text-muted-foreground">Không có đăng ký đang hoạt động</span>
                       )}
                     </div>
                   </div>
@@ -246,17 +246,17 @@ export function UserManagement() {
                 {/* Apps */}
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
-                    Apps ({detail.apps.length})
+                    Ứng dụng ({detail.apps.length})
                   </p>
                   <div className="space-y-1.5">
                     {detail.apps.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No apps</p>
+                      <p className="text-sm text-muted-foreground">Không có ứng dụng</p>
                     ) : (
                       detail.apps.map((app) => (
                         <div key={app.id} className="rounded-md border px-3 py-2 flex items-center justify-between">
                           <span className="text-sm font-medium">{app.name}</span>
                           <Badge variant={app.enabled ? "outline" : "destructive"} className="text-xs">
-                            {app.enabled ? "enabled" : "disabled"}
+                            {app.enabled ? "đang bật" : "đã tắt"}
                           </Badge>
                         </div>
                       ))
@@ -268,10 +268,10 @@ export function UserManagement() {
 
                 {/* Actions */}
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Actions</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Thao tác</p>
                   <div className="flex flex-wrap gap-2">
                     <Button variant="outline" size="sm" onClick={() => handleForceLogout(detail.id)}>
-                      <LogOut className="size-3.5" /> Force Logout
+                      <LogOut className="size-3.5" /> Buộc đăng xuất
                     </Button>
                   </div>
                 </div>

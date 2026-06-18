@@ -1,4 +1,5 @@
-from datetime import datetime, timezone
+import uuid
+from datetime import datetime, timezone, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy import select, func, update, delete
@@ -15,6 +16,7 @@ from schema.billing import (
     EntitlementListItem, EntitlementListResponse,
     PaymentSessionListItem, PaymentSessionListResponse,
     UpdateSubscriptionRequest, UpdatePaymentSessionRequest,
+    GrantEntitlementRequest,
 )
 from utils.auth_deps import require_admin
 
@@ -139,6 +141,46 @@ async def list_entitlements(
     ]
 
     return EntitlementListResponse(items=items, total=total, page=page, page_size=page_size)
+
+
+@router.post("/entitlements", response_model=EntitlementListItem, status_code=status.HTTP_201_CREATED)
+async def grant_entitlement(
+    body: GrantEntitlementRequest,
+    db: AsyncSession = Depends(get_db),
+    _admin: dict = Depends(require_admin),
+):
+    app = (await db.execute(select(App).where(App.id == body.app_id))).scalar_one_or_none()
+    if not app:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="App not found")
+
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    ends_at = None
+    if body.duration_days and body.duration_days > 0:
+        ends_at = now + timedelta(days=body.duration_days)
+
+    ent = Entitlement(
+        id=uuid.uuid4().hex,
+        type="manual",
+        subscription_id=None,
+        app_id=body.app_id,
+        plan_id=body.plan_id,
+        created_at=now,
+        updated_at=now,
+        ends_at=ends_at,
+    )
+    db.add(ent)
+    await db.commit()
+
+    return EntitlementListItem(
+        id=ent.id,
+        type=ent.type,
+        app_id=ent.app_id,
+        app_name=app.name,
+        subscription_id=ent.subscription_id,
+        plan_id=ent.plan_id,
+        ends_at=ent.ends_at,
+        created_at=ent.created_at,
+    )
 
 
 @router.delete("/entitlements/{ent_id}", status_code=status.HTTP_204_NO_CONTENT)

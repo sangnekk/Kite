@@ -139,39 +139,39 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const { stats, usage_chart, recent_logs } = data
 
   const errorTrend = stats.errors_24h > stats.errors_prev_24h ? "up" : stats.errors_24h < stats.errors_prev_24h ? "down" : undefined
-  const errorSub = `vs ${stats.errors_prev_24h} yesterday`
+  const errorSub = `so với ${stats.errors_prev_24h} hôm qua`
 
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Command Center</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Trung tâm điều khiển</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Kite system overview — {new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+          Tổng quan hệ thống Kite — {new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
         </p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <StatCard icon={Users} label="Total Users" value={stats.total_users} />
-        <StatCard icon={Bot} label="Total Apps" value={stats.total_apps} sub={`${stats.disabled_apps} disabled`} />
-        <StatCard icon={Activity} label="Active Apps" value={stats.active_apps} />
+        <StatCard icon={Users} label="Tổng người dùng" value={stats.total_users} />
+        <StatCard icon={Bot} label="Tổng ứng dụng" value={stats.total_apps} sub={`${stats.disabled_apps} đã vô hiệu hóa`} />
+        <StatCard icon={Activity} label="Ứng dụng hoạt động" value={stats.active_apps} />
         <StatCard
           icon={AlertTriangle}
-          label="Errors (24h)"
+          label="Lỗi (24h)"
           value={stats.errors_24h}
           sub={errorSub}
           trend={errorTrend}
           color={stats.errors_24h > 0 ? "text-destructive" : "text-foreground"}
         />
-        <StatCard icon={Zap} label="Credits Used" value={stats.total_credits.toLocaleString()} sub={`${stats.active_subscriptions} active subs`} />
+        <StatCard icon={Zap} label="Tín dụng đã dùng" value={stats.total_credits.toLocaleString()} sub={`${stats.active_subscriptions} đăng ký hoạt động`} />
       </div>
 
       {/* Charts */}
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-semibold">Usage Over Time</CardTitle>
-            <CardDescription>Credits consumed per day (last 7 days)</CardDescription>
+            <CardTitle className="text-sm font-semibold">Mức sử dụng theo thời gian</CardTitle>
+            <CardDescription>Tín dụng tiêu thụ mỗi ngày (7 ngày gần đây)</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
@@ -196,11 +196,11 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-sm font-semibold">Error Rate</CardTitle>
-                <CardDescription>Errors per day (last 7 days)</CardDescription>
+                <CardTitle className="text-sm font-semibold">Tỷ lệ lỗi</CardTitle>
+                <CardDescription>Lỗi mỗi ngày (7 ngày gần đây)</CardDescription>
               </div>
               <Button size="sm" variant="destructive" onClick={() => onNavigate("logs")}>
-                View Logs
+                Xem nhật ký
               </Button>
             </div>
           </CardHeader>
@@ -220,7 +220,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                 />
               </BarChart>
             </ChartContainer>
-            <p className="text-xs text-muted-foreground mt-2">Click a bar to jump to logs</p>
+            <p className="text-xs text-muted-foreground mt-2">Nhấp vào một cột để chuyển đến nhật ký</p>
           </CardContent>
         </Card>
       </div>
@@ -232,19 +232,19 @@ export function Dashboard({ onNavigate }: DashboardProps) {
             <div>
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <span className="size-2 rounded-full bg-green-500 animate-pulse inline-block" />
-                Live Activity Feed
+                Hoạt động trực tiếp
               </CardTitle>
-              <CardDescription>Most recent system events</CardDescription>
+              <CardDescription>Sự kiện hệ thống gần đây nhất</CardDescription>
             </div>
             <Button size="sm" variant="outline" onClick={() => onNavigate("logs")}>
-              View All
+              Xem tất cả
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-1">
             {recent_logs.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">No recent logs</p>
+              <p className="text-sm text-muted-foreground py-4 text-center">Không có nhật ký gần đây</p>
             ) : (
               recent_logs.map((log) => (
                 <div
