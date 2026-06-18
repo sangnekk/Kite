@@ -34,8 +34,11 @@ func (h *BillingHandler) HandleSePayIPN(c *handler.Context, body json.RawMessage
 		return &wire.BillingWebhookResponse{}, nil
 	}
 
-	paymentRef := firstNonEmpty(derefString(req.Code), req.Content, req.Description, req.ReferenceCode)
-	paymentID, ok := payment.ExtractInvoiceNumber(paymentRef)
+	// Try every field that may carry the transfer memo and use the first one
+	// that yields a valid invoice number. The `code` field is auto-extracted by
+	// the bank/SePay and is frequently truncated (e.g. MBBank caps it), so the
+	// full `content`/`description` fields are tried first.
+	paymentID, ok := firstInvoiceNumber(req.Content, req.Description, derefString(req.Code), req.ReferenceCode)
 	if !ok {
 		return nil, handler.ErrBadRequest("invalid_invoice_number", "failed to parse invoice number")
 	}
@@ -155,6 +158,22 @@ func (h *BillingHandler) HandleSePayIPN(c *handler.Context, body json.RawMessage
 	}
 
 	return &wire.BillingWebhookResponse{}, nil
+}
+
+// firstInvoiceNumber returns the first parseable KITE invoice number found
+// across the provided fields. Banks split the transfer memo across several
+// fields and may truncate some of them, so we cannot rely on field priority
+// alone — we pick the first field that actually decodes to a valid invoice.
+func firstInvoiceNumber(values ...string) (string, bool) {
+	for _, value := range values {
+		if strings.TrimSpace(value) == "" {
+			continue
+		}
+		if id, ok := payment.ExtractInvoiceNumber(value); ok {
+			return id, true
+		}
+	}
+	return "", false
 }
 
 func firstNonEmpty(values ...string) string {

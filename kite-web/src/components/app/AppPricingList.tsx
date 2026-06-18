@@ -94,6 +94,32 @@ export default function AppPricingList() {
             </div>
             <div className="space-y-4 text-sm">
               <div>
+                <div className="text-muted-foreground">Tên ngân hàng</div>
+                <div className="font-medium">
+                  {activeCheckout.checkout.bank_name}
+                </div>
+              </div>
+              <div>
+                <div className="text-muted-foreground">Số tài khoản</div>
+                <div className="flex items-center gap-2">
+                  <div className="rounded-xl border bg-muted/40 px-4 py-3 font-mono text-sm break-all">
+                    {activeCheckout.checkout.account_number}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(
+                        activeCheckout.checkout.account_number
+                      );
+                      toast.success("Đã sao chép số tài khoản");
+                    }}
+                  >
+                    Sao chép
+                  </Button>
+                </div>
+              </div>
+              <div>
                 <div className="text-muted-foreground">Số tiền</div>
                 <div className="text-3xl font-bold">
                   {formatNumber(activeCheckout.checkout.amount)}đ

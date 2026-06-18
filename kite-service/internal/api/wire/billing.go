@@ -60,6 +60,8 @@ type BillingCheckoutResponse struct {
 	QRCodeURL        string                 `json:"qr_code_url"`
 	PaymentContent   string                 `json:"payment_content"`
 	PaymentStatusURL string                 `json:"payment_status_url"`
+	BankName         string                 `json:"bank_name"`
+	AccountNumber    string                 `json:"account_number"`
 	Amount           int                    `json:"amount"`
 	ExpiresAt        time.Time              `json:"expires_at"`
 	Fields           []BillingCheckoutField `json:"fields"`

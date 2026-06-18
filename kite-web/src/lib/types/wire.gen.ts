@@ -180,6 +180,8 @@ export interface BillingCheckoutResponse {
   qr_code_url: string;
   payment_content: string;
   payment_status_url: string;
+  bank_name: string;
+  account_number: string;
   amount: number /* int */;
   expires_at: string /* RFC3339 */;
   fields: BillingCheckoutField[];

@@ -65,6 +65,8 @@ func (h *BillingHandler) HandleAppCheckout(c *handler.Context, req wire.BillingC
 		QRCodeURL:        qrImageURL,
 		PaymentContent:   qrContent,
 		PaymentStatusURL: fmt.Sprintf("/v1/apps/%s/billing/checkouts/%s?plan_id=%s", c.App.ID, paymentID, url.QueryEscape(plan.ID)),
+		BankName:         strings.TrimSpace(h.config.MerchantBankName),
+		AccountNumber:    strings.TrimSpace(h.config.MerchantAccountNo),
 		Amount:           amount,
 		ExpiresAt:        now.Add(time.Duration(h.config.CheckoutTTLMinutes) * time.Minute),
 	}, nil
