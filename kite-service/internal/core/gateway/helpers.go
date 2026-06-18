@@ -103,8 +103,8 @@ func presenceForApp(app *model.App, customBotStatus bool, token string) *gateway
 	status := discord.OnlineStatus
 	activity := discord.Activity{
 		Type:  discord.CustomActivity,
-		Name:  "kite.onl",
-		State: "🪁 Powered by Vibe Bot",
+		Name:  "bot.vibebost.vn",
+		State: "⭐ Bot được chạy từ bot.vibehost.vn",
 	}
 
 	if customBotStatus && app.DiscordStatus != nil {
