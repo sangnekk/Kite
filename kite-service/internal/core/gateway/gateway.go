@@ -41,7 +41,8 @@ func NewGateway(
 	eventHandler EventHandler,
 	tokenCrypt *util.SymmetricCrypt,
 ) (*Gateway, error) {
-	session, err := createSession(tokenCrypt, app)
+	features := planManager.AppFeatures(context.Background(), app.ID)
+	session, err := createSession(tokenCrypt, app, features.CustomBotStatus)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create session: %w", err)
 	}
@@ -130,7 +131,8 @@ func (g *Gateway) Close() error {
 
 func (g *Gateway) Update(ctx context.Context, app *model.App) {
 	if !app.DiscordStatus.Equals(g.app.DiscordStatus) {
-		presence := presenceForApp(app)
+		features := g.planManager.AppFeatures(ctx, app.ID)
+		presence := presenceForApp(app, features.CustomBotStatus)
 
 		err := g.session.Gateway().Send(ctx, presence)
 		if err != nil {
@@ -158,7 +160,8 @@ func (g *Gateway) Update(ctx context.Context, app *model.App) {
 			)
 		}
 
-		session, err := createSession(g.tokenCrypt, app)
+		features := g.planManager.AppFeatures(ctx, app.ID)
+		session, err := createSession(g.tokenCrypt, app, features.CustomBotStatus)
 		if err != nil {
 			g.createLogEntry(model.LogLevelError, fmt.Sprintf("Failed to create session: %v", err))
 			return

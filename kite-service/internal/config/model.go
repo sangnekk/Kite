@@ -144,4 +144,5 @@ type BillingPlanConfig struct {
 	FeatureMaxMessages          int  `toml:"feature_max_messages"`
 	FeatureMaxEventListeners    int  `toml:"feature_max_event_listeners"`
 	FeaturePrioritySupport      bool `toml:"feature_priority_support"`
+	FeatureCustomBotStatus      bool `toml:"feature_custom_bot_status"`
 }

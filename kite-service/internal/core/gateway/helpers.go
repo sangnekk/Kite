@@ -35,14 +35,14 @@ func getAppIntents(client *api.Client) (gateway.Intents, error) {
 	return res, nil
 }
 
-func createSession(tokenCrypt *util.SymmetricCrypt, app *model.App) (*state.State, error) {
+func createSession(tokenCrypt *util.SymmetricCrypt, app *model.App, customBotStatus bool) (*state.State, error) {
 	token, err := tokenCrypt.DecryptString(app.DiscordToken)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decrypt token: %w", err)
 	}
 
 	identifier := gateway.DefaultIdentifier("Bot " + token)
-	identifier.IdentifyCommand.Presence = presenceForApp(app)
+	identifier.IdentifyCommand.Presence = presenceForApp(app, customBotStatus)
 
 	// TODO: pass in custom opts instead of modifying the default
 	gateway.DefaultGatewayOpts.AlwaysCloseGracefully = false
@@ -51,7 +51,10 @@ func createSession(tokenCrypt *util.SymmetricCrypt, app *model.App) (*state.Stat
 	return state.NewWithIdentifier(identifier), nil
 }
 
-func presenceForApp(app *model.App) *gateway.UpdatePresenceCommand {
+// presenceForApp builds the bot presence. A custom status is only applied when
+// customBotStatus is true (the app's plan allows it); otherwise the default
+// Vibe Bot presence is used, so downgrading a plan reverts the status.
+func presenceForApp(app *model.App, customBotStatus bool) *gateway.UpdatePresenceCommand {
 	status := discord.OnlineStatus
 	activity := discord.Activity{
 		Type:  discord.CustomActivity,
@@ -59,7 +62,7 @@ func presenceForApp(app *model.App) *gateway.UpdatePresenceCommand {
 		State: "🪁 Powered by Vibe Bot",
 	}
 
-	if app.DiscordStatus != nil {
+	if customBotStatus && app.DiscordStatus != nil {
 		if app.DiscordStatus.Status != "" {
 			status = discord.Status(app.DiscordStatus.Status)
 		}

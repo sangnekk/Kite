@@ -200,6 +200,13 @@ func (h *AppHandler) HandleAppUpdate(c *handler.Context, req wire.AppUpdateReque
 }
 
 func (h *AppHandler) HandleAppStatusUpdate(c *handler.Context, req wire.AppStatusUpdateRequest) (*wire.AppStatusUpdateResponse, error) {
+	if req.DiscordStatus != nil && !c.Features.CustomBotStatus {
+		return nil, handler.ErrBadRequest(
+			"feature_not_available",
+			"Đổi trạng thái bot chỉ khả dụng ở các gói có bật tính năng này.",
+		)
+	}
+
 	var status *model.AppDiscordStatus
 	if req.DiscordStatus != nil {
 		status = &model.AppDiscordStatus{

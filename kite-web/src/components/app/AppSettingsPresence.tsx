@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/card";
 import { useAppStatusUpdateMutation } from "@/lib/api/mutations";
 import { setValidationErrors } from "@/lib/form";
-import { useApp } from "@/lib/hooks/api";
+import { useApp, useAppFeature } from "@/lib/hooks/api";
 import { useAppId } from "@/lib/hooks/params";
 import { ExternalLinkIcon } from "lucide-react";
 import Link from "next/link";
@@ -44,6 +44,8 @@ interface FormFields {
 
 export default function AppSettingsPresence() {
   const app = useApp();
+  const appId = useAppId();
+  const canCustomStatus = useAppFeature((f) => f.custom_bot_status);
 
   const form = useForm<FormFields>({
     defaultValues: {
@@ -119,8 +121,30 @@ export default function AppSettingsPresence() {
           Cấu hình trạng thái và hoạt động của ứng dụng trên Discord.
         </CardDescription>
       </CardHeader>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+      {canCustomStatus === false ? (
+        <>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Tính năng đổi trạng thái bot chỉ khả dụng ở các gói có bật tính
+              năng này.
+            </p>
+          </CardContent>
+          <CardFooter className="border-t px-6 py-4">
+            <Button asChild>
+              <Link
+                href={{
+                  pathname: "/apps/[appId]/premium",
+                  query: { appId },
+                }}
+              >
+                Nâng cấp gói
+              </Link>
+            </Button>
+          </CardFooter>
+        </>
+      ) : (
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
           <CardContent className="space-y-5">
             <div className="flex space-x-3 items-end">
               <FormField
@@ -222,7 +246,8 @@ export default function AppSettingsPresence() {
             <Button type="submit">Cập nhật trạng thái</Button>
           </CardFooter>
         </form>
-      </Form>
+        </Form>
+      )}
     </Card>
   );
 }
