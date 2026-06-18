@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
 class Application(FastAPI):
     def __init__(self, *args, **kwargs):
         super().__init__(lifespan=lifespan, *args, **kwargs)
-        self.add_middleware(CORSMiddleware, allow_origins="*", allow_methods="*")
+        self.add_middleware(CORSMiddleware, allow_origins="*", allow_methods="*", allow_headers="*")
         self.add_api_route("/health", self.health_check, methods=["GET"])
         self.include_router(auth_router)
         self.include_router(revenue_router)
