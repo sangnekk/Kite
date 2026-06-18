@@ -26,6 +26,11 @@ export interface AppDiscordStatus {
   activity_name?: string;
   activity_state?: string;
   activity_url?: string;
+  activity_details?: string;
+  activity_large_image?: string;
+  activity_large_text?: string;
+  activity_small_image?: string;
+  activity_small_text?: string;
 }
 export type AppGetResponse = App;
 export interface AppSettings {

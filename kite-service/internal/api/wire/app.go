@@ -23,11 +23,16 @@ type App struct {
 }
 
 type AppDiscordStatus struct {
-	Status        string `json:"status,omitempty"`
-	ActivityType  int    `json:"activity_type,omitempty"`
-	ActivityName  string `json:"activity_name,omitempty"`
-	ActivityState string `json:"activity_state,omitempty"`
-	ActivityURL   string `json:"activity_url,omitempty"`
+	Status             string `json:"status,omitempty"`
+	ActivityType       int    `json:"activity_type,omitempty"`
+	ActivityName       string `json:"activity_name,omitempty"`
+	ActivityState      string `json:"activity_state,omitempty"`
+	ActivityURL        string `json:"activity_url,omitempty"`
+	ActivityDetails    string `json:"activity_details,omitempty"`
+	ActivityLargeImage string `json:"activity_large_image,omitempty"`
+	ActivityLargeText  string `json:"activity_large_text,omitempty"`
+	ActivitySmallImage string `json:"activity_small_image,omitempty"`
+	ActivitySmallText  string `json:"activity_small_text,omitempty"`
 }
 
 type AppGetResponse = App
@@ -115,11 +120,16 @@ func AppToWire(app *model.App) *App {
 	var status *AppDiscordStatus
 	if app.DiscordStatus != nil {
 		status = &AppDiscordStatus{
-			Status:        app.DiscordStatus.Status,
-			ActivityType:  app.DiscordStatus.ActivityType,
-			ActivityName:  app.DiscordStatus.ActivityName,
-			ActivityState: app.DiscordStatus.ActivityState,
-			ActivityURL:   app.DiscordStatus.ActivityURL,
+			Status:             app.DiscordStatus.Status,
+			ActivityType:       app.DiscordStatus.ActivityType,
+			ActivityName:       app.DiscordStatus.ActivityName,
+			ActivityState:      app.DiscordStatus.ActivityState,
+			ActivityURL:        app.DiscordStatus.ActivityURL,
+			ActivityDetails:    app.DiscordStatus.ActivityDetails,
+			ActivityLargeImage: app.DiscordStatus.ActivityLargeImage,
+			ActivityLargeText:  app.DiscordStatus.ActivityLargeText,
+			ActivitySmallImage: app.DiscordStatus.ActivitySmallImage,
+			ActivitySmallText:  app.DiscordStatus.ActivitySmallText,
 		}
 	}
 

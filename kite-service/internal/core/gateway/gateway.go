@@ -132,7 +132,8 @@ func (g *Gateway) Close() error {
 func (g *Gateway) Update(ctx context.Context, app *model.App) {
 	if !app.DiscordStatus.Equals(g.app.DiscordStatus) {
 		features := g.planManager.AppFeatures(ctx, app.ID)
-		presence := presenceForApp(app, features.CustomBotStatus)
+		token, _ := g.tokenCrypt.DecryptString(app.DiscordToken)
+		presence := presenceForApp(app, features.CustomBotStatus, token)
 
 		err := g.session.Gateway().Send(ctx, presence)
 		if err != nil {

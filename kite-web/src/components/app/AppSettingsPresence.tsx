@@ -39,6 +39,11 @@ interface FormFields {
     activity_type?: string;
     activity_name?: string;
     activity_url?: string;
+    activity_details?: string;
+    activity_large_image?: string;
+    activity_large_text?: string;
+    activity_small_image?: string;
+    activity_small_text?: string;
   };
 }
 
@@ -54,6 +59,11 @@ export default function AppSettingsPresence() {
         activity_type: "0",
         activity_name: "",
         activity_url: "",
+        activity_details: "",
+        activity_large_image: "",
+        activity_large_text: "",
+        activity_small_image: "",
+        activity_small_text: "",
       },
     },
   });
@@ -66,6 +76,11 @@ export default function AppSettingsPresence() {
           activity_type: app.discord_status?.activity_type?.toString() || "0",
           activity_name: app.discord_status?.activity_name || "",
           activity_url: app.discord_status?.activity_url || "",
+          activity_details: app.discord_status?.activity_details || "",
+          activity_large_image: app.discord_status?.activity_large_image || "",
+          activity_large_text: app.discord_status?.activity_large_text || "",
+          activity_small_image: app.discord_status?.activity_small_image || "",
+          activity_small_text: app.discord_status?.activity_small_text || "",
         },
       });
     }
@@ -86,6 +101,16 @@ export default function AppSettingsPresence() {
                 activity_name: data.discord_status.activity_name || undefined,
                 activity_state: data.discord_status.activity_name || undefined,
                 activity_url: data.discord_status.activity_url || undefined,
+                activity_details:
+                  data.discord_status.activity_details || undefined,
+                activity_large_image:
+                  data.discord_status.activity_large_image || undefined,
+                activity_large_text:
+                  data.discord_status.activity_large_text || undefined,
+                activity_small_image:
+                  data.discord_status.activity_small_image || undefined,
+                activity_small_text:
+                  data.discord_status.activity_small_text || undefined,
               }
             : undefined,
         },
@@ -238,6 +263,105 @@ export default function AppSettingsPresence() {
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="discord_status.activity_details"
+                  render={({ field }) => (
+                    <FormItem className="w-full">
+                      <FormLabel>Chi tiết (dòng phụ)</FormLabel>
+                      <FormControl>
+                        <Input type="text" className="w-full" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Ảnh: dán link ảnh trực tiếp (.png, .jpg, .gif, .webp). Kite sẽ
+                  tự chuyển sang định dạng Discord khi áp dụng.
+                </p>
+                <div className="flex gap-3">
+                  <FormField
+                    control={form.control}
+                    name="discord_status.activity_large_image"
+                    rules={{
+                      validate: (v) =>
+                        !v ||
+                        /^https?:\/\/\S+\.(png|jpe?g|gif|webp)(\?\S*)?$/i.test(
+                          v
+                        ) ||
+                        "Phải là link ảnh trực tiếp (.png, .jpg, .gif, .webp)",
+                    }}
+                    render={({ field }) => (
+                      <FormItem className="w-full">
+                        <FormLabel>Ảnh lớn (URL)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="text"
+                            placeholder="https://.../anh.png"
+                            className="w-full"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="discord_status.activity_large_text"
+                    render={({ field }) => (
+                      <FormItem className="w-full">
+                        <FormLabel>Text hover ảnh lớn</FormLabel>
+                        <FormControl>
+                          <Input type="text" className="w-full" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <FormField
+                    control={form.control}
+                    name="discord_status.activity_small_image"
+                    rules={{
+                      validate: (v) =>
+                        !v ||
+                        /^https?:\/\/\S+\.(png|jpe?g|gif|webp)(\?\S*)?$/i.test(
+                          v
+                        ) ||
+                        "Phải là link ảnh trực tiếp (.png, .jpg, .gif, .webp)",
+                    }}
+                    render={({ field }) => (
+                      <FormItem className="w-full">
+                        <FormLabel>Ảnh nhỏ (URL)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="text"
+                            placeholder="https://.../anh.png"
+                            className="w-full"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="discord_status.activity_small_text"
+                    render={({ field }) => (
+                      <FormItem className="w-full">
+                        <FormLabel>Text hover ảnh nhỏ</FormLabel>
+                        <FormControl>
+                          <Input type="text" className="w-full" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </>
             )}
           </CardContent>

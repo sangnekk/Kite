@@ -37,11 +37,18 @@ type AppSettings struct {
 }
 
 type AppDiscordStatus struct {
-	Status        string `json:"status,omitempty"`
-	ActivityType  int    `json:"activity_type,omitempty"`
-	ActivityName  string `json:"activity_name,omitempty"`
-	ActivityState string `json:"activity_state,omitempty"`
-	ActivityURL   string `json:"activity_url,omitempty"`
+	Status          string `json:"status,omitempty"`
+	ActivityType    int    `json:"activity_type,omitempty"`
+	ActivityName    string `json:"activity_name,omitempty"`
+	ActivityState   string `json:"activity_state,omitempty"`
+	ActivityURL     string `json:"activity_url,omitempty"`
+	ActivityDetails string `json:"activity_details,omitempty"`
+	// Image assets. A plain http(s) URL is resolved to a Discord external asset
+	// (mp:...) when the presence is built; an asset key or mp: value is used as-is.
+	ActivityLargeImage string `json:"activity_large_image,omitempty"`
+	ActivityLargeText  string `json:"activity_large_text,omitempty"`
+	ActivitySmallImage string `json:"activity_small_image,omitempty"`
+	ActivitySmallText  string `json:"activity_small_text,omitempty"`
 }
 
 func (s *AppDiscordStatus) Equals(other *AppDiscordStatus) bool {
@@ -57,7 +64,12 @@ func (s *AppDiscordStatus) Equals(other *AppDiscordStatus) bool {
 		s.ActivityType == other.ActivityType &&
 		s.ActivityName == other.ActivityName &&
 		s.ActivityState == other.ActivityState &&
-		s.ActivityURL == other.ActivityURL
+		s.ActivityURL == other.ActivityURL &&
+		s.ActivityDetails == other.ActivityDetails &&
+		s.ActivityLargeImage == other.ActivityLargeImage &&
+		s.ActivityLargeText == other.ActivityLargeText &&
+		s.ActivitySmallImage == other.ActivitySmallImage &&
+		s.ActivitySmallText == other.ActivitySmallText
 }
 
 type AppCollaboratorRole string

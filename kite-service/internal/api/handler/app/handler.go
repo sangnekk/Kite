@@ -210,11 +210,16 @@ func (h *AppHandler) HandleAppStatusUpdate(c *handler.Context, req wire.AppStatu
 	var status *model.AppDiscordStatus
 	if req.DiscordStatus != nil {
 		status = &model.AppDiscordStatus{
-			Status:        req.DiscordStatus.Status,
-			ActivityType:  req.DiscordStatus.ActivityType,
-			ActivityName:  req.DiscordStatus.ActivityName,
-			ActivityState: req.DiscordStatus.ActivityState,
-			ActivityURL:   req.DiscordStatus.ActivityURL,
+			Status:             req.DiscordStatus.Status,
+			ActivityType:       req.DiscordStatus.ActivityType,
+			ActivityName:       req.DiscordStatus.ActivityName,
+			ActivityState:      req.DiscordStatus.ActivityState,
+			ActivityURL:        req.DiscordStatus.ActivityURL,
+			ActivityDetails:    req.DiscordStatus.ActivityDetails,
+			ActivityLargeImage: req.DiscordStatus.ActivityLargeImage,
+			ActivityLargeText:  req.DiscordStatus.ActivityLargeText,
+			ActivitySmallImage: req.DiscordStatus.ActivitySmallImage,
+			ActivitySmallText:  req.DiscordStatus.ActivitySmallText,
 		}
 	}
 
