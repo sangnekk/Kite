@@ -11,8 +11,12 @@ import (
 
 	"github.com/diamondburned/arikawa/v3/api"
 	"github.com/diamondburned/arikawa/v3/discord"
+	"github.com/kitecloud/kite/kite-service/internal/model"
 	"github.com/kitecloud/kite/kite-service/pkg/flow"
 )
+
+// slashCommandCap is Discord's hard limit on global slash commands per app.
+const slashCommandCap = 100
 
 func (m *CommandManager) DeployCommandsForApp(ctx context.Context, appID string) error {
 	deploymentStartedAt := time.Now().UTC()
@@ -34,6 +38,25 @@ func (m *CommandManager) DeployCommandsForApp(ctx context.Context, appID string)
 
 	if !app.Enabled {
 		return nil
+	}
+
+	// Discord rejects the whole bulk-overwrite if it exceeds 100 slash commands,
+	// which would drop every command. Cap defensively and warn the app instead.
+	if len(cmdData) > slashCommandCap {
+		dropped := len(cmdData) - slashCommandCap
+		cmdData = cmdData[:slashCommandCap]
+
+		slog.Warn(
+			"slash command cap exceeded, dropping extra commands",
+			slog.String("app_id", appID),
+			slog.Int("dropped", dropped),
+		)
+		_ = m.logStore.CreateLogEntry(ctx, model.LogEntry{
+			AppID:     appID,
+			Level:     model.LogLevelWarn,
+			Message:   fmt.Sprintf("Discord chỉ cho phép %d lệnh slash; %d lệnh không được đăng ký. Hãy chuyển các lệnh thừa sang prefix.", slashCommandCap, dropped),
+			CreatedAt: time.Now().UTC(),
+		})
 	}
 
 	appId, err := strconv.ParseUint(app.DiscordID, 10, 64)

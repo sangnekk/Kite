@@ -4,7 +4,8 @@ import {
   permissionBits,
 } from "@/lib/discord/permissions";
 import { getNodeId, useNodeValues } from "@/lib/flow/nodes";
-import { useMessages, useVariables } from "@/lib/hooks/api";
+import { useCommands, useMessages, useVariables } from "@/lib/hooks/api";
+import { useRouter } from "next/router";
 import { useAppId } from "@/lib/hooks/params";
 import {
   CommandArgumentChoiceData,
@@ -409,7 +410,38 @@ function DescriptionInput({ data, updateData, errors }: InputProps) {
   );
 }
 
+// Discord caps an app at 100 global slash commands. Prefix commands have no
+// such limit (but need the MESSAGE_CONTENT intent).
+const SLASH_COMMAND_CAP = 100;
+
 function CommandTypesInput({ data, updateData, errors }: InputProps) {
+  const commands = useCommands();
+  const router = useRouter();
+  const cmdId = router.query.cmdId as string | undefined;
+
+  // How many *other* commands already use a slash trigger.
+  const slashUsedByOthers = useMemo(
+    () =>
+      (commands ?? []).filter((c) => {
+        if (!c || c.id === cmdId) return false;
+        const entry = c.flow_source?.nodes?.find(
+          (n) => n.type === "entry_command"
+        );
+        return entry ? !entry.data?.command_disable_slash : false;
+      }).length,
+    [commands, cmdId]
+  );
+
+  const atSlashCap = slashUsedByOthers >= SLASH_COMMAND_CAP;
+
+  // At the cap this command can't be a slash command: force it to prefix and
+  // lock the slash toggle.
+  useEffect(() => {
+    if (atSlashCap && !data.command_disable_slash) {
+      updateData({ command_disable_slash: true, command_enable_prefix: true });
+    }
+  }, [atSlashCap, data.command_disable_slash, updateData]);
+
   return (
     <div>
       <div className="font-medium text-foreground mb-1">Loại lệnh</div>
@@ -420,11 +452,17 @@ function CommandTypesInput({ data, updateData, errors }: InputProps) {
         <BaseCheckbox
           field="command_disable_slash"
           title="Lệnh slash (/tên)"
+          description={
+            atSlashCap
+              ? "Bạn đã dùng hết số lượng slash command mà Discord cho phép, từ giờ chỉ còn prefix command."
+              : undefined
+          }
           value={!data.command_disable_slash}
           updateValue={(v) =>
             updateData({ command_disable_slash: v ? undefined : true })
           }
           errors={errors}
+          disabled={atSlashCap}
         />
         <BaseCheckbox
           field="command_enable_prefix"
@@ -2950,6 +2988,7 @@ function BaseCheckbox({
   errors,
   value,
   updateValue,
+  disabled,
 }: {
   field: string;
   title: string;
@@ -2957,6 +2996,7 @@ function BaseCheckbox({
   errors: Record<string, string>;
   value: boolean;
   updateValue: (value: boolean) => void;
+  disabled?: boolean;
 }) {
   const error = errors[field];
 
@@ -2966,7 +3006,7 @@ function BaseCheckbox({
       {description ? (
         <div className="text-muted-foreground text-sm mb-2">{description}</div>
       ) : null}
-      <Switch checked={value} onCheckedChange={updateValue} />
+      <Switch checked={value} onCheckedChange={updateValue} disabled={disabled} />
       {error && (
         <div className="text-red-600 dark:text-red-400 text-sm flex items-center space-x-1 pt-2">
           <CircleAlertIcon className="h-5 w-5 flex-none" />
