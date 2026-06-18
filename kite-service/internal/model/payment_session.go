@@ -17,6 +17,7 @@ const (
 
 type PaymentSession struct {
 	ID                    string
+	Seq                   int64
 	Provider              string
 	PaymentID             string
 	AppID                 string

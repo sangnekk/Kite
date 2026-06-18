@@ -25,6 +25,33 @@ func (h *BillingHandler) HandleSePayIPN(c *handler.Context, body json.RawMessage
 		return nil, handler.ErrUnauthorized("unauthorized", "invalid sepay secret key")
 	}
 
+	resp, err := h.processSePayIPN(c, body)
+	if err != nil {
+		// Alert ops about any authenticated transaction that failed to process
+		// so it can be reconciled manually. Best-effort, never blocks the flow.
+		h.notifySePayError(body, err)
+
+		// A terminal failure (validation / business rule, i.e. a *handler.Error
+		// with a 4xx status) will never succeed on retry. Ack it with 200 so
+		// SePay stops re-sending the same IPN — otherwise every retry would also
+		// re-fire the Discord alert. The webhook above already recorded it once.
+		var handlerErr *handler.Error
+		if errors.As(err, &handlerErr) && handlerErr.Status >= 400 && handlerErr.Status < 500 {
+			slog.Warn(
+				"Rejected SePay IPN",
+				slog.String("code", handlerErr.Code),
+				slog.String("error", err.Error()),
+			)
+			return &wire.BillingWebhookResponse{}, nil
+		}
+
+		// Transient/internal error (e.g. DB blip): surface it so SePay retries.
+		return nil, err
+	}
+	return resp, err
+}
+
+func (h *BillingHandler) processSePayIPN(c *handler.Context, body json.RawMessage) (*wire.BillingWebhookResponse, error) {
 	var req wire.BillingSePayIPNRequest
 	if err := json.Unmarshal(body, &req); err != nil {
 		return nil, handler.ErrBadRequest("invalid_request", fmt.Sprintf("failed to decode sepay ipn: %v", err))
@@ -42,46 +69,26 @@ func (h *BillingHandler) HandleSePayIPN(c *handler.Context, body json.RawMessage
 	if !ok {
 		return nil, handler.ErrBadRequest("invalid_invoice_number", "failed to parse invoice number")
 	}
-	code, ok := payment.DecodeInvoiceNumber(paymentID)
-	if !ok {
-		return nil, handler.ErrBadRequest("invalid_payment_code", "failed to parse payment code")
-	}
-
 	if h.paymentSessionStore == nil {
 		return nil, fmt.Errorf("payment session store is not configured")
 	}
 
+	// The transfer memo only carries the invoice id ("KITE<seq>"); the app and
+	// plan come from the payment session created at checkout time. A transfer
+	// for an unknown id is rejected (and alerted) rather than silently credited.
 	session, err := h.paymentSessionStore.PaymentSession(c.Context(), paymentID)
 	if err != nil {
-		if !errors.Is(err, pgx.ErrNoRows) {
-			return nil, fmt.Errorf("failed to load payment session: %w", err)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, handler.ErrBadRequest("unknown_payment_session", fmt.Sprintf("no payment session for invoice %s", paymentID))
 		}
-
-		now := time.Now().UTC()
-		session, err = h.paymentSessionStore.CreatePaymentSession(c.Context(), model.PaymentSession{
-			ID:         util.UniqueID(),
-			Provider:   "sepay",
-			PaymentID:  paymentID,
-			AppID:      code.AppID,
-			PlanID:     code.PlanID,
-			Amount:     int(req.TransferAmount),
-			QRImageURL: "",
-			QRContent:  paymentID,
-			Status:     model.PaymentSessionStatusPending,
-			CreatedAt:  now,
-			UpdatedAt:  now,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("failed to create payment session: %w", err)
-		}
+		return nil, fmt.Errorf("failed to load payment session: %w", err)
 	}
 
-	if session.PlanID != code.PlanID {
-		return nil, handler.ErrBadRequest("plan_mismatch", "payment session plan does not match payment code")
-	}
-
-	if session.AppID != code.AppID {
-		return nil, handler.ErrBadRequest("app_mismatch", "payment session app does not match payment code")
+	// Only a pending session may be processed. A session that is already paid
+	// (duplicate IPN) or failed/superseded (a newer checkout replaced it) is
+	// rejected so we never double-credit or honor a stale QR code.
+	if session.Status != model.PaymentSessionStatusPending {
+		return nil, handler.ErrBadRequest("payment_session_not_pending", fmt.Sprintf("payment session %s is %s", paymentID, session.Status))
 	}
 
 	amount := int(req.TransferAmount)
@@ -93,17 +100,31 @@ func (h *BillingHandler) HandleSePayIPN(c *handler.Context, body json.RawMessage
 		return nil, handler.ErrBadRequest("account_mismatch", "payment account does not match configured account")
 	}
 
-	plan := h.planManager.PlanByID(code.PlanID)
+	plan := h.planManager.PlanByID(session.PlanID)
 	if plan == nil {
 		return nil, handler.ErrBadRequest("unknown_plan", "Unknown plan")
 	}
 
-	app, err := h.appStore.App(c.Context(), code.AppID)
+	app, err := h.appStore.App(c.Context(), session.AppID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load app: %w", err)
 	}
 
 	now := time.Now().UTC()
+
+	// Reject a payment for a plan the app already actively owns. The UI prevents
+	// re-buying the current plan, so this is an anomaly that needs manual
+	// handling (refund or manual extension) rather than a parallel entitlement.
+	activeEntitlements, err := h.entitlementStore.ActiveEntitlements(c.Context(), app.ID, now)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load active entitlements: %w", err)
+	}
+	for _, ent := range activeEntitlements {
+		if ent.PlanID == plan.ID {
+			return nil, handler.ErrBadRequest("plan_already_active", fmt.Sprintf("app already has an active entitlement for plan %s", plan.ID))
+		}
+	}
+
 	renewsAt := now.AddDate(50, 0, 0)
 	subscription, err := h.subscriptionStore.UpsertLemonSqueezySubscription(c.Context(), model.Subscription{
 		ID:                         util.UniqueID(),
@@ -174,6 +195,44 @@ func firstInvoiceNumber(values ...string) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+// notifySePayError sends a Discord alert describing a failed SePay IPN so it
+// can be reconciled manually. It is best-effort: no-op when the Discord webhook
+// is not configured, and delivery happens in the background.
+func (h *BillingHandler) notifySePayError(body json.RawMessage, processErr error) {
+	if h.discordNotifier == nil {
+		return
+	}
+
+	var req wire.BillingSePayIPNRequest
+	_ = json.Unmarshal(body, &req) // best-effort, fields stay empty on failure
+
+	fields := []discordEmbedField{
+		{Name: "Lỗi", Value: truncateForDiscord(processErr.Error(), 1000), Inline: false},
+	}
+	if req.Gateway != "" {
+		fields = append(fields, discordEmbedField{Name: "Ngân hàng", Value: req.Gateway, Inline: true})
+	}
+	if req.TransferAmount != 0 {
+		fields = append(fields, discordEmbedField{Name: "Số tiền", Value: fmt.Sprintf("%d", req.TransferAmount), Inline: true})
+	}
+	if req.ReferenceCode != "" {
+		fields = append(fields, discordEmbedField{Name: "Mã giao dịch", Value: req.ReferenceCode, Inline: true})
+	}
+	if content := firstNonEmpty(derefString(req.Code), req.Content, req.Description); content != "" {
+		fields = append(fields, discordEmbedField{Name: "Nội dung CK", Value: truncateForDiscord(content, 1000), Inline: false})
+	}
+	if req.TransactionDate != "" {
+		fields = append(fields, discordEmbedField{Name: "Thời gian", Value: req.TransactionDate, Inline: true})
+	}
+
+	h.discordNotifier.NotifyAsync(discordEmbed{
+		Title:       "❌ Lỗi giao dịch SePay",
+		Description: "Một webhook IPN từ SePay xử lý thất bại và cần được kiểm tra thủ công.",
+		Color:       15548997, // red
+		Fields:      fields,
+	})
 }
 
 func firstNonEmpty(values ...string) string {

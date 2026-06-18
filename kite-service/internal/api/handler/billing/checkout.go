@@ -37,13 +37,19 @@ func (h *BillingHandler) HandleAppCheckout(c *handler.Context, req wire.BillingC
 		return nil, fmt.Errorf("merchant bank name is not configured")
 	}
 
-	paymentID := payment.EncodeInvoiceNumber(c.App.ID, plan.ID, util.UniqueID())
+	seq, err := h.paymentSessionStore.NextPaymentSequence(c.Context())
+	if err != nil {
+		return nil, fmt.Errorf("failed to allocate payment sequence: %w", err)
+	}
+
+	paymentID := payment.EncodeInvoiceNumber(seq)
 	qrContent := paymentID
 	qrImageURL := buildSePayQRCodeURL(h.config.MerchantAccountNo, h.config.MerchantBankName, amount, qrContent)
 	now := time.Now().UTC()
 
 	if _, err := h.paymentSessionStore.CreatePaymentSession(c.Context(), model.PaymentSession{
 		ID:         util.UniqueID(),
+		Seq:        seq,
 		Provider:   "sepay",
 		PaymentID:  paymentID,
 		AppID:      c.App.ID,
@@ -56,6 +62,13 @@ func (h *BillingHandler) HandleAppCheckout(c *handler.Context, req wire.BillingC
 		UpdatedAt:  now,
 	}); err != nil {
 		return nil, fmt.Errorf("failed to create payment session: %w", err)
+	}
+
+	// Supersede every older still-pending checkout for this app: only the latest
+	// one (this session) stays valid. A transfer against a superseded id will be
+	// rejected by the IPN handler (and alerted via Discord).
+	if err := h.paymentSessionStore.FailPendingPaymentSessionsForApp(c.Context(), c.App.ID, paymentID, now); err != nil {
+		return nil, fmt.Errorf("failed to supersede previous payment sessions: %w", err)
 	}
 
 	return &wire.BillingCheckoutResponse{

@@ -16,13 +16,8 @@ func (h *BillingHandler) HandleAppCheckoutStatus(c *handler.Context) (*wire.Bill
 		return nil, handler.ErrBadRequest("invalid_request", "payment_id and plan_id are required")
 	}
 
-	invoiceParts, ok := payment.DecodeInvoiceNumber(paymentID)
-	if !ok {
+	if _, ok := payment.DecodeInvoiceNumber(paymentID); !ok {
 		return nil, handler.ErrBadRequest("invalid_invoice", "invalid invoice number")
-	}
-
-	if invoiceParts.PlanID != planID {
-		return nil, handler.ErrBadRequest("plan_mismatch", "plan_id does not match invoice")
 	}
 
 	plan := h.planManager.PlanByID(planID)
