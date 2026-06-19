@@ -588,14 +588,10 @@ export const nodeActionHttpRequestDataSchema = nodeBaseDataSchema.extend({
 
 export const nodeActionAiChatCompletionDataSchema = nodeBaseDataSchema.extend({
   ai_chat_completion_data: z.object({
-    model: z
-      .union([
-        z.literal("gpt-4.1"),
-        z.literal("gpt-4.1-mini"),
-        z.literal("gpt-4.1-nano"),
-        z.literal("gpt-4o-mini"),
-      ])
-      .optional(),
+    // Model is a registry key resolved server-side; the available keys are
+    // config-driven, so it is validated as a free-form string here and checked
+    // against the active model registry by the backend.
+    model: z.string().optional(),
     system_prompt: z.string().max(2000).optional(),
     prompt: z.string().max(2000).min(1),
     max_completion_tokens: z
@@ -609,14 +605,8 @@ export const nodeActionAiChatCompletionDataSchema = nodeBaseDataSchema.extend({
 export const nodeActionAiWebSearchCompletionDataSchema =
   nodeBaseDataSchema.extend({
     ai_chat_completion_data: z.object({
-      model: z
-        .union([
-          z.literal("gpt-4.1"),
-          z.literal("gpt-4.1-mini"),
-          z.literal("gpt-4.1-nano"),
-          z.literal("gpt-4o-mini"),
-        ])
-        .optional(),
+      // See nodeActionAiChatCompletionDataSchema: config-driven registry key.
+      model: z.string().optional(),
       system_prompt: z.string().max(2000).optional(),
       prompt: z.string().max(2000).min(1),
       max_completion_tokens: z

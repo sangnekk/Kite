@@ -20,8 +20,7 @@ import (
 	"github.com/kitecloud/kite/kite-service/pkg/plugin"
 	"github.com/kitecloud/kite/kite-service/pkg/plugin/counting"
 	"github.com/kitecloud/kite/kite-service/pkg/plugin/starboard"
-	"github.com/openai/openai-go"
-	"github.com/openai/openai-go/option"
+	"github.com/kitecloud/kite/kite-service/pkg/provider"
 )
 
 func StartServer(c context.Context, cfg *config.Config) error {
@@ -53,9 +52,15 @@ func StartServer(c context.Context, cfg *config.Config) error {
 		return fmt.Errorf("failed to create token crypt: %w", err)
 	}
 
-	var openaiClient openai.Client
-	if cfg.OpenAI.APIKey != "" {
-		openaiClient = openai.NewClient(option.WithAPIKey(cfg.OpenAI.APIKey))
+	engineHTTP := engineHTTPClient(cfg)
+	aiProvider, aiRegistry := buildAIProvider(cfg, engineHTTP)
+	provider.SetDefaultModelRegistry(aiRegistry)
+
+	// Pass the AI provider as a nil interface (not a typed-nil pointer) when no
+	// provider is configured, so the API layer's nil checks behave correctly.
+	var aiProviderInterface provider.AIProvider
+	if aiProvider != nil {
+		aiProviderInterface = aiProvider
 	}
 
 	pluginRegistry := plugin.NewRegistry()
@@ -87,8 +92,8 @@ func StartServer(c context.Context, cfg *config.Config) error {
 			PluginRegistry:       pluginRegistry,
 			VariableValueStore:   pg,
 			ResumePointStore:     pg,
-			HttpClient:           engineHTTPClient(cfg),
-			OpenaiClient:         &openaiClient,
+			HttpClient:           engineHTTP,
+			AIProvider:           aiProvider,
 			TokenCrypt:           tokenCrypt,
 		},
 	)
@@ -154,6 +159,7 @@ func StartServer(c context.Context, cfg *config.Config) error {
 	},
 		pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg,
 		assetStore, gateway, planManager, pluginRegistry, tokenCrypt, commandManager,
+		aiRegistry, aiProviderInterface,
 	)
 	address := fmt.Sprintf("%s:%d", cfg.API.Host, cfg.API.Port)
 	if err := apiServer.Serve(ctx, address); err != nil {

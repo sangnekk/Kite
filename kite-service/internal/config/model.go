@@ -11,6 +11,7 @@ type Config struct {
 	Discord    DiscordConfig    `toml:"discord"`
 	Engine     EngineConfig     `toml:"engine"`
 	OpenAI     OpenAIConfig     `toml:"openai"`
+	AI         AIConfig         `toml:"ai"`
 	Billing    BillingConfig    `toml:"billing"`
 	Encryption EncryptionConfig `toml:"encryption"`
 
@@ -99,6 +100,41 @@ type UserLimitsConfig struct {
 
 type OpenAIConfig struct {
 	APIKey string `toml:"api_key"`
+}
+
+// AIConfig configures the AI providers and the models users can pick in flows.
+// Each provider speaks one wire protocol (openai or anthropic) and exposes one
+// or more manually declared models. Providers without an api_key are skipped at
+// startup, so their models never appear in the model picker.
+type AIConfig struct {
+	// DefaultModel is the model key used when a flow node leaves the model
+	// empty. Falls back to the first available model when unset or unavailable.
+	DefaultModel string             `toml:"default_model"`
+	Providers    []AIProviderConfig `toml:"provider" validate:"dive"`
+}
+
+type AIProviderConfig struct {
+	// ID uniquely identifies the provider and links its models to it.
+	ID string `toml:"id" validate:"required"`
+	// API is the wire protocol: "openai" (also covers OpenAI-compatible
+	// gateways like OpenRouter/Groq/vLLM via base_url) or "anthropic".
+	API string `toml:"api" validate:"required,oneof=openai anthropic"`
+	// BaseURL overrides the upstream endpoint. Empty uses the official one.
+	BaseURL string          `toml:"base_url"`
+	APIKey  string          `toml:"api_key"`
+	Models  []AIModelConfig `toml:"model" validate:"dive"`
+}
+
+type AIModelConfig struct {
+	// Key is the stable identifier stored in flow data and shown as the
+	// dropdown value. Decoupled from Model so spelling/provider can change.
+	Key string `toml:"key" validate:"required"`
+	// Name is the human-friendly label shown to no-code users.
+	Name string `toml:"name" validate:"required"`
+	// Model is the exact model spelling sent to the upstream API.
+	Model string `toml:"model" validate:"required"`
+	// Credits is the base cost charged per chat completion with this model.
+	Credits int `toml:"credits"`
 }
 
 type BillingConfig struct {

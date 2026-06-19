@@ -4,7 +4,10 @@ import { NodeMouseHandler, OnSelectionChangeParams } from "@xyflow/react";
 import { useCallback, useState } from "react";
 import FlowEditor from "./FlowEditor";
 import FlowMenu from "./FlowMenu";
+import FlowCopilotPanel from "./FlowCopilotPanel";
 import { LogEntry } from "@/lib/types/wire.gen";
+import { Button } from "../ui/button";
+import { SparklesIcon } from "lucide-react";
 
 interface Props {
   flowData: FlowData;
@@ -15,6 +18,7 @@ interface Props {
 
 export default function Flow({ flowData, logs, context, onChange }: Props) {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [copilotOpen, setCopilotOpen] = useState(false);
 
   // Only *close* the settings panel when the selection is cleared (clicking the
   // canvas, switching tabs, etc.). Opening is driven by an explicit click below,
@@ -37,14 +41,32 @@ export default function Flow({ flowData, logs, context, onChange }: Props) {
       <div className="flex flex-auto overflow-y-hidden relative">
         <FlowMenu selectedNodeId={selectedNodeId} logs={logs} />
 
-        <div className="flex-auto">
+        <div className="flex-auto relative">
           <FlowEditor
             initialData={flowData}
             onChange={onChange}
             onSelectionChange={onSelectionChange}
             onNodeClick={onNodeClick}
           />
+
+          {!copilotOpen && (
+            <Button
+              className="absolute top-3 right-3 gap-2 shadow-md"
+              size="sm"
+              onClick={() => setCopilotOpen(true)}
+            >
+              <SparklesIcon className="size-4" />
+              Trợ lý AI
+            </Button>
+          )}
         </div>
+
+        {copilotOpen && (
+          <FlowCopilotPanel
+            onApplied={onChange}
+            onClose={() => setCopilotOpen(false)}
+          />
+        )}
       </div>
     </FlowContextStoreProvider>
   );

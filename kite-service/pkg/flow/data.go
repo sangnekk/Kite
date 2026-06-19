@@ -3,6 +3,7 @@ package flow
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"regexp"
 
 	"github.com/diamondburned/arikawa/v3/api"
@@ -12,7 +13,6 @@ import (
 	"github.com/kitecloud/kite/kite-service/pkg/eval"
 	"github.com/kitecloud/kite/kite-service/pkg/message"
 	"github.com/kitecloud/kite/kite-service/pkg/provider"
-	"github.com/sashabaranov/go-openai"
 	"gopkg.in/guregu/null.v4"
 )
 
@@ -555,9 +555,29 @@ type AIChatCompletionData struct {
 
 func (d AIChatCompletionData) Validate() error {
 	return validation.ValidateStruct(&d,
-		validation.Field(&d.Model, validation.In(openai.GPT4Dot1, openai.GPT4Dot1Mini, openai.GPT4oMini, openai.GPT4Dot1Nano)),
+		validation.Field(&d.Model, validation.By(validateAIModelKey)),
 		validation.Field(&d.Prompt, validation.Required, validation.Length(1, 2000)),
 	)
+}
+
+// validateAIModelKey accepts any model key registered in the active AI model
+// registry. An empty key is allowed (the default model is applied at runtime),
+// and when no models are configured (AI disabled / tests) validation is lenient.
+func validateAIModelKey(value any) error {
+	key, _ := value.(string)
+	if key == "" {
+		return nil
+	}
+
+	registry := provider.DefaultModelRegistry()
+	if registry.Len() == 0 {
+		return nil
+	}
+	if !registry.Has(key) {
+		return errors.New("unknown or unavailable model")
+	}
+
+	return nil
 }
 
 type FlowNodePosition struct {

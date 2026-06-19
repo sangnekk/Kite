@@ -30,6 +30,62 @@ endpoint = "localhost:9000"
 access_key_id = "kite"
 secret_access_key = "1234567890"
 
+# AI providers and the models users can pick in flow AI nodes.
+#
+# Each provider speaks one wire protocol via `api`:
+#   - "openai"    : OpenAI itself, or any OpenAI-compatible gateway (OpenRouter,
+#                   Groq, vLLM, Ollama, ...) by also setting `base_url`.
+#   - "anthropic" : Anthropic Messages API, or an anthropic-compatible endpoint
+#                   via `base_url`.
+#
+# A provider with an empty `api_key` is skipped at startup, so its models never
+# show up in the model picker. Models are declared manually because custom
+# providers spell model names differently:
+#   - key   : stable id stored in flows and used as the dropdown value
+#   - name  : label shown to users
+#   - model : exact spelling sent to the upstream API
+#   - credits: base cost charged per chat completion (web search costs 5x)
+#
+# If no [[ai.provider]] is configured but [openai].api_key is set, Kite falls
+# back to a built-in OpenAI model set for backwards compatibility.
+#
+# [ai]
+# default_model = "gpt-4.1-mini"
+#
+# [[ai.provider]]
+# id = "openai"
+# api = "openai"
+# api_key = "sk-..."
+#
+#   [[ai.provider.model]]
+#   key = "gpt-4.1-mini"
+#   name = "GPT-4.1 Mini"
+#   model = "gpt-4.1-mini"
+#   credits = 20
+#
+# [[ai.provider]]
+# id = "anthropic"
+# api = "anthropic"
+# api_key = "sk-ant-..."
+#
+#   [[ai.provider.model]]
+#   key = "claude-sonnet"
+#   name = "Claude Sonnet 4.6"
+#   model = "claude-sonnet-4-6"
+#   credits = 30
+#
+# [[ai.provider]]
+# id = "openrouter"
+# api = "openai"
+# base_url = "https://openrouter.ai/api/v1"
+# api_key = "sk-or-..."
+#
+#   [[ai.provider.model]]
+#   key = "llama-70b"
+#   name = "Llama 3.3 70B"
+#   model = "meta-llama/llama-3.3-70b-instruct"
+#   credits = 10
+
 [billing]
 transfer_code_prefix = "KITE"
 merchant_bank_name = "Bank UserName" # Tên ngân hàng

@@ -8,6 +8,7 @@ import {
   AppSettingsGetResponse,
   AppListResponse,
   AssetGetResponse,
+  AIModelListResponse,
   BillingPlanListResponse,
   BillingCheckoutStatusResponse,
   CommandGetResponse,
@@ -326,6 +327,13 @@ export function useBillingPlansQuery() {
   return useQuery({
     queryKey: ["billing", "plans"],
     queryFn: () => apiRequest<BillingPlanListResponse>(`/v1/billing/plans`),
+  });
+}
+
+export function useAIModelsQuery() {
+  return useQuery({
+    queryKey: ["ai", "models"],
+    queryFn: () => apiRequest<AIModelListResponse>(`/v1/ai-models`),
   });
 }
 

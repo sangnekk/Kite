@@ -62,6 +62,8 @@ import {
   VariablesImportResponse,
   VariableUpdateRequest,
   VariableUpdateResponse,
+  FlowAssistRequest,
+  FlowAssistResponse,
 } from "../types/wire.gen";
 import client, { apiRequest } from "./client";
 
@@ -817,5 +819,18 @@ export function useCommandsDeployMutation(appId: string) {
         queryKey: ["apps", appId, "commands"],
       });
     },
+  });
+}
+
+export function useFlowAssistMutation(appId: string) {
+  return useMutation({
+    mutationFn: (req: FlowAssistRequest) =>
+      apiRequest<FlowAssistResponse>(`/v1/apps/${appId}/ai/flow-assist`, {
+        method: "POST",
+        body: JSON.stringify(req),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }),
   });
 }

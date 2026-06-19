@@ -257,6 +257,28 @@ export interface BillingPlan {
 }
 export type BillingPlanListResponse = (BillingPlan | undefined)[];
 
+export interface AIModel {
+  key: string;
+  name: string;
+  credits: number;
+}
+export type AIModelListResponse = (AIModel | undefined)[];
+
+export interface FlowAssistMessage {
+  role: string;
+  content: string;
+}
+export interface FlowAssistRequest {
+  message: string;
+  flow: FlowData;
+  history?: FlowAssistMessage[];
+  model?: string;
+}
+export interface FlowAssistResponse {
+  message: string;
+  flow?: FlowData;
+}
+
 //////////
 // source: collaborator.go
 

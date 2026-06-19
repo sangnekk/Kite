@@ -17,7 +17,6 @@ import (
 	"github.com/kitecloud/kite/kite-service/pkg/flow"
 	"github.com/kitecloud/kite/kite-service/pkg/plugin"
 	"github.com/kitecloud/kite/kite-service/pkg/provider"
-	"github.com/openai/openai-go"
 	"gopkg.in/guregu/null.v4"
 )
 
@@ -38,8 +37,10 @@ type Env struct {
 	VariableValueStore   store.VariableValueStore
 	ResumePointStore     store.ResumePointStore
 	HttpClient           *http.Client
-	OpenaiClient         *openai.Client
-	TokenCrypt           *util.SymmetricCrypt
+	// AIProvider routes AI requests to the upstream that owns each model. Nil
+	// when no AI provider is configured, in which case a mock is used.
+	AIProvider *AIProvider
+	TokenCrypt *util.SymmetricCrypt
 }
 
 type entityLinks struct {
@@ -52,8 +53,8 @@ type entityLinks struct {
 
 func (s Env) flowProviders(appID string, session *state.State, links entityLinks) flow.FlowProviders {
 	var aiProvider provider.AIProvider = &provider.MockAIProvider{}
-	if s.OpenaiClient != nil {
-		aiProvider = NewAIProvider(s.OpenaiClient)
+	if s.AIProvider != nil {
+		aiProvider = s.AIProvider
 	}
 
 	return flow.FlowProviders{

@@ -11,6 +11,7 @@ import (
 	"github.com/kitecloud/kite/kite-service/internal/store"
 	"github.com/kitecloud/kite/kite-service/internal/util"
 	"github.com/kitecloud/kite/kite-service/pkg/plugin"
+	"github.com/kitecloud/kite/kite-service/pkg/provider"
 	"github.com/rs/cors"
 )
 
@@ -80,6 +81,8 @@ func NewAPIServer(
 	pluginRegistry *plugin.Registry,
 	tokenCrypt *util.SymmetricCrypt,
 	commandManager *command.CommandManager,
+	aiModelRegistry *provider.AIModelRegistry,
+	aiProvider provider.AIProvider,
 ) *APIServer {
 	s := &APIServer{
 		config: config,
@@ -107,6 +110,8 @@ func NewAPIServer(
 		pluginRegistry,
 		tokenCrypt,
 		commandManager,
+		aiModelRegistry,
+		aiProvider,
 	)
 	return s
 }

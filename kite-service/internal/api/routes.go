@@ -7,6 +7,7 @@ import (
 
 	"github.com/kitecloud/kite/kite-service/internal/api/access"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler"
+	aihandler "github.com/kitecloud/kite/kite-service/internal/api/handler/ai"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/app"
 	appstate "github.com/kitecloud/kite/kite-service/internal/api/handler/app_state"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/asset"
@@ -26,6 +27,7 @@ import (
 	"github.com/kitecloud/kite/kite-service/internal/store"
 	"github.com/kitecloud/kite/kite-service/internal/util"
 	"github.com/kitecloud/kite/kite-service/pkg/plugin"
+	"github.com/kitecloud/kite/kite-service/pkg/provider"
 	kiteweb "github.com/sangnekk/Kite/kite-web"
 )
 
@@ -51,6 +53,8 @@ func (s *APIServer) RegisterRoutes(
 	pluginRegistry *plugin.Registry,
 	tokenCrypt *util.SymmetricCrypt,
 	commandManager *command.CommandManager,
+	aiModelRegistry *provider.AIModelRegistry,
+	aiProvider provider.AIProvider,
 ) {
 	sessionManager := session.NewSessionManager(session.SessionManagerConfig{
 		StrictCookies: s.config.StrictCookies,
@@ -178,6 +182,11 @@ func (s *APIServer) RegisterRoutes(
 
 	v1Group.Post("/billing/sepay/ipn", handler.TypedWithBody(billingHandler.HandleSePayIPN))
 	v1Group.Get("/billing/plans", handler.Typed(billingHandler.HandleBillingPlanList))
+
+	// AI routes
+	aiHandler := aihandler.NewAIHandler(aiModelRegistry, aiProvider)
+	v1Group.Get("/ai-models", handler.Typed(aiHandler.HandleAIModelList))
+	appGroup.Post("/ai/flow-assist", handler.TypedWithBody(aiHandler.HandleFlowAssist))
 
 	userBillingGroup := v1Group.Group("/billing", sessionManager.RequireSession)
 	userBillingGroup.Post("/subscriptions/{subscriptionID}/manage", handler.Typed(billingHandler.HandleSubscriptionManage))

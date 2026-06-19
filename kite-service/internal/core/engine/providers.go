@@ -1,11 +1,15 @@
 package engine
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -22,6 +26,7 @@ import (
 	"github.com/kitecloud/kite/kite-service/pkg/provider"
 	"github.com/kitecloud/kite/kite-service/pkg/thing"
 	"github.com/openai/openai-go"
+	"github.com/openai/openai-go/option"
 	"github.com/openai/openai-go/responses"
 	"gopkg.in/guregu/null.v4"
 )
@@ -534,17 +539,110 @@ func (p *HTTPProvider) HTTPRequest(ctx context.Context, req *http.Request) (*htt
 	return p.client.Do(req)
 }
 
-type AIProvider struct {
-	client *openai.Client
+// aiProviderClient holds the resolved upstream connection for one configured
+// provider.
+type aiProviderClient struct {
+	apiType         provider.AIModelAPIType
+	openai          *openai.Client
+	useResponsesAPI bool
+
+	// Anthropic is called via raw HTTP so no extra SDK dependency is needed and
+	// any anthropic-compatible base_url works out of the box.
+	httpClient *http.Client
+	baseURL    string
+	apiKey     string
 }
 
-func NewAIProvider(client *openai.Client) *AIProvider {
-	return &AIProvider{
-		client: client,
+// AIProviderConn describes one configured upstream AI provider.
+type AIProviderConn struct {
+	ID      string
+	APIType provider.AIModelAPIType
+	BaseURL string
+	APIKey  string
+}
+
+type AIProvider struct {
+	registry *provider.AIModelRegistry
+	clients  map[string]*aiProviderClient
+}
+
+// NewMultiAIProvider builds an AIProvider that routes each request to the
+// upstream that owns the requested model. Returns nil when no providers are
+// configured, so callers fall back to the mock provider.
+func NewMultiAIProvider(registry *provider.AIModelRegistry, conns []AIProviderConn, httpClient *http.Client) *AIProvider {
+	if registry == nil || registry.Len() == 0 {
+		return nil
 	}
+
+	clients := make(map[string]*aiProviderClient, len(conns))
+	for _, conn := range conns {
+		switch conn.APIType {
+		case provider.AIModelAPIOpenAI:
+			reqOpts := []option.RequestOption{option.WithAPIKey(conn.APIKey)}
+			// Only OpenAI's own endpoint supports the Responses API; custom
+			// openai-compatible gateways are driven via Chat Completions.
+			useResponses := conn.BaseURL == ""
+			if conn.BaseURL != "" {
+				reqOpts = append(reqOpts, option.WithBaseURL(conn.BaseURL))
+			}
+			client := openai.NewClient(reqOpts...)
+			clients[conn.ID] = &aiProviderClient{
+				apiType:         provider.AIModelAPIOpenAI,
+				openai:          &client,
+				useResponsesAPI: useResponses,
+			}
+		case provider.AIModelAPIAnthropic:
+			baseURL := conn.BaseURL
+			if baseURL == "" {
+				baseURL = "https://api.anthropic.com"
+			}
+			clients[conn.ID] = &aiProviderClient{
+				apiType:    provider.AIModelAPIAnthropic,
+				httpClient: httpClient,
+				baseURL:    strings.TrimRight(baseURL, "/"),
+				apiKey:     conn.APIKey,
+			}
+		}
+	}
+
+	return &AIProvider{registry: registry, clients: clients}
 }
 
 func (p *AIProvider) CreateResponse(ctx context.Context, opts provider.CreateResponseOpts) (string, error) {
+	model, ok := p.registry.Lookup(opts.Model)
+	if !ok {
+		return "", fmt.Errorf("unknown ai model %q", opts.Model)
+	}
+
+	client, ok := p.clients[model.ProviderID]
+	if !ok {
+		return "", fmt.Errorf("no configured client for ai provider %q", model.ProviderID)
+	}
+
+	switch client.apiType {
+	case provider.AIModelAPIOpenAI:
+		if client.useResponsesAPI {
+			return p.createOpenAIResponse(ctx, client, model.Model, opts)
+		}
+		return p.createOpenAIChatCompletion(ctx, client, model.Model, opts)
+	case provider.AIModelAPIAnthropic:
+		return p.createAnthropicMessage(ctx, client, model.Model, opts)
+	default:
+		return "", fmt.Errorf("unsupported ai api type %q", client.apiType)
+	}
+}
+
+// resolveMaxOutputTokens honors the requested limit as-is, defaulting to 500
+// when unset. Per-feature caps (e.g. the flow AI node's cost cap) are applied
+// by the caller before reaching the provider.
+func resolveMaxOutputTokens(opts provider.CreateResponseOpts) int {
+	if opts.MaxOutputTokens > 0 {
+		return opts.MaxOutputTokens
+	}
+	return 500
+}
+
+func (p *AIProvider) createOpenAIResponse(ctx context.Context, client *aiProviderClient, wireModel string, opts provider.CreateResponseOpts) (string, error) {
 	tools := []responses.ToolUnionParam{}
 	for _, tool := range opts.Tools {
 		switch tool {
@@ -578,22 +676,12 @@ func (p *AIProvider) CreateResponse(ctx context.Context, opts provider.CreateRes
 		})
 	}
 
-	model := opts.Model
-	if model == "" {
-		model = openai.ChatModelGPT4oMini
-	}
-
-	maxOutputTokens := 500
-	if opts.MaxOutputTokens > 0 && opts.MaxOutputTokens < maxOutputTokens {
-		maxOutputTokens = opts.MaxOutputTokens
-	}
-
-	resp, err := p.client.Responses.New(ctx, responses.ResponseNewParams{
-		Model: model,
+	resp, err := client.openai.Responses.New(ctx, responses.ResponseNewParams{
+		Model: wireModel,
 		Input: responses.ResponseNewParamsInputUnion{
 			OfInputItemList: inputs,
 		},
-		MaxOutputTokens: openai.Int(int64(maxOutputTokens)),
+		MaxOutputTokens: openai.Int(int64(resolveMaxOutputTokens(opts))),
 		Tools:           tools,
 	})
 	if err != nil {
@@ -601,6 +689,109 @@ func (p *AIProvider) CreateResponse(ctx context.Context, opts provider.CreateRes
 	}
 
 	return resp.OutputText(), nil
+}
+
+func (p *AIProvider) createOpenAIChatCompletion(ctx context.Context, client *aiProviderClient, wireModel string, opts provider.CreateResponseOpts) (string, error) {
+	messages := []openai.ChatCompletionMessageParamUnion{}
+	if opts.SystemPrompt != "" {
+		messages = append(messages, openai.SystemMessage(opts.SystemPrompt))
+	}
+	messages = append(messages, openai.UserMessage(opts.Prompt))
+
+	resp, err := client.openai.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
+		Model:               wireModel,
+		Messages:            messages,
+		MaxCompletionTokens: openai.Int(int64(resolveMaxOutputTokens(opts))),
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to create chat completion: %w", err)
+	}
+	if len(resp.Choices) == 0 {
+		return "", nil
+	}
+
+	return resp.Choices[0].Message.Content, nil
+}
+
+type anthropicMessageRequest struct {
+	Model     string                    `json:"model"`
+	MaxTokens int                       `json:"max_tokens"`
+	System    string                    `json:"system,omitempty"`
+	Messages  []anthropicMessagePayload `json:"messages"`
+}
+
+type anthropicMessagePayload struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+type anthropicMessageResponse struct {
+	Content []struct {
+		Type string `json:"type"`
+		Text string `json:"text"`
+	} `json:"content"`
+	Error *struct {
+		Type    string `json:"type"`
+		Message string `json:"message"`
+	} `json:"error"`
+}
+
+func (p *AIProvider) createAnthropicMessage(ctx context.Context, client *aiProviderClient, wireModel string, opts provider.CreateResponseOpts) (string, error) {
+	body, err := json.Marshal(anthropicMessageRequest{
+		Model:     wireModel,
+		MaxTokens: resolveMaxOutputTokens(opts),
+		System:    opts.SystemPrompt,
+		Messages: []anthropicMessagePayload{
+			{Role: "user", Content: opts.Prompt},
+		},
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal anthropic request: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, client.baseURL+"/v1/messages", bytes.NewReader(body))
+	if err != nil {
+		return "", fmt.Errorf("failed to create anthropic request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Api-Key", client.apiKey)
+	req.Header.Set("Anthropic-Version", "2023-06-01")
+
+	httpClient := client.httpClient
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to send anthropic request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read anthropic response: %w", err)
+	}
+
+	var parsed anthropicMessageResponse
+	if err := json.Unmarshal(respBody, &parsed); err != nil {
+		return "", fmt.Errorf("failed to decode anthropic response: %w", err)
+	}
+	if parsed.Error != nil {
+		return "", fmt.Errorf("anthropic error: %s", parsed.Error.Message)
+	}
+	if resp.StatusCode >= 400 {
+		return "", fmt.Errorf("anthropic request failed with status %d", resp.StatusCode)
+	}
+
+	var out strings.Builder
+	for _, block := range parsed.Content {
+		if block.Type == "text" {
+			out.WriteString(block.Text)
+		}
+	}
+
+	return out.String(), nil
 }
 
 type VariableProvider struct {

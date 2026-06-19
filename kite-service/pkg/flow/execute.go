@@ -15,8 +15,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/openai/openai-go"
-
 	"github.com/diamondburned/arikawa/v3/api"
 	"github.com/diamondburned/arikawa/v3/discord"
 	"github.com/diamondburned/arikawa/v3/utils/json/option"
@@ -1782,7 +1780,7 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 			Model:           data.Model,
 			Prompt:          prompt.String(),
 			SystemPrompt:    systemPrompt.String(),
-			MaxOutputTokens: int(maxCompletionTokens.Int()),
+			MaxOutputTokens: clampNodeMaxTokens(int(maxCompletionTokens.Int())),
 		})
 		if err != nil {
 			return traceError(n, err)
@@ -1818,7 +1816,7 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 			Model:           data.Model,
 			Prompt:          prompt.String(),
 			SystemPrompt:    systemPrompt.String(),
-			MaxOutputTokens: int(maxCompletionTokens.Int()),
+			MaxOutputTokens: clampNodeMaxTokens(int(maxCompletionTokens.Int())),
 			Tools:           []provider.AIToolType{provider.AIToolTypeWebSearchPreview},
 		})
 		if err != nil {
@@ -2133,6 +2131,25 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 	return nil
 }
 
+// clampNodeMaxTokens preserves the flow AI node's cost cap: generation is
+// limited to 500 tokens, lowering it only when the node requests fewer.
+func clampNodeMaxTokens(v int) int {
+	if v > 0 && v < 500 {
+		return v
+	}
+	return 500
+}
+
+// aiModelCredits returns the base chat credit cost for a model key, falling
+// back to the given default when the model isn't found in the registry (e.g.
+// AI not configured, or a custom model without an explicit credit cost).
+func aiModelCredits(modelKey string, fallback int) int {
+	if m, ok := provider.DefaultModelRegistry().Lookup(modelKey); ok && m.Credits > 0 {
+		return m.Credits
+	}
+	return fallback
+}
+
 func (n *CompiledFlowNode) CreditsCost() int {
 	switch n.Type {
 	case FlowNodeTypeActionAIChatCompletion:
@@ -2141,28 +2158,15 @@ func (n *CompiledFlowNode) CreditsCost() int {
 			return 0
 		}
 
-		switch data.Model {
-		case openai.ChatModelGPT4_1:
-			return 100
-		case openai.ChatModelGPT4_1Mini:
-			return 20
-		default:
-			return 5
-		}
+		return aiModelCredits(data.Model, 5)
 	case FlowNodeTypeActionAISearchWeb:
 		data := n.Data.AIChatCompletionData
 		if data == nil {
 			return 0
 		}
 
-		switch data.Model {
-		case openai.ChatModelGPT4_1:
-			return 500
-		case openai.ChatModelGPT4_1Mini:
-			return 100
-		default:
-			return 25
-		}
+		// Web search is charged at 5x the model's base chat cost.
+		return aiModelCredits(data.Model, 5) * 5
 	case FlowNodeTypeActionHTTPRequest:
 		return 3
 	}

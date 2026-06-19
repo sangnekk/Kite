@@ -10,6 +10,7 @@ import {
   useAppStateGuildsQuery,
   useAppSubscriptionsQuery,
   useBillingCheckoutStatusQuery,
+  useAIModelsQuery,
   useBillingPlansQuery,
   useCommandQuery,
   useCommandsQuery,
@@ -37,6 +38,7 @@ import {
   AppEntityListResponse,
   AppGetResponse,
   AppListResponse,
+  AIModelListResponse,
   BillingPlanListResponse,
   CommandGetResponse,
   CommandListResponse,
@@ -333,6 +335,13 @@ export function useBillingPlans(
   callback?: (res: APIResponse<BillingPlanListResponse>) => void
 ) {
   const query = useBillingPlansQuery();
+  return useResponseData(query, callback);
+}
+
+export function useAIModels(
+  callback?: (res: APIResponse<AIModelListResponse>) => void
+) {
+  const query = useAIModelsQuery();
   return useResponseData(query, callback);
 }
 
