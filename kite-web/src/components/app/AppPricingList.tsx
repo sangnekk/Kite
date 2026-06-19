@@ -35,6 +35,10 @@ export default function AppPricingList() {
     (subscription) => subscription!.status !== "expired"
   );
 
+  // Safety first: while the bot already has any active plan (paid or manually
+  // granted), block buying another so plans never stack.
+  const hasActivePlan = (activeSubscriptions?.length ?? 0) > 0;
+
   const plans = useBillingPlans();
 
   const pricings = useMemo(() => {
@@ -189,7 +193,9 @@ export default function AppPricingList() {
             <CardContent>
               <Button
                 className="w-full"
-                disabled={pricing.current || pricing.price === 0}
+                disabled={
+                  pricing.current || pricing.price === 0 || hasActivePlan
+                }
                 variant={pricing.popular ? "default" : "outline"}
                 onClick={() =>
                   checkout(pricing.id, (data) => {
@@ -197,7 +203,11 @@ export default function AppPricingList() {
                   })
                 }
               >
-                {pricing.current ? "Gói hiện tại" : "Bắt đầu ngay"}
+                {pricing.current
+                  ? "Gói hiện tại"
+                  : hasActivePlan
+                  ? "Đang dùng gói khác"
+                  : "Bắt đầu ngay"}
               </Button>
             </CardContent>
 

@@ -112,17 +112,16 @@ func (h *BillingHandler) processSePayIPN(c *handler.Context, body json.RawMessag
 
 	now := time.Now().UTC()
 
-	// Reject a payment for a plan the app already actively owns. The UI prevents
-	// re-buying the current plan, so this is an anomaly that needs manual
-	// handling (refund or manual extension) rather than a parallel entitlement.
+	// Reject a payment when the app already has any active plan (paid or manually
+	// granted). Checkout creation guards this too, so reaching here is an anomaly
+	// (e.g. a plan granted after checkout started) that needs manual handling
+	// (refund) rather than stacking a parallel entitlement.
 	activeEntitlements, err := h.entitlementStore.ActiveEntitlements(c.Context(), app.ID, now)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load active entitlements: %w", err)
 	}
-	for _, ent := range activeEntitlements {
-		if ent.PlanID == plan.ID {
-			return nil, handler.ErrBadRequest("plan_already_active", fmt.Sprintf("app already has an active entitlement for plan %s", plan.ID))
-		}
+	if len(activeEntitlements) > 0 {
+		return nil, handler.ErrBadRequest("plan_already_active", fmt.Sprintf("app already has an active entitlement (plan %s)", activeEntitlements[0].PlanID))
 	}
 
 	renewsAt := now.AddDate(50, 0, 0)

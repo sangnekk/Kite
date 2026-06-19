@@ -22,6 +22,17 @@ func (h *BillingHandler) HandleAppCheckout(c *handler.Context, req wire.BillingC
 		return nil, handler.ErrBadRequest("unknown_plan", "Unknown plan")
 	}
 
+	// Safety first: don't let an app start a checkout while it already has any
+	// active plan (paid or manually granted). The current plan must expire (or
+	// be revoked) first, so plans never stack. The UI also hides the buy buttons.
+	activeEntitlements, err := h.entitlementStore.ActiveEntitlements(c.Context(), c.App.ID, time.Now().UTC())
+	if err != nil {
+		return nil, fmt.Errorf("failed to load active entitlements: %w", err)
+	}
+	if len(activeEntitlements) > 0 {
+		return nil, handler.ErrBadRequest("plan_already_active", "App already has an active plan")
+	}
+
 	amount := plan.PaymentAmount
 	if amount <= 0 {
 		amount = int(plan.Price)
