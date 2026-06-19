@@ -53,7 +53,8 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 		err = n.ExecuteChildren(ctx)
 		if err != nil {
 			createDefaultErrorResponse(ctx, err)
-			return traceError(n, err)
+			// ExecuteChildren already wraps the error with this node; don't double-wrap.
+			return err
 		}
 
 		return nil
@@ -64,7 +65,7 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 
 		err := n.ExecuteChildren(ctx)
 		if err != nil {
-			return traceError(n, err)
+			return err
 		}
 
 		return nil
@@ -313,7 +314,8 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 			err = n.ExecuteChildren(ctx)
 			if err != nil {
 				createDefaultErrorResponse(ctx, err)
-				return traceError(n, err)
+				// ExecuteChildren already wraps the error with this node.
+				return err
 			}
 
 			return nil

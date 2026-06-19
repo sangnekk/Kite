@@ -8,7 +8,8 @@ import {
   MessageSquareWarningIcon,
   TextCursorInputIcon,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useIsMobile } from "@/lib/hooks/use-mobile";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import FlowLogList from "./FlowLogList";
 import FlowNodeEditor from "./FlowNodeEditor";
@@ -24,21 +25,36 @@ export default function FlowMenu({
   selectedNodeId: string | null;
   logs?: LogEntry[];
 }) {
-  const [tab, setTab] = useState<Tab>("action");
+  const [tab, setTab] = useState<Tab | null>("action");
+
+  // On phones the panel overlays the canvas, so start collapsed — otherwise it
+  // covers the flow and blocks touch (you can't drag nodes underneath it).
+  const isMobile = useIsMobile();
+  const autoCollapsed = useRef(false);
+  useEffect(() => {
+    if (isMobile && !autoCollapsed.current) {
+      autoCollapsed.current = true;
+      setTab(null);
+    }
+  }, [isMobile]);
 
   const store = useStoreApi();
 
   const wrappedSetTab = useCallback(
-    (tab: Tab) => {
-      setTab(tab);
+    (next: Tab) => {
+      // Tapping the active tab again collapses the panel so the canvas is
+      // visible — essential on phones where the panel overlays the flow.
+      setTab((prev) => (prev === next ? null : next));
       store.getState().addSelectedNodes([]);
     },
     [store, setTab]
   );
 
+  const panelVisible = tab !== null || !!selectedNodeId;
+
   return (
     <div className="flex flex-none">
-      <div className="flex-none flex flex-col justify-between bg-muted/50">
+      <div className="flex-none flex flex-col justify-between bg-muted/50 z-30">
         <div className="flex-none flex flex-col items-center gap-1">
           <Tab
             id="action"
@@ -79,16 +95,18 @@ export default function FlowMenu({
           />
         </div>
       </div>
-      <div className="flex-none relative w-96 bg-muted/30">
-        {(tab === "action" ||
-          tab === "data" ||
-          tab === "control_flow" ||
-          tab === "option") && <FlowNodeExplorer category={tab} />}
+      {panelVisible && (
+        <div className="flex-none w-96 max-w-[calc(100vw-3.5rem)] bg-muted/30 absolute inset-y-0 left-14 z-20 md:relative md:inset-y-auto md:left-auto md:z-auto md:max-w-none">
+          {(tab === "action" ||
+            tab === "data" ||
+            tab === "control_flow" ||
+            tab === "option") && <FlowNodeExplorer category={tab} />}
 
-        {tab === "logs" && <FlowLogList logs={logs} />}
+          {tab === "logs" && <FlowLogList logs={logs} />}
 
-        {selectedNodeId && <FlowNodeEditor nodeId={selectedNodeId} />}
-      </div>
+          {selectedNodeId && <FlowNodeEditor nodeId={selectedNodeId} />}
+        </div>
+      )}
     </div>
   );
 }
@@ -103,7 +121,7 @@ function Tab({
   id: Tab;
   icon: LucideIcon;
   title: string;
-  tab: Tab;
+  tab: Tab | null;
   setTab: (tab: Tab) => void;
 }) {
   return (

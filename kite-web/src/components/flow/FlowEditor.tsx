@@ -9,6 +9,7 @@ import {
   EdgeChange,
   Node,
   NodeChange,
+  NodeMouseHandler,
   OnSelectionChangeFunc,
   ReactFlow,
   useEdgesState,
@@ -18,6 +19,7 @@ import {
 import { DragEvent, useCallback } from "react";
 
 import { edgeTypes, nodeTypes } from "@/lib/flow/components";
+import FlowValidationPanel from "./FlowValidationPanel";
 import { FlowData } from "@/lib/flow/dataSchema";
 import { getLayoutedElements } from "@/lib/flow/layout";
 import { createNode, getNodeValues } from "@/lib/flow/nodes";
@@ -29,12 +31,14 @@ interface Props {
   initialData?: FlowData;
   onChange: () => void;
   onSelectionChange?: OnSelectionChangeFunc;
+  onNodeClick?: NodeMouseHandler;
 }
 
 export default function FlowEditor({
   initialData,
   onChange,
   onSelectionChange,
+  onNodeClick,
 }: Props) {
   const { theme } = useHookedTheme();
 
@@ -202,6 +206,7 @@ export default function FlowEditor({
       onConnect={onConnect}
       isValidConnection={isValidConnection}
       onSelectionChange={onSelectionChange}
+      onNodeClick={onNodeClick}
       colorMode={theme === "dark" ? "dark" : "light"}
       defaultEdgeOptions={{ type: "delete_button" }}
       multiSelectionKeyCode={null}
@@ -212,6 +217,7 @@ export default function FlowEditor({
       className="!bg-background flex-auto"
       fitView
     >
+      <FlowValidationPanel />
       <Controls
         showInteractive={false}
         position="bottom-right"

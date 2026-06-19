@@ -1,6 +1,6 @@
 import { FlowContextStoreProvider, FlowContextType } from "@/lib/flow/context";
 import { FlowData } from "@/lib/flow/dataSchema";
-import { OnSelectionChangeParams } from "@xyflow/react";
+import { NodeMouseHandler, OnSelectionChangeParams } from "@xyflow/react";
 import { useCallback, useState } from "react";
 import FlowEditor from "./FlowEditor";
 import FlowMenu from "./FlowMenu";
@@ -16,16 +16,21 @@ interface Props {
 export default function Flow({ flowData, logs, context, onChange }: Props) {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
+  // Only *close* the settings panel when the selection is cleared (clicking the
+  // canvas, switching tabs, etc.). Opening is driven by an explicit click below,
+  // so dragging a node to rearrange it doesn't pop the settings open.
   const onSelectionChange = useCallback(
     ({ nodes }: OnSelectionChangeParams) => {
-      if (nodes.length === 1) {
-        setSelectedNodeId(nodes[0].id);
-      } else {
+      if (nodes.length === 0) {
         setSelectedNodeId(null);
       }
     },
     []
   );
+
+  const onNodeClick = useCallback<NodeMouseHandler>((_event, node) => {
+    setSelectedNodeId(node.id);
+  }, []);
 
   return (
     <FlowContextStoreProvider type={context}>
@@ -37,6 +42,7 @@ export default function Flow({ flowData, logs, context, onChange }: Props) {
             initialData={flowData}
             onChange={onChange}
             onSelectionChange={onSelectionChange}
+            onNodeClick={onNodeClick}
           />
         </div>
       </div>

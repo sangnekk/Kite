@@ -1,53 +1,52 @@
-import { NodeData } from "@/lib/flow/dataSchema";
 import { LinkIcon } from "lucide-react";
-import { useMemo } from "react";
-import { useEdges } from "@xyflow/react";
-import { useNodeValues } from "@/lib/flow/nodes";
+import { useNodeIssues } from "@/lib/flow/validate";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Props {
   id: string;
-  type: string;
-  data: NodeData;
   showConnectedMarker?: boolean;
 }
 
 export default function FlowNodeMarkers({
   id,
-  type,
-  data,
   showConnectedMarker = true,
 }: Props) {
-  const edges = useEdges();
+  const issues = useNodeIssues(id);
 
-  const isConnected = useMemo(() => {
-    if (!showConnectedMarker) return true;
-    return edges.some((edge) => edge.target === id);
-  }, [edges, id, showConnectedMarker]);
+  const disconnected = showConnectedMarker
+    ? issues.find((issue) => issue.kind === "disconnected")
+    : undefined;
+  const config = issues.find((issue) => issue.kind === "config");
 
-  const { dataSchema } = useNodeValues(type);
-
-  const hasError = useMemo(() => {
-    if (!dataSchema) return false;
-
-    try {
-      dataSchema.parse(data);
-      return false;
-    } catch {
-      return true;
-    }
-  }, [dataSchema, data]);
+  if (!disconnected && !config) return null;
 
   return (
     <div className="absolute -top-2 -right-2 flex space-x-1">
-      {!isConnected && (
-        <div className="h-4 w-4 bg-red-500 rounded-full flex items-center justify-center">
-          <LinkIcon className="h-2.5 w-2.5 text-white" />
-        </div>
+      {disconnected && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="h-4 w-4 bg-red-500 rounded-full flex items-center justify-center cursor-help">
+              <LinkIcon className="h-2.5 w-2.5 text-white" />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent className="max-w-60">
+            {disconnected.message}
+          </TooltipContent>
+        </Tooltip>
       )}
-      {hasError && (
-        <div className="h-4 w-4 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-medium leading-4">
-          !
-        </div>
+      {config && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="h-4 w-4 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-medium leading-4 cursor-help">
+              !
+            </div>
+          </TooltipTrigger>
+          <TooltipContent className="max-w-60">{config.message}</TooltipContent>
+        </Tooltip>
       )}
     </div>
   );
