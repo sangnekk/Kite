@@ -14,18 +14,37 @@ func (h *BillingHandler) HandleAppSubscriptionList(c *handler.Context) (*wire.Su
 		return nil, err
 	}
 
+	// Active entitlements are the source of truth for whether a plan is still
+	// granted: they carry the real `ends_at` and drop out of this set once it
+	// passes. A subscription row's own status/renews_at never change after
+	// creation, so we derive each subscription's live status from its entitlement
+	// here. Without this an expired plan keeps reporting "active", and the billing
+	// UI never releases it (re-purchase stays blocked, the plan stays "current").
+	entitlements, err := h.entitlementStore.ActiveEntitlements(c.Context(), c.App.ID, time.Now().UTC())
+	if err != nil {
+		return nil, err
+	}
+
+	activeSubscriptionIDs := make(map[string]bool, len(entitlements))
+	for _, ent := range entitlements {
+		if ent.SubscriptionID.Valid {
+			activeSubscriptionIDs[ent.SubscriptionID.String] = true
+		}
+	}
+
 	res := make(wire.SubscriptionListResponse, len(subscriptions))
 	for i, subscription := range subscriptions {
-		res[i] = wire.SubscriptionToWire(subscription, c.Session.UserID)
+		w := wire.SubscriptionToWire(subscription, c.Session.UserID)
+		if !activeSubscriptionIDs[subscription.ID] {
+			w.Status = "expired"
+			w.StatusFormatted = "Hết hạn"
+		}
+		res[i] = w
 	}
 
 	// Manual grants from the admin console create an entitlement but no
 	// subscription row, so they wouldn't show up otherwise. Surface active
 	// manual entitlements (those not backed by a subscription) here too.
-	entitlements, err := h.entitlementStore.ActiveEntitlements(c.Context(), c.App.ID, time.Now().UTC())
-	if err != nil {
-		return nil, err
-	}
 	for _, ent := range entitlements {
 		if ent.Type != "manual" || ent.SubscriptionID.Valid {
 			continue

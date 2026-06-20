@@ -184,8 +184,9 @@ func (s *APIServer) RegisterRoutes(
 	v1Group.Get("/billing/plans", handler.Typed(billingHandler.HandleBillingPlanList))
 
 	// AI routes
-	aiHandler := aihandler.NewAIHandler(aiModelRegistry, aiProvider)
+	aiHandler := aihandler.NewAIHandler(aiModelRegistry, aiProvider, variableStore, messageStore, eventListenerStore, usageStore)
 	v1Group.Get("/ai-models", handler.Typed(aiHandler.HandleAIModelList))
+	appGroup.Get("/ai/credits", handler.Typed(aiHandler.HandleAICredits))
 	appGroup.Post("/ai/flow-assist", handler.TypedWithBody(aiHandler.HandleFlowAssist))
 
 	userBillingGroup := v1Group.Group("/billing", sessionManager.RequireSession)

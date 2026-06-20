@@ -70,6 +70,10 @@ type APIConfig struct {
 
 type AppConfig struct {
 	PublicBaseURL string `toml:"public_base_url" validate:"required"`
+	// AllowedOrigins lists additional origins (besides PublicBaseURL) that are
+	// permitted to make cross-origin browser requests to the API, e.g. a docs
+	// site hosted on a separate subdomain.
+	AllowedOrigins []string `toml:"allowed_origins"`
 }
 
 type EncryptionConfig struct {
@@ -181,4 +185,6 @@ type BillingPlanConfig struct {
 	FeatureMaxEventListeners    int  `toml:"feature_max_event_listeners"`
 	FeaturePrioritySupport      bool `toml:"feature_priority_support"`
 	FeatureCustomBotStatus      bool `toml:"feature_custom_bot_status"`
+	FeatureAIIncluded           bool `toml:"feature_ai_included"`
+	FeatureAICreditPerDay       int  `toml:"feature_ai_credit_per_day"`
 }

@@ -20,8 +20,25 @@ type FlowAssistMessage struct {
 // FlowAssistResponse carries the assistant's reply and the updated flow the
 // editor should apply. Flow is nil when the assistant only replied with text.
 type FlowAssistResponse struct {
-	Message string          `json:"message"`
-	Flow    json.RawMessage `json:"flow,omitempty"`
+	Message string             `json:"message"`
+	Flow    json.RawMessage    `json:"flow,omitempty"`
+	Actions []FlowAssistAction `json:"actions,omitempty"`
+}
+
+// FlowAssistAction records one resource the agent created (or tried to) during
+// the turn, so the UI can show what happened.
+type FlowAssistAction struct {
+	Tool    string `json:"tool"`
+	Summary string `json:"summary"`
+	OK      bool   `json:"ok"`
+}
+
+// AICreditsResponse reports the app's AI copilot credit budget for today.
+type AICreditsResponse struct {
+	Included    bool `json:"included"`
+	UsedToday   int  `json:"used_today"`
+	LimitPerDay int  `json:"limit_per_day"`
+	Remaining   int  `json:"remaining"`
 }
 
 // AIModel is one selectable AI model exposed to the flow editor. Only the

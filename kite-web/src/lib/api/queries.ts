@@ -8,6 +8,7 @@ import {
   AppSettingsGetResponse,
   AppListResponse,
   AssetGetResponse,
+  AICreditsResponse,
   AIModelListResponse,
   BillingPlanListResponse,
   BillingCheckoutStatusResponse,
@@ -334,6 +335,14 @@ export function useAIModelsQuery() {
   return useQuery({
     queryKey: ["ai", "models"],
     queryFn: () => apiRequest<AIModelListResponse>(`/v1/ai-models`),
+  });
+}
+
+export function useAICreditsQuery(appId: string) {
+  return useQuery({
+    queryKey: ["apps", appId, "ai", "credits"],
+    queryFn: () =>
+      apiRequest<AICreditsResponse>(`/v1/apps/${appId}/ai/credits`),
   });
 }
 

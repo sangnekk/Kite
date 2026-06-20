@@ -3,18 +3,34 @@ package ai
 import (
 	"github.com/kitecloud/kite/kite-service/internal/api/handler"
 	"github.com/kitecloud/kite/kite-service/internal/api/wire"
+	"github.com/kitecloud/kite/kite-service/internal/store"
 	"github.com/kitecloud/kite/kite-service/pkg/provider"
 )
 
 type AIHandler struct {
-	modelRegistry *provider.AIModelRegistry
-	ai            provider.AIProvider
+	modelRegistry      *provider.AIModelRegistry
+	ai                 provider.AIProvider
+	variableStore      store.VariableStore
+	messageStore       store.MessageStore
+	eventListenerStore store.EventListenerStore
+	usageStore         store.UsageStore
 }
 
-func NewAIHandler(modelRegistry *provider.AIModelRegistry, ai provider.AIProvider) *AIHandler {
+func NewAIHandler(
+	modelRegistry *provider.AIModelRegistry,
+	ai provider.AIProvider,
+	variableStore store.VariableStore,
+	messageStore store.MessageStore,
+	eventListenerStore store.EventListenerStore,
+	usageStore store.UsageStore,
+) *AIHandler {
 	return &AIHandler{
-		modelRegistry: modelRegistry,
-		ai:            ai,
+		modelRegistry:      modelRegistry,
+		ai:                 ai,
+		variableStore:      variableStore,
+		messageStore:       messageStore,
+		eventListenerStore: eventListenerStore,
+		usageStore:         usageStore,
 	}
 }
 

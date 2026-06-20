@@ -9,6 +9,7 @@ strict_cookies = true
 
 [app]
 public_base_url = "http://localhost:8080"
+allowed_origins = []
 
 [user_limits]
 max_apps_per_user = 10
@@ -120,3 +121,7 @@ feature_max_messages = 25
 feature_max_event_listeners = 5
 feature_priority_support = false
 feature_custom_bot_status = false
+# Set feature_ai_included = true and a daily budget to enable the AI copilot
+# for a plan. Plans without these keys default to disabled / 0.
+feature_ai_included = false
+feature_ai_credit_per_day = 0

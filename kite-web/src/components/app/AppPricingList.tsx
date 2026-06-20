@@ -258,6 +258,14 @@ export default function AppPricingList() {
                     <h3 className="ml-2">Trạng thái bot tùy chỉnh</h3>
                   </span>
                 )}
+                {pricing.feature_ai_included && (
+                  <span className="flex">
+                    <CheckIcon className="text-green-500" />{" "}
+                    <h3 className="ml-2">
+                      Trợ lý AI · {pricing.feature_ai_credit_per_day} credit/ngày
+                    </h3>
+                  </span>
+                )}
               </div>
             </CardFooter>
           </Card>

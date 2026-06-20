@@ -832,5 +832,12 @@ export function useFlowAssistMutation(appId: string) {
           "Content-Type": "application/json",
         },
       }),
+    onSuccess: () => {
+      // The agent may create variables, message templates or event listeners;
+      // refresh their lists so they appear without a manual reload.
+      client.invalidateQueries({ queryKey: ["apps", appId, "variables"] });
+      client.invalidateQueries({ queryKey: ["apps", appId, "messages"] });
+      client.invalidateQueries({ queryKey: ["apps", appId, "event-listeners"] });
+    },
   });
 }

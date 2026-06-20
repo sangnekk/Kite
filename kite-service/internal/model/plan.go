@@ -25,6 +25,8 @@ type Plan struct {
 	FeatureMaxEventListeners    int
 	FeaturePrioritySupport      bool
 	FeatureCustomBotStatus      bool
+	FeatureAIIncluded           bool
+	FeatureAICreditPerDay       int
 }
 
 func (p Plan) Features() Features {
@@ -38,6 +40,8 @@ func (p Plan) Features() Features {
 		MaxEventListeners:    p.FeatureMaxEventListeners,
 		PrioritySupport:      p.FeaturePrioritySupport,
 		CustomBotStatus:      p.FeatureCustomBotStatus,
+		AIIncluded:           p.FeatureAIIncluded,
+		AICreditPerDay:       p.FeatureAICreditPerDay,
 	}
 }
 
@@ -51,6 +55,8 @@ type Features struct {
 	MaxEventListeners    int
 	PrioritySupport      bool
 	CustomBotStatus      bool
+	AIIncluded           bool
+	AICreditPerDay       int
 }
 
 func (f Features) Merge(other Features) Features {
@@ -64,6 +70,8 @@ func (f Features) Merge(other Features) Features {
 		MaxEventListeners:    max(f.MaxEventListeners, other.MaxEventListeners),
 		PrioritySupport:      f.PrioritySupport || other.PrioritySupport,
 		CustomBotStatus:      f.CustomBotStatus || other.CustomBotStatus,
+		AIIncluded:           f.AIIncluded || other.AIIncluded,
+		AICreditPerDay:       max(f.AICreditPerDay, other.AICreditPerDay),
 	}
 }
 

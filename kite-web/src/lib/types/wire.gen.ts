@@ -254,8 +254,17 @@ export interface BillingPlan {
   feature_max_event_listeners: number /* int */;
   feature_priority_support: boolean;
   feature_custom_bot_status: boolean;
+  feature_ai_included: boolean;
+  feature_ai_credit_per_day: number /* int */;
 }
 export type BillingPlanListResponse = (BillingPlan | undefined)[];
+
+export interface AICreditsResponse {
+  included: boolean;
+  used_today: number /* int */;
+  limit_per_day: number /* int */;
+  remaining: number /* int */;
+}
 
 export interface AIModel {
   key: string;
@@ -274,9 +283,15 @@ export interface FlowAssistRequest {
   history?: FlowAssistMessage[];
   model?: string;
 }
+export interface FlowAssistAction {
+  tool: string;
+  summary: string;
+  ok: boolean;
+}
 export interface FlowAssistResponse {
   message: string;
   flow?: FlowData;
+  actions?: FlowAssistAction[];
 }
 
 //////////
@@ -393,6 +408,8 @@ export interface Features {
   max_event_listeners: number /* int */;
   priority_support: boolean;
   custom_bot_status: boolean;
+  ai_included: boolean;
+  ai_credit_per_day: number /* int */;
 }
 export type FeaturesGetResponse = Features;
 

@@ -21,6 +21,7 @@ type APIServerConfig struct {
 	SecureCookies       bool
 	StrictCookies       bool
 	AppPublicBaseURL    string
+	AppAllowedOrigins   []string
 	APIPublicBaseURL    string
 	DiscordClientID     string
 	DiscordClientSecret string
@@ -117,8 +118,9 @@ func NewAPIServer(
 }
 
 func (s *APIServer) Serve(ctx context.Context, address string) error {
+	allowedOrigins := append([]string{s.config.AppPublicBaseURL}, s.config.AppAllowedOrigins...)
 	handler := cors.New(cors.Options{
-		AllowedOrigins:   []string{s.config.AppPublicBaseURL},
+		AllowedOrigins:   allowedOrigins,
 		AllowCredentials: true,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 	}).Handler(s.mux)

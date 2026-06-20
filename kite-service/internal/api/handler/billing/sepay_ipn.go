@@ -124,7 +124,19 @@ func (h *BillingHandler) processSePayIPN(c *handler.Context, body json.RawMessag
 		return nil, handler.ErrBadRequest("plan_already_active", fmt.Sprintf("app already has an active entitlement (plan %s)", activeEntitlements[0].PlanID))
 	}
 
+	// A plan with a positive premium duration grants access for a fixed window:
+	// the entitlement (the source of truth for feature gating) expires at endsAt
+	// and the subscription record mirrors it, so the billing UI releases the plan
+	// once it lapses instead of showing it as active forever. A zero duration
+	// means lifetime access (no expiry), kept as a far-future RenewsAt.
+	endsAt := null.Time{}
 	renewsAt := now.AddDate(50, 0, 0)
+	if plan.PremiumDurationDays > 0 {
+		end := now.AddDate(0, 0, plan.PremiumDurationDays)
+		endsAt = null.TimeFrom(end)
+		renewsAt = end
+	}
+
 	subscription, err := h.subscriptionStore.UpsertLemonSqueezySubscription(c.Context(), model.Subscription{
 		ID:                         util.UniqueID(),
 		DisplayName:                plan.Title,
@@ -133,7 +145,7 @@ func (h *BillingHandler) processSePayIPN(c *handler.Context, body json.RawMessag
 		StatusFormatted:            "Active",
 		RenewsAt:                   renewsAt,
 		TrialEndsAt:                null.Time{},
-		EndsAt:                     null.Time{},
+		EndsAt:                     endsAt,
 		CreatedAt:                  now,
 		UpdatedAt:                  now,
 		UserID:                     app.OwnerUserID,
@@ -152,11 +164,6 @@ func (h *BillingHandler) processSePayIPN(c *handler.Context, body json.RawMessag
 		return nil, fmt.Errorf("failed to upsert subscription: %w", err)
 	}
 
-	entitlementEndsAt := null.Time{}
-	if plan.PremiumDurationDays > 0 {
-		entitlementEndsAt = null.TimeFrom(now.AddDate(0, 0, plan.PremiumDurationDays))
-	}
-
 	entitlement := model.Entitlement{
 		ID:             util.UniqueID(),
 		Type:           "subscription",
@@ -165,7 +172,7 @@ func (h *BillingHandler) processSePayIPN(c *handler.Context, body json.RawMessag
 		PlanID:         plan.ID,
 		CreatedAt:      now,
 		UpdatedAt:      now,
-		EndsAt:         entitlementEndsAt,
+		EndsAt:         endsAt,
 	}
 
 	_, err = h.entitlementStore.UpsertSubscriptionEntitlement(c.Context(), entitlement)

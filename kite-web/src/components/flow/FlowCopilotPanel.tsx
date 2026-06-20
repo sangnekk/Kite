@@ -1,9 +1,10 @@
 import { useFlowAssistMutation } from "@/lib/api/mutations";
+import { useAICreditsQuery } from "@/lib/api/queries";
 import { NodeData } from "@/lib/flow/dataSchema";
 import { getLayoutedElements } from "@/lib/flow/layout";
 import { useAIModels } from "@/lib/hooks/api";
 import { useAppId } from "@/lib/hooks/params";
-import { FlowAssistMessage } from "@/lib/types/wire.gen";
+import { FlowAssistAction, FlowAssistMessage } from "@/lib/types/wire.gen";
 import { Edge, Node, useReactFlow } from "@xyflow/react";
 import { SparklesIcon, XIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -27,10 +28,16 @@ export default function FlowCopilotPanel({ onApplied, onClose }: Props) {
   const appId = useAppId();
   const models = useAIModels();
   const mutation = useFlowAssistMutation(appId);
+  const creditsQuery = useAICreditsQuery(appId);
+  const credits = creditsQuery.data?.success
+    ? creditsQuery.data.data
+    : undefined;
   const { getNodes, getEdges, setNodes, setEdges, fitView } =
     useReactFlow<Node<NodeData>>();
 
-  const [messages, setMessages] = useState<FlowAssistMessage[]>([]);
+  const [messages, setMessages] = useState<
+    (FlowAssistMessage & { actions?: FlowAssistAction[] })[]
+  >([]);
   const [input, setInput] = useState("");
   const [model, setModel] = useState<string>("");
 
@@ -56,6 +63,7 @@ export default function FlowCopilotPanel({ onApplied, onClose }: Props) {
       },
       {
         onSuccess(res) {
+          creditsQuery.refetch();
           if (!res.success) {
             toast.error(`Trợ lý lỗi: ${res.error.message}`);
             setMessages((m) => [
@@ -67,13 +75,45 @@ export default function FlowCopilotPanel({ onApplied, onClose }: Props) {
 
           setMessages((m) => [
             ...m,
-            { role: "assistant", content: res.data.message },
+            {
+              role: "assistant",
+              content: res.data.message,
+              actions: res.data.actions,
+            },
           ]);
 
           if (res.data.flow) {
+            let nodes = (res.data.flow.nodes ?? []) as unknown as Node<NodeData>[];
+            let edges = (res.data.flow.edges ?? []) as unknown as Edge[];
+
+            // The editor's entry node is fixed and cannot be removed. Reuse it
+            // instead of letting the AI add a second entry node: remap the AI's
+            // entry onto the existing one and drop the duplicate.
+            const existingEntry = getNodes().find((n) =>
+              n.type?.startsWith("entry_")
+            );
+            const aiEntry = nodes.find((n) => n.type?.startsWith("entry_"));
+            if (existingEntry && aiEntry && aiEntry.id !== existingEntry.id) {
+              const remap = (id: string) =>
+                id === aiEntry.id ? existingEntry.id : id;
+              edges = edges.map((e) => ({
+                ...e,
+                source: remap(e.source),
+                target: remap(e.target),
+              }));
+              nodes = nodes.map((n) =>
+                n.id === aiEntry.id
+                  ? {
+                      ...existingEntry,
+                      data: { ...existingEntry.data, ...n.data },
+                    }
+                  : n
+              );
+            }
+
             const layouted = getLayoutedElements(
-              (res.data.flow.nodes ?? []) as unknown as Node[],
-              (res.data.flow.edges ?? []) as unknown as Edge[],
+              nodes as unknown as Node[],
+              edges as unknown as Edge[],
               { direction: "TB" }
             );
             setNodes(layouted.nodes as Node<NodeData>[]);
@@ -92,6 +132,7 @@ export default function FlowCopilotPanel({ onApplied, onClose }: Props) {
     messages,
     model,
     mutation,
+    creditsQuery,
     getNodes,
     getEdges,
     setNodes,
@@ -104,7 +145,14 @@ export default function FlowCopilotPanel({ onApplied, onClose }: Props) {
     <div className="w-96 flex-none border-l border-border bg-background flex flex-col h-full">
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border flex-none">
         <SparklesIcon className="size-5 text-primary" />
-        <div className="font-bold text-foreground flex-auto">Trợ lý AI</div>
+        <div className="flex-auto">
+          <div className="font-bold text-foreground leading-tight">Trợ lý AI</div>
+          {credits && (
+            <div className="text-xs text-muted-foreground">
+              Còn {credits.remaining}/{credits.limit_per_day} credit AI hôm nay
+            </div>
+          )}
+        </div>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <XIcon className="size-5" />
         </Button>
@@ -120,15 +168,34 @@ export default function FlowCopilotPanel({ onApplied, onClose }: Props) {
             </div>
           )}
           {messages.map((m, i) => (
-            <div
-              key={i}
-              className={
-                m.role === "user"
-                  ? "ml-6 rounded-lg bg-primary/10 px-3 py-2 text-sm text-foreground"
-                  : "mr-6 rounded-lg bg-muted px-3 py-2 text-sm text-foreground whitespace-pre-wrap"
-              }
-            >
-              {m.content}
+            <div key={i} className="space-y-1">
+              <div
+                className={
+                  m.role === "user"
+                    ? "ml-6 rounded-lg bg-primary/10 px-3 py-2 text-sm text-foreground"
+                    : "mr-6 rounded-lg bg-muted px-3 py-2 text-sm text-foreground whitespace-pre-wrap"
+                }
+              >
+                {m.content}
+              </div>
+              {m.actions && m.actions.length > 0 && (
+                <div className="mr-6 space-y-1">
+                  {m.actions.map((a, j) => (
+                    <div
+                      key={j}
+                      className="flex items-start gap-1.5 text-xs text-muted-foreground"
+                    >
+                      <span className={a.ok ? "text-green-500" : "text-red-500"}>
+                        {a.ok ? "✓" : "✕"}
+                      </span>
+                      <span>
+                        <span className="font-medium">{a.tool}</span>:{" "}
+                        {a.summary}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
           {mutation.isPending && (
@@ -148,7 +215,7 @@ export default function FlowCopilotPanel({ onApplied, onClose }: Props) {
             <SelectContent>
               {models.map((m) => (
                 <SelectItem key={m!.key} value={m!.key}>
-                  {m!.name}
+                  {m!.credits ? `${m!.name} (${m!.credits} credit)` : m!.name}
                 </SelectItem>
               ))}
             </SelectContent>

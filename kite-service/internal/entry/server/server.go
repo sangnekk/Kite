@@ -133,6 +133,7 @@ func StartServer(c context.Context, cfg *config.Config) error {
 		StrictCookies:       cfg.API.StrictCookies,
 		APIPublicBaseURL:    cfg.API.PublicBaseURL,
 		AppPublicBaseURL:    cfg.App.PublicBaseURL,
+		AppAllowedOrigins:   cfg.App.AllowedOrigins,
 		DiscordClientID:     cfg.Discord.ClientID,
 		DiscordClientSecret: cfg.Discord.ClientSecret,
 		UserLimits: api.APIUserLimitsConfig{
