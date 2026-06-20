@@ -10,6 +10,16 @@ type FlowAssistRequest struct {
 	History []FlowAssistMessage `json:"history,omitempty"`
 	// Model optionally overrides the model key; empty uses the server default.
 	Model string `json:"model,omitempty"`
+	// NodeCatalog is the full set of available blocks, sent by the editor so the
+	// assistant knows every node type it can use (kept in sync with the UI).
+	NodeCatalog []NodeCatalogEntry `json:"node_catalog,omitempty"`
+}
+
+type NodeCatalogEntry struct {
+	Type        string   `json:"type"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	Fields      []string `json:"fields"`
 }
 
 type FlowAssistMessage struct {

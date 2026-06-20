@@ -277,11 +277,18 @@ export interface FlowAssistMessage {
   role: string;
   content: string;
 }
+export interface NodeCatalogEntry {
+  type: string;
+  name: string;
+  description: string;
+  fields: string[];
+}
 export interface FlowAssistRequest {
   message: string;
   flow: FlowData;
   history?: FlowAssistMessage[];
   model?: string;
+  node_catalog?: NodeCatalogEntry[];
 }
 export interface FlowAssistAction {
   tool: string;

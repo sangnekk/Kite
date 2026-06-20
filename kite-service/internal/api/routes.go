@@ -87,6 +87,14 @@ func (s *APIServer) RegisterRoutes(
 		}))
 	}
 
+	// Unknown /v1 paths must return a JSON 404 instead of falling through to the
+	// catch-all "/" handler (which serves the embedded website's HTML 404).
+	// Specific registered routes (e.g. "GET /v1/health") still take precedence
+	// over this subtree pattern.
+	s.mux.Handle("/v1/", handler.APIHandler(func(c *handler.Context) error {
+		return handler.ErrNotFound("unknown_route", "API route not found")
+	}))
+
 	v1Group := handler.Group(
 		s.mux, "/v1",
 		handler.ClusterIndexProvider(s.config.ClusterCount, s.config.ClusterIndex),

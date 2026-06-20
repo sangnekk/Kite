@@ -331,6 +331,22 @@ func toolFeedback(tool string, args json.RawMessage, observation string) string 
 func buildFlowAssistUserPrompt(req wire.FlowAssistRequest) string {
 	var b strings.Builder
 
+	if len(req.NodeCatalog) > 0 {
+		b.WriteString("Full list of available blocks you may use (type — name — fields). The catalog above details the common ones; for any block here that isn't detailed, infer its data from the field names:\n")
+		for _, n := range req.NodeCatalog {
+			b.WriteString("- ")
+			b.WriteString(n.Type)
+			b.WriteString(" — ")
+			b.WriteString(n.Name)
+			if len(n.Fields) > 0 {
+				b.WriteString(" — fields: ")
+				b.WriteString(strings.Join(n.Fields, ", "))
+			}
+			b.WriteString("\n")
+		}
+		b.WriteString("\n")
+	}
+
 	b.WriteString(flowAssistExample)
 	b.WriteString("\n\n")
 

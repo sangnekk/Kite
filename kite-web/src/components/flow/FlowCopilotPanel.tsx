@@ -2,12 +2,13 @@ import { useFlowAssistMutation } from "@/lib/api/mutations";
 import { useAICreditsQuery } from "@/lib/api/queries";
 import { NodeData } from "@/lib/flow/dataSchema";
 import { getLayoutedElements } from "@/lib/flow/layout";
+import { nodeTypes } from "@/lib/flow/nodes";
 import { useAIModels } from "@/lib/hooks/api";
 import { useAppId } from "@/lib/hooks/params";
 import { FlowAssistAction, FlowAssistMessage } from "@/lib/types/wire.gen";
 import { Edge, Node, useReactFlow } from "@xyflow/react";
 import { SparklesIcon, XIcon } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
 import {
@@ -38,6 +39,19 @@ export default function FlowCopilotPanel({ onApplied, onClose }: Props) {
   const [messages, setMessages] = useState<
     (FlowAssistMessage & { actions?: FlowAssistAction[] })[]
   >([]);
+
+  // Full block catalog from the editor registry, so the assistant knows every
+  // node type it can use (always in sync with the UI).
+  const nodeCatalog = useMemo(
+    () =>
+      Object.entries(nodeTypes).map(([type, v]) => ({
+        type,
+        name: v.defaultTitle,
+        description: v.defaultDescription,
+        fields: v.dataFields,
+      })),
+    []
+  );
   const [input, setInput] = useState("");
   const [model, setModel] = useState<string>("");
 
@@ -60,6 +74,7 @@ export default function FlowCopilotPanel({ onApplied, onClose }: Props) {
         flow: { nodes: getNodes(), edges: getEdges() } as any,
         history,
         model: model || undefined,
+        node_catalog: nodeCatalog,
       },
       {
         onSuccess(res) {
@@ -133,6 +148,7 @@ export default function FlowCopilotPanel({ onApplied, onClose }: Props) {
     model,
     mutation,
     creditsQuery,
+    nodeCatalog,
     getNodes,
     getEdges,
     setNodes,
