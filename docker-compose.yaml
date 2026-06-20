@@ -65,6 +65,18 @@ services:
       postgres:
         condition: service_healthy
 
+  docs:
+    build:
+      context: ./kite-docs
+      dockerfile: Dockerfile
+      args:
+        # Domain the docs embeds/schema fetch from. Bound to .env so switching
+        # to a real domain only requires editing KITE_APP__PUBLIC_BASE_URL there.
+        APP_BASE_URL: ${KITE_APP__PUBLIC_BASE_URL}
+    restart: always
+    ports:
+      - "4000:80"
+
   admin-service:
     build:
       context: ./kite-admin-service
