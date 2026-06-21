@@ -55,7 +55,6 @@ func (s *APIServer) RegisterRoutes(
 	tokenCrypt *util.SymmetricCrypt,
 	commandManager *command.CommandManager,
 	aiModelRegistry *provider.AIModelRegistry,
-	aiProvider provider.AIProvider,
 	aiConversationStore store.AIConversationStore,
 ) {
 	sessionManager := session.NewSessionManager(session.SessionManagerConfig{
@@ -195,14 +194,15 @@ func (s *APIServer) RegisterRoutes(
 	v1Group.Get("/billing/plans", handler.Typed(billingHandler.HandleBillingPlanList))
 
 	// AI routes
-	aiHandler := aihandler.NewAIHandler(aiModelRegistry, aiProvider, variableStore, messageStore, eventListenerStore, usageStore, aiConversationStore)
+	aiHandler := aihandler.NewAIHandler(aiModelRegistry, usageStore, aiConversationStore)
 	v1Group.Get("/ai-models", handler.Typed(aiHandler.HandleAIModelList))
 	appGroup.Get("/ai/credits", handler.Typed(aiHandler.HandleAICredits))
+	appGroup.Post("/ai/credits/check", handler.TypedWithBody(aiHandler.HandleAICheckCredit))
 	appGroup.Post("/ai/credits/consume", handler.TypedWithBody(aiHandler.HandleAIConsumeCredit))
-	appGroup.Post("/ai/flow-assist", handler.TypedWithBody(aiHandler.HandleFlowAssist))
-	appGroup.Get("/ai/conversation", handler.Typed(aiHandler.HandleAIConversationGet))
-	appGroup.Put("/ai/conversation", handler.TypedWithBody(aiHandler.HandleAIConversationSave))
-	appGroup.Delete("/ai/conversation", handler.Typed(aiHandler.HandleAIConversationDelete))
+	appGroup.Get("/ai/conversations", handler.Typed(aiHandler.HandleAIConversationList))
+	appGroup.Get("/ai/conversations/{conversationID}", handler.Typed(aiHandler.HandleAIConversationGet))
+	appGroup.Put("/ai/conversations/{conversationID}", handler.TypedWithBody(aiHandler.HandleAIConversationUpsert))
+	appGroup.Delete("/ai/conversations/{conversationID}", handler.Typed(aiHandler.HandleAIConversationDelete))
 
 	// Flow routes
 	flowHandler := flowhandler.NewFlowHandler()

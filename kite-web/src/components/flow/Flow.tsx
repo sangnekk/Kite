@@ -9,6 +9,7 @@ import { LogEntry } from "@/lib/types/wire.gen";
 import { Button } from "../ui/button";
 import { SparklesIcon } from "lucide-react";
 import { useAppFeatures } from "@/lib/hooks/api";
+import { AI_FEATURES_ENABLED } from "@/lib/ai/featureFlags";
 
 interface Props {
   flowData: FlowData;
@@ -21,7 +22,7 @@ export default function Flow({ flowData, logs, context, onChange }: Props) {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [copilotOpen, setCopilotOpen] = useState(false);
   const features = useAppFeatures();
-  const aiEnabled = !!features?.ai_included;
+  const aiEnabled = AI_FEATURES_ENABLED && !!features?.ai_included;
 
   // Only *close* the settings panel when the selection is cleared (clicking the
   // canvas, switching tabs, etc.). Opening is driven by an explicit click below,

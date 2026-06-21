@@ -56,13 +56,6 @@ func StartServer(c context.Context, cfg *config.Config) error {
 	aiProvider, aiRegistry := buildAIProvider(cfg, engineHTTP)
 	provider.SetDefaultModelRegistry(aiRegistry)
 
-	// Pass the AI provider as a nil interface (not a typed-nil pointer) when no
-	// provider is configured, so the API layer's nil checks behave correctly.
-	var aiProviderInterface provider.AIProvider
-	if aiProvider != nil {
-		aiProviderInterface = aiProvider
-	}
-
 	pluginRegistry := plugin.NewRegistry()
 	pluginRegistry.Register(
 		counting.NewCountingPlugin(),
@@ -161,7 +154,7 @@ func StartServer(c context.Context, cfg *config.Config) error {
 	},
 		pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg,
 		assetStore, gateway, planManager, pluginRegistry, tokenCrypt, commandManager,
-		aiRegistry, aiProviderInterface, pg,
+		aiRegistry, pg,
 	)
 	address := fmt.Sprintf("%s:%d", cfg.API.Host, cfg.API.Port)
 	if err := apiServer.Serve(ctx, address); err != nil {

@@ -6,6 +6,7 @@ import (
 
 	"github.com/kitecloud/kite/kite-service/internal/api/handler"
 	"github.com/kitecloud/kite/kite-service/internal/api/wire"
+	"github.com/kitecloud/kite/kite-service/internal/model"
 	"github.com/kitecloud/kite/kite-service/internal/store"
 )
 
@@ -61,6 +62,11 @@ func (h *UsageHandler) HandleUsageByTypeList(c *handler.Context) (*wire.UsageByT
 
 	res := make(wire.UsageByTypeListResponse, 0, len(entries))
 	for _, entry := range entries {
+		// AI assistant usage has its own separate budget and is excluded from the
+		// bot-run credit total, so keep it out of this breakdown too.
+		if entry.Type == model.UsageRecordTypeAIFlowAssist {
+			continue
+		}
 		res = append(res, &wire.UsageByTypeEntry{
 			Type:        string(entry.Type),
 			CreditsUsed: entry.CreditsUsed,

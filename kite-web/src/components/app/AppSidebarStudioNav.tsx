@@ -6,7 +6,10 @@ import {
   MailPlusIcon,
   SatelliteDishIcon,
   BlocksIcon,
+  SparklesIcon,
 } from "lucide-react";
+import { useAppFeature } from "@/lib/hooks/api";
+import { AI_FEATURES_ENABLED } from "@/lib/ai/featureFlags";
 
 import {
   SidebarGroup,
@@ -35,8 +38,21 @@ export default function AppSidebarStudioNav() {
     [router.pathname]
   );
 
+  const featureIncluded = useAppFeature((f) => f.ai_included);
+  const aiIncluded = AI_FEATURES_ENABLED && featureIncluded;
+
   const items = useMemo(() => {
     return [
+      ...(aiIncluded
+        ? [
+            {
+              name: "Trợ lý AI",
+              url: "/apps/[appId]/ai",
+              icon: SparklesIcon,
+              active: isActive("/apps/[appId]/ai"),
+            },
+          ]
+        : []),
       {
         name: "Lệnh",
         url: "/apps/[appId]/commands",
@@ -74,7 +90,7 @@ export default function AppSidebarStudioNav() {
         active: isActive("/apps/[appId]/templates"),
       },
     ];
-  }, [isActive]);
+  }, [isActive, aiIncluded]);
 
   return (
     <SidebarGroup className="">

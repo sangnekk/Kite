@@ -42,9 +42,31 @@ func (h *AIHandler) HandleAICredits(c *handler.Context) (*wire.AICreditsResponse
 	}, nil
 }
 
+// HandleAICheckCredit gates one AI turn by plan + daily budget WITHOUT charging.
+// The AI service calls this before streaming so a turn that later errors out
+// (e.g. gateway rate limit) is never charged; the charge happens via
+// HandleAIConsumeCredit only once the turn completes successfully.
+func (h *AIHandler) HandleAICheckCredit(c *handler.Context, req wire.AIConsumeCreditRequest) (*wire.AIConsumeCreditResponse, error) {
+	cost := h.turnCreditCost(req.Model)
+
+	if err := h.checkAIQuota(c, cost); err != nil {
+		return nil, err
+	}
+
+	used, err := h.aiCreditsUsedToday(c)
+	if err != nil {
+		return nil, handler.ErrInternal("failed to check AI usage")
+	}
+
+	return &wire.AIConsumeCreditResponse{
+		Charged:   0,
+		Remaining: max(0, c.Features.AICreditPerDay-used),
+	}, nil
+}
+
 // HandleAIConsumeCredit gates one AI turn by plan + daily budget and charges
-// the selected model's credit cost atomically. Used by the external AI service
-// (which can't write usage records itself) to enforce access before streaming.
+// the selected model's credit cost. Called by the AI service after a turn
+// completes successfully (so failed turns are not charged).
 func (h *AIHandler) HandleAIConsumeCredit(c *handler.Context, req wire.AIConsumeCreditRequest) (*wire.AIConsumeCreditResponse, error) {
 	cost := h.turnCreditCost(req.Model)
 

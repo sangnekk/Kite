@@ -14,29 +14,33 @@ INSERT INTO usage_records (
 -- name: GetUsageRecordsByAppBetween :many
 SELECT * FROM usage_records WHERE app_id = @app_id AND created_at BETWEEN @start_at AND @end_at ORDER BY created_at DESC;
 
+-- AI assistant usage (type 'ai_flow_assist') has its own separate daily budget
+-- and must NOT count toward the app's monthly bot-run credit, so it is excluded
+-- from the credit aggregates below.
+
 -- name: GetUsageCreditsUsedByAppBetween :one
-SELECT COALESCE(SUM(credits_used), 0)::int FROM usage_records WHERE app_id = @app_id AND created_at BETWEEN @start_at AND @end_at;
+SELECT COALESCE(SUM(credits_used), 0)::int FROM usage_records WHERE app_id = @app_id AND type != 'ai_flow_assist' AND created_at BETWEEN @start_at AND @end_at;
 
 -- name: GetUsageCreditsUsedByTypeBetween :many
 SELECT type, SUM(credits_used) FROM usage_records WHERE app_id = @app_id AND created_at BETWEEN @start_at AND @end_at GROUP BY type;
 
 -- name: GetUsageCreditsUsedByDayBetween :many
-SELECT 
-    d.dt as date, 
-    coalesce(u.credits_used, 0) as credits_used 
+SELECT
+    d.dt as date,
+    coalesce(u.credits_used, 0) as credits_used
 FROM (
-    SELECT dt::date 
+    SELECT dt::date
     FROM generate_series(@start_at::timestamp, @end_at::timestamp, '1 day'::interval) dt
 ) d
 LEFT JOIN (
-    SELECT DATE(created_at) as date, SUM(credits_used) as credits_used 
-    FROM usage_records 
-    WHERE app_id = @app_id AND created_at BETWEEN @start_at AND @end_at 
+    SELECT DATE(created_at) as date, SUM(credits_used) as credits_used
+    FROM usage_records
+    WHERE app_id = @app_id AND type != 'ai_flow_assist' AND created_at BETWEEN @start_at AND @end_at
     GROUP BY DATE(created_at)
 ) u ON d.dt = u.date;
 
 -- name: GetAllUsageCreditsUsedBetween :many
-SELECT app_id, SUM(credits_used) FROM usage_records WHERE created_at BETWEEN @start_at AND @end_at GROUP BY app_id;
+SELECT app_id, SUM(credits_used) FROM usage_records WHERE type != 'ai_flow_assist' AND created_at BETWEEN @start_at AND @end_at GROUP BY app_id;
 
 -- name: DeleteUsageRecordsBefore :exec
 DELETE FROM usage_records WHERE created_at < @before_at;

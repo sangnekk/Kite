@@ -1,5 +1,5 @@
-import { apiRequest } from "@/lib/api/client";
-import { useAIConversationQuery, useAICreditsQuery } from "@/lib/api/queries";
+import { useAIConversations } from "@/lib/ai/useAIConversations";
+import { useAICreditsQuery } from "@/lib/api/queries";
 import { NodeData } from "@/lib/flow/dataSchema";
 import { getLayoutedElements } from "@/lib/flow/layout";
 import { useAIModels } from "@/lib/hooks/api";
@@ -8,13 +8,13 @@ import { useChat } from "@ai-sdk/react";
 import {
   DefaultChatTransport,
   lastAssistantMessageIsCompleteWithToolCalls,
-  type UIMessage,
 } from "ai";
 import { Edge, Node, useReactFlow } from "@xyflow/react";
 import { SparklesIcon, SquarePenIcon, XIcon } from "lucide-react";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import ConversationHistoryMenu from "../ai/ConversationHistoryMenu";
 import {
   Tool,
   ToolContent,
@@ -49,13 +49,12 @@ export default function FlowCopilotPanel({
 }: Props) {
   const appId = useAppId();
   const router = useRouter();
-  // Stable per-entity key (the editor route) for saving/loading the conversation.
+  // Conversations are scoped per editor route (this flow entity); each route has
+  // its own list of saved chats the user can pick from.
   const contextKey = router.asPath.split(/[?#]/)[0];
   const models = useAIModels();
   const creditsQuery = useAICreditsQuery(appId);
   const credits = creditsQuery.data?.success ? creditsQuery.data.data : undefined;
-  const conversationQuery = useAIConversationQuery(appId, contextKey);
-  const loadedRef = useRef(false);
 
   const { getNodes, getEdges, setNodes, setEdges, fitView } =
     useReactFlow<Node<NodeData>>();
@@ -130,34 +129,20 @@ export default function FlowCopilotPanel({
 
   const busy = status === "submitted" || status === "streaming";
 
-  // Load the saved conversation once when the panel opens.
-  useEffect(() => {
-    if (loadedRef.current || !conversationQuery.data) return;
-    loadedRef.current = true;
-    const res = conversationQuery.data;
-    if (res.success && res.data.messages?.length) {
-      setMessages(res.data.messages as unknown as UIMessage[]);
-    }
-  }, [conversationQuery.data, setMessages]);
-
-  // Persist the conversation after each completed turn.
-  useEffect(() => {
-    if (!loadedRef.current || status !== "ready" || messages.length === 0) return;
-    apiRequest(`/v1/apps/${appId}/ai/conversation`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key: contextKey, messages }),
-    }).catch(() => {});
-  }, [status, messages, appId, contextKey]);
-
-  const clearConversation = useCallback(() => {
-    setMessages([]);
-    loadedRef.current = true;
-    apiRequest(
-      `/v1/apps/${appId}/ai/conversation?key=${encodeURIComponent(contextKey)}`,
-      { method: "DELETE" }
-    ).catch(() => {});
-  }, [setMessages, appId, contextKey]);
+  const {
+    conversations,
+    conversationId,
+    newChat,
+    selectConversation,
+    deleteConversation,
+  } = useAIConversations({
+    appId,
+    context: contextKey,
+    messages,
+    setMessages,
+    status,
+    autoContinue: true,
+  });
 
   const scrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -193,12 +178,18 @@ export default function FlowCopilotPanel({
             </div>
           )}
         </div>
+        <ConversationHistoryMenu
+          conversations={conversations}
+          conversationId={conversationId}
+          onSelect={selectConversation}
+          onDelete={deleteConversation}
+        />
         {messages.length > 0 && (
           <Button
             variant="ghost"
             size="icon"
             title="Đoạn chat mới"
-            onClick={clearConversation}
+            onClick={newChat}
             disabled={busy}
           >
             <SquarePenIcon className="size-5" />

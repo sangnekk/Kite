@@ -62,8 +62,6 @@ import {
   VariablesImportResponse,
   VariableUpdateRequest,
   VariableUpdateResponse,
-  FlowAssistRequest,
-  FlowAssistResponse,
 } from "../types/wire.gen";
 import client, { apiRequest } from "./client";
 
@@ -822,22 +820,3 @@ export function useCommandsDeployMutation(appId: string) {
   });
 }
 
-export function useFlowAssistMutation(appId: string) {
-  return useMutation({
-    mutationFn: (req: FlowAssistRequest) =>
-      apiRequest<FlowAssistResponse>(`/v1/apps/${appId}/ai/flow-assist`, {
-        method: "POST",
-        body: JSON.stringify(req),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }),
-    onSuccess: () => {
-      // The agent may create variables, message templates or event listeners;
-      // refresh their lists so they appear without a manual reload.
-      client.invalidateQueries({ queryKey: ["apps", appId, "variables"] });
-      client.invalidateQueries({ queryKey: ["apps", appId, "messages"] });
-      client.invalidateQueries({ queryKey: ["apps", appId, "event-listeners"] });
-    },
-  });
-}

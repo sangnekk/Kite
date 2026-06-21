@@ -84,7 +84,6 @@ func NewAPIServer(
 	tokenCrypt *util.SymmetricCrypt,
 	commandManager *command.CommandManager,
 	aiModelRegistry *provider.AIModelRegistry,
-	aiProvider provider.AIProvider,
 	aiConversationStore store.AIConversationStore,
 ) *APIServer {
 	s := &APIServer{
@@ -114,7 +113,6 @@ func NewAPIServer(
 		tokenCrypt,
 		commandManager,
 		aiModelRegistry,
-		aiProvider,
 		aiConversationStore,
 	)
 	return s

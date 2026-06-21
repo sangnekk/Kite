@@ -9,6 +9,7 @@ import {
   AppListResponse,
   AssetGetResponse,
   AIConversationResponse,
+  AIConversationListResponse,
   AICreditsResponse,
   AIModelListResponse,
   BillingPlanListResponse,
@@ -339,15 +340,30 @@ export function useAIModelsQuery() {
   });
 }
 
-export function useAIConversationQuery(appId: string, key: string) {
+// Lists conversation summaries for a context (e.g. "studio" or a flow route),
+// most-recent first, for the conversation picker.
+export function useAIConversationsQuery(appId: string, context: string) {
   return useQuery({
-    queryKey: ["apps", appId, "ai", "conversation", key],
+    queryKey: ["apps", appId, "ai", "conversations", context],
+    queryFn: () =>
+      apiRequest<AIConversationListResponse>(
+        `/v1/apps/${appId}/ai/conversations?context=${encodeURIComponent(context)}`
+      ),
+    enabled: !!appId && !!context,
+    refetchOnWindowFocus: false,
+  });
+}
+
+// Loads a single conversation (with messages) by id. Disabled when id is empty
+// (a brand-new, not-yet-saved conversation).
+export function useAIConversationQuery(appId: string, conversationId: string) {
+  return useQuery({
+    queryKey: ["apps", appId, "ai", "conversation", conversationId],
     queryFn: () =>
       apiRequest<AIConversationResponse>(
-        `/v1/apps/${appId}/ai/conversation?key=${encodeURIComponent(key)}`
+        `/v1/apps/${appId}/ai/conversations/${conversationId}`
       ),
-    enabled: !!appId && !!key,
-    // Conversation history is loaded once when the panel opens; don't refetch.
+    enabled: !!appId && !!conversationId,
     staleTime: Infinity,
     refetchOnWindowFocus: false,
   });

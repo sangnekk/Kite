@@ -58,7 +58,7 @@ func (q *Queries) DeleteUsageRecordsBefore(ctx context.Context, beforeAt pgtype.
 }
 
 const getAllUsageCreditsUsedBetween = `-- name: GetAllUsageCreditsUsedBetween :many
-SELECT app_id, SUM(credits_used) FROM usage_records WHERE created_at BETWEEN $1 AND $2 GROUP BY app_id
+SELECT app_id, SUM(credits_used) FROM usage_records WHERE type != 'ai_flow_assist' AND created_at BETWEEN $1 AND $2 GROUP BY app_id
 `
 
 type GetAllUsageCreditsUsedBetweenParams struct {
@@ -92,7 +92,7 @@ func (q *Queries) GetAllUsageCreditsUsedBetween(ctx context.Context, arg GetAllU
 }
 
 const getUsageCreditsUsedByAppBetween = `-- name: GetUsageCreditsUsedByAppBetween :one
-SELECT COALESCE(SUM(credits_used), 0)::int FROM usage_records WHERE app_id = $1 AND created_at BETWEEN $2 AND $3
+SELECT COALESCE(SUM(credits_used), 0)::int FROM usage_records WHERE app_id = $1 AND type != 'ai_flow_assist' AND created_at BETWEEN $2 AND $3
 `
 
 type GetUsageCreditsUsedByAppBetweenParams struct {
@@ -117,9 +117,9 @@ FROM (
     FROM generate_series($1::timestamp, $2::timestamp, '1 day'::interval) dt
 ) d
 LEFT JOIN (
-    SELECT DATE(created_at) as date, SUM(credits_used) as credits_used 
-    FROM usage_records 
-    WHERE app_id = $3 AND created_at BETWEEN $1 AND $2 
+    SELECT DATE(created_at) as date, SUM(credits_used) as credits_used
+    FROM usage_records
+    WHERE app_id = $3 AND type != 'ai_flow_assist' AND created_at BETWEEN $1 AND $2
     GROUP BY DATE(created_at)
 ) u ON d.dt = u.date
 `

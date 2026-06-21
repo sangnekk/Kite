@@ -259,7 +259,22 @@ export interface BillingPlan {
 }
 export type BillingPlanListResponse = (BillingPlan | undefined)[];
 
+export interface AIConversationSummary {
+  id: string;
+  title: string;
+  updated_at: string;
+}
+export type AIConversationListResponse = (AIConversationSummary | undefined)[];
+
 export interface AIConversationResponse {
+  id: string;
+  title: string;
+  messages: any[];
+}
+
+export interface AIConversationUpsertRequest {
+  context: string;
+  title: string;
   messages: any[];
 }
 
@@ -276,34 +291,6 @@ export interface AIModel {
   credits: number;
 }
 export type AIModelListResponse = (AIModel | undefined)[];
-
-export interface FlowAssistMessage {
-  role: string;
-  content: string;
-}
-export interface NodeCatalogEntry {
-  type: string;
-  name: string;
-  description: string;
-  fields: string[];
-}
-export interface FlowAssistRequest {
-  message: string;
-  flow: FlowData;
-  history?: FlowAssistMessage[];
-  model?: string;
-  node_catalog?: NodeCatalogEntry[];
-}
-export interface FlowAssistAction {
-  tool: string;
-  summary: string;
-  ok: boolean;
-}
-export interface FlowAssistResponse {
-  message: string;
-  flow?: FlowData;
-  actions?: FlowAssistAction[];
-}
 
 //////////
 // source: collaborator.go

@@ -1,47 +1,9 @@
 package wire
 
-import "encoding/json"
-
-// FlowAssistRequest is a single turn of the flow copilot: the user's
-// instruction, the flow currently open in the editor, and prior turns.
-type FlowAssistRequest struct {
-	Message string              `json:"message"`
-	Flow    json.RawMessage     `json:"flow"`
-	History []FlowAssistMessage `json:"history,omitempty"`
-	// Model optionally overrides the model key; empty uses the server default.
-	Model string `json:"model,omitempty"`
-	// NodeCatalog is the full set of available blocks, sent by the editor so the
-	// assistant knows every node type it can use (kept in sync with the UI).
-	NodeCatalog []NodeCatalogEntry `json:"node_catalog,omitempty"`
-}
-
-type NodeCatalogEntry struct {
-	Type        string   `json:"type"`
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	Fields      []string `json:"fields"`
-}
-
-type FlowAssistMessage struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
-}
-
-// FlowAssistResponse carries the assistant's reply and the updated flow the
-// editor should apply. Flow is nil when the assistant only replied with text.
-type FlowAssistResponse struct {
-	Message string             `json:"message"`
-	Flow    json.RawMessage    `json:"flow,omitempty"`
-	Actions []FlowAssistAction `json:"actions,omitempty"`
-}
-
-// FlowAssistAction records one resource the agent created (or tried to) during
-// the turn, so the UI can show what happened.
-type FlowAssistAction struct {
-	Tool    string `json:"tool"`
-	Summary string `json:"summary"`
-	OK      bool   `json:"ok"`
-}
+import (
+	"encoding/json"
+	"time"
+)
 
 // AICreditsResponse reports the app's AI copilot credit budget for today.
 type AICreditsResponse struct {
@@ -63,15 +25,26 @@ type AIConsumeCreditResponse struct {
 	Remaining int `json:"remaining"`
 }
 
-// AIConversationResponse returns the stored copilot messages (opaque UIMessage
-// JSON), or an empty array when there is no saved conversation.
+// AIConversationSummary is a row in the conversation picker.
+type AIConversationSummary struct {
+	ID        string    `json:"id"`
+	Title     string    `json:"title"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type AIConversationListResponse = []*AIConversationSummary
+
+// AIConversationResponse is a full conversation (messages = opaque UIMessage JSON).
 type AIConversationResponse struct {
+	ID       string          `json:"id"`
+	Title    string          `json:"title"`
 	Messages json.RawMessage `json:"messages"`
 }
 
-// AIConversationSaveRequest persists the copilot messages for a context key.
-type AIConversationSaveRequest struct {
-	Key      string          `json:"key"`
+// AIConversationUpsertRequest creates/updates a conversation by id.
+type AIConversationUpsertRequest struct {
+	Context  string          `json:"context"`
+	Title    string          `json:"title"`
 	Messages json.RawMessage `json:"messages"`
 }
 

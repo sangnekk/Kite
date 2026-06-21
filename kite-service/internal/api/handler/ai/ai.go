@@ -1,6 +1,9 @@
 package ai
 
 import (
+	"encoding/json"
+	"strings"
+
 	"github.com/kitecloud/kite/kite-service/internal/api/handler"
 	"github.com/kitecloud/kite/kite-service/internal/api/wire"
 	"github.com/kitecloud/kite/kite-service/internal/store"
@@ -8,32 +11,20 @@ import (
 )
 
 type AIHandler struct {
-	modelRegistry      *provider.AIModelRegistry
-	ai                 provider.AIProvider
-	variableStore      store.VariableStore
-	messageStore       store.MessageStore
-	eventListenerStore store.EventListenerStore
-	usageStore         store.UsageStore
-	conversationStore  store.AIConversationStore
+	modelRegistry     *provider.AIModelRegistry
+	usageStore        store.UsageStore
+	conversationStore store.AIConversationStore
 }
 
 func NewAIHandler(
 	modelRegistry *provider.AIModelRegistry,
-	ai provider.AIProvider,
-	variableStore store.VariableStore,
-	messageStore store.MessageStore,
-	eventListenerStore store.EventListenerStore,
 	usageStore store.UsageStore,
 	conversationStore store.AIConversationStore,
 ) *AIHandler {
 	return &AIHandler{
-		modelRegistry:      modelRegistry,
-		ai:                 ai,
-		variableStore:      variableStore,
-		messageStore:       messageStore,
-		eventListenerStore: eventListenerStore,
-		usageStore:         usageStore,
-		conversationStore:  conversationStore,
+		modelRegistry:     modelRegistry,
+		usageStore:        usageStore,
+		conversationStore: conversationStore,
 	}
 }
 
@@ -55,7 +46,7 @@ func (h *AIHandler) HandleAIModelList(c *handler.Context) (*wire.AIModelListResp
 	return &res, nil
 }
 
-// aiConfigured reports whether at least one AI model is available.
-func (h *AIHandler) aiConfigured() bool {
-	return h.ai != nil && h.modelRegistry.Len() > 0
+// isJSONNull reports whether a raw JSON message is the literal null.
+func isJSONNull(raw json.RawMessage) bool {
+	return strings.TrimSpace(string(raw)) == "null"
 }
