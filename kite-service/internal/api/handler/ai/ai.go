@@ -14,6 +14,7 @@ type AIHandler struct {
 	messageStore       store.MessageStore
 	eventListenerStore store.EventListenerStore
 	usageStore         store.UsageStore
+	conversationStore  store.AIConversationStore
 }
 
 func NewAIHandler(
@@ -23,6 +24,7 @@ func NewAIHandler(
 	messageStore store.MessageStore,
 	eventListenerStore store.EventListenerStore,
 	usageStore store.UsageStore,
+	conversationStore store.AIConversationStore,
 ) *AIHandler {
 	return &AIHandler{
 		modelRegistry:      modelRegistry,
@@ -31,6 +33,7 @@ func NewAIHandler(
 		messageStore:       messageStore,
 		eventListenerStore: eventListenerStore,
 		usageStore:         usageStore,
+		conversationStore:  conversationStore,
 	}
 }
 

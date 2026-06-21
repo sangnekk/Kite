@@ -66,6 +66,7 @@ export default function Flow({ flowData, logs, context, onChange }: Props) {
 
         {aiEnabled && copilotOpen && (
           <FlowCopilotPanel
+            context={context}
             onApplied={onChange}
             onClose={() => setCopilotOpen(false)}
           />

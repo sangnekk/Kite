@@ -8,6 +8,7 @@ import {
   AppSettingsGetResponse,
   AppListResponse,
   AssetGetResponse,
+  AIConversationResponse,
   AICreditsResponse,
   AIModelListResponse,
   BillingPlanListResponse,
@@ -335,6 +336,20 @@ export function useAIModelsQuery() {
   return useQuery({
     queryKey: ["ai", "models"],
     queryFn: () => apiRequest<AIModelListResponse>(`/v1/ai-models`),
+  });
+}
+
+export function useAIConversationQuery(appId: string, key: string) {
+  return useQuery({
+    queryKey: ["apps", appId, "ai", "conversation", key],
+    queryFn: () =>
+      apiRequest<AIConversationResponse>(
+        `/v1/apps/${appId}/ai/conversation?key=${encodeURIComponent(key)}`
+      ),
+    enabled: !!appId && !!key,
+    // Conversation history is loaded once when the panel opens; don't refetch.
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
   });
 }
 

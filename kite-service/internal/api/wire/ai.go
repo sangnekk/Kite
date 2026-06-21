@@ -63,6 +63,18 @@ type AIConsumeCreditResponse struct {
 	Remaining int `json:"remaining"`
 }
 
+// AIConversationResponse returns the stored copilot messages (opaque UIMessage
+// JSON), or an empty array when there is no saved conversation.
+type AIConversationResponse struct {
+	Messages json.RawMessage `json:"messages"`
+}
+
+// AIConversationSaveRequest persists the copilot messages for a context key.
+type AIConversationSaveRequest struct {
+	Key      string          `json:"key"`
+	Messages json.RawMessage `json:"messages"`
+}
+
 // AIModel is one selectable AI model exposed to the flow editor. Only the
 // fields a no-code user needs to pick a model are exposed; the upstream model
 // spelling and provider routing stay server-side.

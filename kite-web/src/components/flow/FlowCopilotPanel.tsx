@@ -1,4 +1,5 @@
-import { useAICreditsQuery } from "@/lib/api/queries";
+import { apiRequest } from "@/lib/api/client";
+import { useAIConversationQuery, useAICreditsQuery } from "@/lib/api/queries";
 import { NodeData } from "@/lib/flow/dataSchema";
 import { getLayoutedElements } from "@/lib/flow/layout";
 import { useAIModels } from "@/lib/hooks/api";
@@ -7,9 +8,11 @@ import { useChat } from "@ai-sdk/react";
 import {
   DefaultChatTransport,
   lastAssistantMessageIsCompleteWithToolCalls,
+  type UIMessage,
 } from "ai";
 import { Edge, Node, useReactFlow } from "@xyflow/react";
-import { SparklesIcon, XIcon } from "lucide-react";
+import { SparklesIcon, SquarePenIcon, XIcon } from "lucide-react";
+import { useRouter } from "next/router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -31,6 +34,7 @@ import {
 import { Textarea } from "../ui/textarea";
 
 interface Props {
+  context: string;
   onApplied: () => void;
   onClose: () => void;
 }
@@ -38,11 +42,20 @@ interface Props {
 const AI_SERVICE_URL =
   process.env.NEXT_PUBLIC_AI_SERVICE_URL ?? "http://localhost:3001";
 
-export default function FlowCopilotPanel({ onApplied, onClose }: Props) {
+export default function FlowCopilotPanel({
+  context,
+  onApplied,
+  onClose,
+}: Props) {
   const appId = useAppId();
+  const router = useRouter();
+  // Stable per-entity key (the editor route) for saving/loading the conversation.
+  const contextKey = router.asPath.split(/[?#]/)[0];
   const models = useAIModels();
   const creditsQuery = useAICreditsQuery(appId);
   const credits = creditsQuery.data?.success ? creditsQuery.data.data : undefined;
+  const conversationQuery = useAIConversationQuery(appId, contextKey);
+  const loadedRef = useRef(false);
 
   const { getNodes, getEdges, setNodes, setEdges, fitView } =
     useReactFlow<Node<NodeData>>();
@@ -87,7 +100,7 @@ export default function FlowCopilotPanel({ onApplied, onClose }: Props) {
     [getNodes, setNodes, setEdges, fitView, onApplied]
   );
 
-  const { messages, sendMessage, addToolResult, status } = useChat({
+  const { messages, setMessages, sendMessage, addToolResult, status } = useChat({
     transport: new DefaultChatTransport({
       api: `${AI_SERVICE_URL}/chat`,
       credentials: "include",
@@ -117,6 +130,35 @@ export default function FlowCopilotPanel({ onApplied, onClose }: Props) {
 
   const busy = status === "submitted" || status === "streaming";
 
+  // Load the saved conversation once when the panel opens.
+  useEffect(() => {
+    if (loadedRef.current || !conversationQuery.data) return;
+    loadedRef.current = true;
+    const res = conversationQuery.data;
+    if (res.success && res.data.messages?.length) {
+      setMessages(res.data.messages as unknown as UIMessage[]);
+    }
+  }, [conversationQuery.data, setMessages]);
+
+  // Persist the conversation after each completed turn.
+  useEffect(() => {
+    if (!loadedRef.current || status !== "ready" || messages.length === 0) return;
+    apiRequest(`/v1/apps/${appId}/ai/conversation`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: contextKey, messages }),
+    }).catch(() => {});
+  }, [status, messages, appId, contextKey]);
+
+  const clearConversation = useCallback(() => {
+    setMessages([]);
+    loadedRef.current = true;
+    apiRequest(
+      `/v1/apps/${appId}/ai/conversation?key=${encodeURIComponent(contextKey)}`,
+      { method: "DELETE" }
+    ).catch(() => {});
+  }, [setMessages, appId, contextKey]);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
@@ -131,12 +173,13 @@ export default function FlowCopilotPanel({ onApplied, onClose }: Props) {
       {
         body: {
           appId,
+          context,
           model: model || undefined,
           flow: { nodes: getNodes(), edges: getEdges() },
         },
       }
     );
-  }, [input, busy, sendMessage, appId, model, getNodes, getEdges]);
+  }, [input, busy, sendMessage, appId, context, model, getNodes, getEdges]);
 
   return (
     <div className="w-96 flex-none border-l border-border bg-background flex flex-col h-full">
@@ -150,6 +193,17 @@ export default function FlowCopilotPanel({ onApplied, onClose }: Props) {
             </div>
           )}
         </div>
+        {messages.length > 0 && (
+          <Button
+            variant="ghost"
+            size="icon"
+            title="Đoạn chat mới"
+            onClick={clearConversation}
+            disabled={busy}
+          >
+            <SquarePenIcon className="size-5" />
+          </Button>
+        )}
         <Button variant="ghost" size="icon" onClick={onClose}>
           <XIcon className="size-5" />
         </Button>

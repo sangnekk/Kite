@@ -85,6 +85,7 @@ func NewAPIServer(
 	commandManager *command.CommandManager,
 	aiModelRegistry *provider.AIModelRegistry,
 	aiProvider provider.AIProvider,
+	aiConversationStore store.AIConversationStore,
 ) *APIServer {
 	s := &APIServer{
 		config: config,
@@ -114,6 +115,7 @@ func NewAPIServer(
 		commandManager,
 		aiModelRegistry,
 		aiProvider,
+		aiConversationStore,
 	)
 	return s
 }

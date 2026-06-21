@@ -259,6 +259,10 @@ export interface BillingPlan {
 }
 export type BillingPlanListResponse = (BillingPlan | undefined)[];
 
+export interface AIConversationResponse {
+  messages: any[];
+}
+
 export interface AICreditsResponse {
   included: boolean;
   used_today: number /* int */;
