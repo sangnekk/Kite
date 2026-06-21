@@ -12,7 +12,9 @@ RUN npm ci
 
 # Build the static export.
 COPY kite-web/ ./
-ENV NEXT_PUBLIC_API_PUBLIC_BASE_URL=https://bot.vibehost.vn
+ARG NEXT_PUBLIC_AI_SERVICE_URL=http://localhost:3008
+ENV NEXT_PUBLIC_API_PUBLIC_BASE_URL=http://localhost:8080
+ENV NEXT_PUBLIC_AI_SERVICE_URL=${NEXT_PUBLIC_AI_SERVICE_URL}
 ENV OUTPUT=export
 RUN npm run build
 

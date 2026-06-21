@@ -31,6 +31,10 @@ const chartConfig = {
     label: "Tin nhắn",
     color: "hsl(var(--chart-5))",
   },
+  ai_flow_assist: {
+    label: "Sử dụng AI",
+    color: "hsl(327.1, 100%, 79.6%) "
+  }
 } satisfies ChartConfig;
 
 const typeNames: Record<string, string> = {
@@ -38,6 +42,7 @@ const typeNames: Record<string, string> = {
   command_flow_execution: "Lệnh",
   event_listener_flow_execution: "Sự kiện",
   message_flow_execution: "Tin nhắn",
+  ai_flow_assist: "Sử dụng AI"
 };
 
 export default function UsageCreditsByTypeChart() {

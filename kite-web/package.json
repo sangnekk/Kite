@@ -6,9 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "gen:catalog": "bun run scripts/gen-flow-catalog.ts"
   },
   "dependencies": {
+    "@ai-sdk/react": "^3.0.210",
     "@codemirror/lang-json": "^6.0.1",
     "@dagrejs/dagre": "^1.1.4",
     "@emoji-mart/data": "^1.2.1",
@@ -76,10 +78,11 @@
     "react-dom": "^18",
     "react-hook-form": "^7.52.0",
     "react-json-view": "^1.21.3",
-    "react-markdown": "^9.0.1",
+    "react-markdown": "^9.1.0",
     "react-textarea-autosize": "^8.5.3",
     "react-twemoji": "^0.5.0",
     "recharts": "^2.15.0",
+    "remark-gfm": "^4.0.1",
     "sharp": "^0.35.1",
     "shiki": "^4.2.0",
     "simple-markdown": "^0.7.3",

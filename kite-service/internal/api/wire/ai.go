@@ -51,6 +51,18 @@ type AICreditsResponse struct {
 	Remaining   int  `json:"remaining"`
 }
 
+// AIConsumeCreditRequest asks the server to gate-and-charge one AI turn. Model
+// is the registry key whose per-model credit cost is charged.
+type AIConsumeCreditRequest struct {
+	Model string `json:"model,omitempty"`
+}
+
+// AIConsumeCreditResponse reports what was charged and the budget left.
+type AIConsumeCreditResponse struct {
+	Charged   int `json:"charged"`
+	Remaining int `json:"remaining"`
+}
+
 // AIModel is one selectable AI model exposed to the flow editor. Only the
 // fields a no-code user needs to pick a model are exposed; the upstream model
 // spelling and provider routing stay server-side.

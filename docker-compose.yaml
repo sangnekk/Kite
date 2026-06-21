@@ -43,6 +43,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        # Baked into the embedded frontend so the browser knows the AI service URL.
+        NEXT_PUBLIC_AI_SERVICE_URL: http://localhost:3008
     restart: always
     ports:
       - "8080:8080"
@@ -57,13 +60,35 @@ services:
       - KITE_DATABASE__S3__ACCESS_KEY_ID=kite
       - KITE_DATABASE__S3__SECRET_ACCESS_KEY=1234567890
       - KITE_DATABASE__S3__SECURE=false
-      - KITE_APP__PUBLIC_BASE_URL=http://localhost:3000
       - KITE_API__PUBLIC_BASE_URL=http://localhost:8080
     volumes:
       - ./kite.toml:/root/kite.toml
     depends_on:
       postgres:
         condition: service_healthy
+
+  ai-service:
+    build:
+      context: ./kite-ai-service
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3008:3001"
+    env_file:
+      - .env
+    environment:
+      - PORT=3001
+      # Internal Docker network name of the Go API.
+      - KITE_API_BASE_URL=http://kite:8080
+      # Browser origin allowed to call this service (with credentials).
+      - WEB_ORIGIN=http://localhost:8080
+      # AI models are read from the same kite.toml as the Go service.
+      - KITE_CONFIG_PATH=/app/kite.toml
+      # AI_GATEWAY_API_KEY comes from .env (Vercel AI Gateway key).
+    volumes:
+      - ./kite.toml:/app/kite.toml:ro
+    depends_on:
+      - kite
 
   docs:
     build:

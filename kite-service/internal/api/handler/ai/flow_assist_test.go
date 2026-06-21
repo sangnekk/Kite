@@ -91,7 +91,7 @@ func TestValidateFlowGraph(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := validateFlowGraph(tc.data)
+			err := flow.ValidateGraph(tc.data)
 			if tc.wantErr && err == nil {
 				t.Errorf("expected error, got nil")
 			}

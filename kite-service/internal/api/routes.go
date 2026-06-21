@@ -15,6 +15,7 @@ import (
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/billing"
 	commandhandler "github.com/kitecloud/kite/kite-service/internal/api/handler/command"
 	eventlistener "github.com/kitecloud/kite/kite-service/internal/api/handler/event_listener"
+	flowhandler "github.com/kitecloud/kite/kite-service/internal/api/handler/flow"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/logs"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/message"
 	pluginhandler "github.com/kitecloud/kite/kite-service/internal/api/handler/plugin"
@@ -59,6 +60,7 @@ func (s *APIServer) RegisterRoutes(
 	sessionManager := session.NewSessionManager(session.SessionManagerConfig{
 		StrictCookies: s.config.StrictCookies,
 		SecureCookies: s.config.SecureCookies,
+		CookieDomain:  s.config.CookieDomain,
 	}, sessionStore)
 	accessManager := access.NewAccessManager(
 		appStore,
@@ -195,7 +197,12 @@ func (s *APIServer) RegisterRoutes(
 	aiHandler := aihandler.NewAIHandler(aiModelRegistry, aiProvider, variableStore, messageStore, eventListenerStore, usageStore)
 	v1Group.Get("/ai-models", handler.Typed(aiHandler.HandleAIModelList))
 	appGroup.Get("/ai/credits", handler.Typed(aiHandler.HandleAICredits))
+	appGroup.Post("/ai/credits/consume", handler.TypedWithBody(aiHandler.HandleAIConsumeCredit))
 	appGroup.Post("/ai/flow-assist", handler.TypedWithBody(aiHandler.HandleFlowAssist))
+
+	// Flow routes
+	flowHandler := flowhandler.NewFlowHandler()
+	appGroup.Post("/flows/validate", handler.TypedWithBody(flowHandler.HandleFlowValidate))
 
 	userBillingGroup := v1Group.Group("/billing", sessionManager.RequireSession)
 	userBillingGroup.Post("/subscriptions/{subscriptionID}/manage", handler.Typed(billingHandler.HandleSubscriptionManage))

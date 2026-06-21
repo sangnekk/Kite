@@ -20,6 +20,7 @@ type APIServerConfig struct {
 	ClusterIndex        int
 	SecureCookies       bool
 	StrictCookies       bool
+	CookieDomain        string
 	AppPublicBaseURL    string
 	AppAllowedOrigins   []string
 	APIPublicBaseURL    string

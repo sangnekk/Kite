@@ -21,6 +21,9 @@ const (
 type SessionManagerConfig struct {
 	StrictCookies bool
 	SecureCookies bool
+	// CookieDomain, when set, scopes the session cookie to a registrable domain
+	// (e.g. ".vibehost.vn") so it is shared across subdomains. Empty = host-only.
+	CookieDomain string
 }
 
 type SessionManager struct {
@@ -54,6 +57,7 @@ func (s *SessionManager) CreateSessionCookie(c *handler.Context, userID string) 
 		SameSite: sameSite,
 		MaxAge:   int(SessionExpiry.Seconds()),
 		Path:     "/",
+		Domain:   s.config.CookieDomain,
 	})
 
 	return key, session, nil
@@ -77,7 +81,16 @@ func (s *SessionManager) CreateSession(ctx context.Context, userID string) (stri
 }
 
 func (s *SessionManager) DeleteSession(c *handler.Context) error {
-	defer c.DeleteCookie(SessionCookieName)
+	// Clear with the same Domain/Path the cookie was set with, otherwise a
+	// domain-scoped session cookie isn't removed on logout.
+	defer c.SetCookie(&http.Cookie{
+		Name:     SessionCookieName,
+		Value:    "",
+		Path:     "/",
+		Domain:   s.config.CookieDomain,
+		HttpOnly: true,
+		MaxAge:   -1,
+	})
 
 	key := c.Cookie(SessionCookieName)
 	if key == "" {

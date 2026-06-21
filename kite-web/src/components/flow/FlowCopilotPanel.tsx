@@ -1,15 +1,25 @@
-import { useFlowAssistMutation } from "@/lib/api/mutations";
 import { useAICreditsQuery } from "@/lib/api/queries";
 import { NodeData } from "@/lib/flow/dataSchema";
 import { getLayoutedElements } from "@/lib/flow/layout";
-import { nodeTypes } from "@/lib/flow/nodes";
 import { useAIModels } from "@/lib/hooks/api";
 import { useAppId } from "@/lib/hooks/params";
-import { FlowAssistAction, FlowAssistMessage } from "@/lib/types/wire.gen";
+import { useChat } from "@ai-sdk/react";
+import {
+  DefaultChatTransport,
+  lastAssistantMessageIsCompleteWithToolCalls,
+} from "ai";
 import { Edge, Node, useReactFlow } from "@xyflow/react";
 import { SparklesIcon, XIcon } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import {
+  Tool,
+  ToolContent,
+  ToolHeader,
+  ToolInput,
+  ToolOutput,
+} from "../ai-elements/tool";
+import Markdown from "../common/Markdown";
 import { Button } from "../ui/button";
 import {
   Select,
@@ -25,137 +35,108 @@ interface Props {
   onClose: () => void;
 }
 
+const AI_SERVICE_URL =
+  process.env.NEXT_PUBLIC_AI_SERVICE_URL ?? "http://localhost:3001";
+
 export default function FlowCopilotPanel({ onApplied, onClose }: Props) {
   const appId = useAppId();
   const models = useAIModels();
-  const mutation = useFlowAssistMutation(appId);
   const creditsQuery = useAICreditsQuery(appId);
-  const credits = creditsQuery.data?.success
-    ? creditsQuery.data.data
-    : undefined;
+  const credits = creditsQuery.data?.success ? creditsQuery.data.data : undefined;
+
   const { getNodes, getEdges, setNodes, setEdges, fitView } =
     useReactFlow<Node<NodeData>>();
 
-  const [messages, setMessages] = useState<
-    (FlowAssistMessage & { actions?: FlowAssistAction[] })[]
-  >([]);
-
-  // Full block catalog from the editor registry, so the assistant knows every
-  // node type it can use (always in sync with the UI).
-  const nodeCatalog = useMemo(
-    () =>
-      Object.entries(nodeTypes).map(([type, v]) => ({
-        type,
-        name: v.defaultTitle,
-        description: v.defaultDescription,
-        fields: v.dataFields,
-      })),
-    []
-  );
   const [input, setInput] = useState("");
   const [model, setModel] = useState<string>("");
+
+  // Apply an AI-produced flow to the canvas: reuse the editor's fixed entry
+  // (remap the AI entry onto it to avoid a duplicate), then dagre-layout.
+  const applyFlow = useCallback(
+    (flowData: { nodes?: unknown[]; edges?: unknown[] }) => {
+      let nodes = (flowData?.nodes ?? []) as Node<NodeData>[];
+      let edges = (flowData?.edges ?? []) as Edge[];
+
+      const existingEntry = getNodes().find((n) => n.type?.startsWith("entry_"));
+      const aiEntry = nodes.find((n) => n.type?.startsWith("entry_"));
+      if (existingEntry && aiEntry && aiEntry.id !== existingEntry.id) {
+        const remap = (id: string) =>
+          id === aiEntry.id ? existingEntry.id : id;
+        edges = edges.map((e) => ({
+          ...e,
+          source: remap(e.source),
+          target: remap(e.target),
+        }));
+        nodes = nodes.map((n) =>
+          n.id === aiEntry.id
+            ? { ...existingEntry, data: { ...existingEntry.data, ...n.data } }
+            : n
+        );
+      }
+
+      const layouted = getLayoutedElements(
+        nodes as unknown as Node[],
+        edges as unknown as Edge[],
+        { direction: "TB" }
+      );
+      setNodes(layouted.nodes as Node<NodeData>[]);
+      setEdges(layouted.edges);
+      onApplied();
+      setTimeout(() => fitView({ duration: 300 }), 50);
+    },
+    [getNodes, setNodes, setEdges, fitView, onApplied]
+  );
+
+  const { messages, sendMessage, addToolResult, status } = useChat({
+    transport: new DefaultChatTransport({
+      api: `${AI_SERVICE_URL}/chat`,
+      credentials: "include",
+    }),
+    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
+    onToolCall: ({ toolCall }) => {
+      if (toolCall.toolName === "update_flow") {
+        try {
+          applyFlow((toolCall.input as { flow: any }).flow);
+          addToolResult({
+            tool: "update_flow",
+            toolCallId: toolCall.toolCallId,
+            output: { ok: true },
+          });
+        } catch (e) {
+          addToolResult({
+            tool: "update_flow",
+            toolCallId: toolCall.toolCallId,
+            output: { ok: false, error: String(e) },
+          });
+        }
+      }
+    },
+    onError: (e) => toast.error(`Trợ lý lỗi: ${e.message}`),
+    onFinish: () => creditsQuery.refetch(),
+  });
+
+  const busy = status === "submitted" || status === "streaming";
 
   const scrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
-  }, [messages, mutation.isPending]);
+  }, [messages, busy]);
 
   const send = useCallback(() => {
-    const message = input.trim();
-    if (!message || mutation.isPending) return;
-
-    const history = messages;
-    setMessages((m) => [...m, { role: "user", content: message }]);
+    const text = input.trim();
+    if (!text || busy) return;
     setInput("");
-
-    mutation.mutate(
+    sendMessage(
+      { text },
       {
-        message,
-        flow: { nodes: getNodes(), edges: getEdges() } as any,
-        history,
-        model: model || undefined,
-        node_catalog: nodeCatalog,
-      },
-      {
-        onSuccess(res) {
-          creditsQuery.refetch();
-          if (!res.success) {
-            toast.error(`Trợ lý lỗi: ${res.error.message}`);
-            setMessages((m) => [
-              ...m,
-              { role: "assistant", content: `⚠️ ${res.error.message}` },
-            ]);
-            return;
-          }
-
-          setMessages((m) => [
-            ...m,
-            {
-              role: "assistant",
-              content: res.data.message,
-              actions: res.data.actions,
-            },
-          ]);
-
-          if (res.data.flow) {
-            let nodes = (res.data.flow.nodes ?? []) as unknown as Node<NodeData>[];
-            let edges = (res.data.flow.edges ?? []) as unknown as Edge[];
-
-            // The editor's entry node is fixed and cannot be removed. Reuse it
-            // instead of letting the AI add a second entry node: remap the AI's
-            // entry onto the existing one and drop the duplicate.
-            const existingEntry = getNodes().find((n) =>
-              n.type?.startsWith("entry_")
-            );
-            const aiEntry = nodes.find((n) => n.type?.startsWith("entry_"));
-            if (existingEntry && aiEntry && aiEntry.id !== existingEntry.id) {
-              const remap = (id: string) =>
-                id === aiEntry.id ? existingEntry.id : id;
-              edges = edges.map((e) => ({
-                ...e,
-                source: remap(e.source),
-                target: remap(e.target),
-              }));
-              nodes = nodes.map((n) =>
-                n.id === aiEntry.id
-                  ? {
-                      ...existingEntry,
-                      data: { ...existingEntry.data, ...n.data },
-                    }
-                  : n
-              );
-            }
-
-            const layouted = getLayoutedElements(
-              nodes as unknown as Node[],
-              edges as unknown as Edge[],
-              { direction: "TB" }
-            );
-            setNodes(layouted.nodes as Node<NodeData>[]);
-            setEdges(layouted.edges);
-            onApplied();
-            setTimeout(() => fitView({ duration: 300 }), 50);
-          }
-        },
-        onError(err) {
-          toast.error(`Trợ lý lỗi: ${String(err)}`);
+        body: {
+          appId,
+          model: model || undefined,
+          flow: { nodes: getNodes(), edges: getEdges() },
         },
       }
     );
-  }, [
-    input,
-    messages,
-    model,
-    mutation,
-    creditsQuery,
-    nodeCatalog,
-    getNodes,
-    getEdges,
-    setNodes,
-    setEdges,
-    fitView,
-    onApplied,
-  ]);
+  }, [input, busy, sendMessage, appId, model, getNodes, getEdges]);
 
   return (
     <div className="w-96 flex-none border-l border-border bg-background flex flex-col h-full">
@@ -178,43 +159,55 @@ export default function FlowCopilotPanel({ onApplied, onClose }: Props) {
         <div className="p-4 space-y-3">
           {messages.length === 0 && (
             <div className="text-sm text-muted-foreground">
-              Mô tả điều bạn muốn bot làm, ví dụ: &quot;tạo lệnh /ban chỉ admin
-              dùng được, ghi log vào kênh mod&quot;. Trợ lý sẽ dựng flow trực
-              tiếp trên canvas.
+              Mô tả điều bạn muốn bot làm, ví dụ: &quot;chào mừng thành viên mới
+              ở kênh #welcome&quot; hoặc &quot;tạo lệnh /ban chỉ admin
+              dùng&quot;. Trợ lý sẽ dựng flow trực tiếp trên canvas.
             </div>
           )}
-          {messages.map((m, i) => (
-            <div key={i} className="space-y-1">
-              <div
-                className={
-                  m.role === "user"
-                    ? "ml-6 rounded-lg bg-primary/10 px-3 py-2 text-sm text-foreground"
-                    : "mr-6 rounded-lg bg-muted px-3 py-2 text-sm text-foreground whitespace-pre-wrap"
-                }
-              >
-                {m.content}
-              </div>
-              {m.actions && m.actions.length > 0 && (
-                <div className="mr-6 space-y-1">
-                  {m.actions.map((a, j) => (
+
+          {messages.map((m) => (
+            <div key={m.id} className="space-y-2">
+              {m.parts.map((part, i) => {
+                if (part.type === "text") {
+                  return m.role === "user" ? (
                     <div
-                      key={j}
-                      className="flex items-start gap-1.5 text-xs text-muted-foreground"
+                      key={i}
+                      className="ml-6 rounded-lg bg-primary/10 px-3 py-2 text-sm text-foreground whitespace-pre-wrap"
                     >
-                      <span className={a.ok ? "text-green-500" : "text-red-500"}>
-                        {a.ok ? "✓" : "✕"}
-                      </span>
-                      <span>
-                        <span className="font-medium">{a.tool}</span>:{" "}
-                        {a.summary}
-                      </span>
+                      {part.text}
                     </div>
-                  ))}
-                </div>
-              )}
+                  ) : (
+                    <div
+                      key={i}
+                      className="mr-6 rounded-lg bg-muted px-3 py-2 text-foreground"
+                    >
+                      <Markdown>{part.text}</Markdown>
+                    </div>
+                  );
+                }
+                if (part.type.startsWith("tool-")) {
+                  const tp = part as any;
+                  return (
+                    <Tool key={i} className="mr-6">
+                      <ToolHeader type={tp.type} state={tp.state} />
+                      <ToolContent>
+                        {tp.input != null && <ToolInput input={tp.input} />}
+                        {(tp.output != null || tp.errorText) && (
+                          <ToolOutput
+                            output={tp.output}
+                            errorText={tp.errorText}
+                          />
+                        )}
+                      </ToolContent>
+                    </Tool>
+                  );
+                }
+                return null;
+              })}
             </div>
           ))}
-          {mutation.isPending && (
+
+          {busy && (
             <div className="mr-6 rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
               Đang suy nghĩ…
             </div>
@@ -252,7 +245,7 @@ export default function FlowCopilotPanel({ onApplied, onClose }: Props) {
         <Button
           className="w-full"
           onClick={send}
-          disabled={!input.trim() || mutation.isPending}
+          disabled={!input.trim() || busy}
         >
           Gửi
         </Button>

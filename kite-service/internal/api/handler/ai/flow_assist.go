@@ -125,7 +125,8 @@ func (h *AIHandler) HandleFlowAssist(c *handler.Context, req wire.FlowAssistRequ
 
 // validateFlowComplete checks the agent's flow with the same rules the runtime
 // uses: node data validation plus graph connectivity (entry node, edge targets,
-// option direction, no floating nodes).
+// option direction, no floating nodes). Shared with the /flows/validate endpoint
+// via flow.ValidateGraph.
 func validateFlowComplete(raw json.RawMessage) error {
 	var data flow.FlowData
 	if err := json.Unmarshal(raw, &data); err != nil {
@@ -134,65 +135,7 @@ func validateFlowComplete(raw json.RawMessage) error {
 	if err := data.Validate(); err != nil {
 		return err
 	}
-	return validateFlowGraph(data)
-}
-
-// validateFlowGraph catches the connection mistakes that make a flow wire up
-// wrong: missing/duplicate entry, edges to unknown nodes, options connected
-// backwards, and floating nodes.
-func validateFlowGraph(data flow.FlowData) error {
-	if len(data.Nodes) == 0 {
-		return fmt.Errorf("flow has no nodes")
-	}
-
-	nodeType := make(map[string]string, len(data.Nodes))
-	entryCount := 0
-	for _, n := range data.Nodes {
-		if _, dup := nodeType[n.ID]; dup {
-			return fmt.Errorf("duplicate node id %q", n.ID)
-		}
-		nodeType[n.ID] = string(n.Type)
-		if strings.HasPrefix(string(n.Type), "entry_") {
-			entryCount++
-		}
-	}
-	if entryCount == 0 {
-		return fmt.Errorf("no entry node — add exactly one entry_* node")
-	}
-	if entryCount > 1 {
-		return fmt.Errorf("found %d entry nodes, need exactly one", entryCount)
-	}
-
-	connected := make(map[string]bool, len(data.Nodes))
-	for _, e := range data.Edges {
-		srcType, ok := nodeType[e.Source]
-		if !ok {
-			return fmt.Errorf("an edge references unknown source node %q", e.Source)
-		}
-		dstType, ok := nodeType[e.Target]
-		if !ok {
-			return fmt.Errorf("an edge references unknown target node %q", e.Target)
-		}
-		connected[e.Source] = true
-		connected[e.Target] = true
-
-		if strings.HasPrefix(srcType, "option_") && !strings.HasPrefix(dstType, "entry_") {
-			return fmt.Errorf("option node %q must connect to the entry node (source=option, target=entry)", e.Source)
-		}
-		if strings.HasPrefix(srcType, "entry_") && strings.HasPrefix(dstType, "option_") {
-			return fmt.Errorf("option node %q is connected backwards; use source=option, target=entry", e.Target)
-		}
-	}
-
-	if len(data.Nodes) > 1 {
-		for id, t := range nodeType {
-			if !connected[id] {
-				return fmt.Errorf("node %q (%s) is not connected to anything", id, t)
-			}
-		}
-	}
-
-	return nil
+	return flow.ValidateGraph(data)
 }
 
 func (h *AIHandler) toolCreateVariable(c *handler.Context, args json.RawMessage) (string, bool) {
@@ -285,7 +228,7 @@ func (h *AIHandler) toolCreateEventListener(c *handler.Context, args json.RawMes
 	if err := flowData.Validate(); err != nil {
 		return "error: invalid flow data: " + err.Error(), false
 	}
-	if err := validateFlowGraph(flowData); err != nil {
+	if err := flow.ValidateGraph(flowData); err != nil {
 		return "error: " + err.Error(), false
 	}
 

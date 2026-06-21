@@ -131,6 +131,7 @@ func StartServer(c context.Context, cfg *config.Config) error {
 		ClusterIndex:        cfg.ClusterIndex,
 		SecureCookies:       cfg.API.SecureCookies,
 		StrictCookies:       cfg.API.StrictCookies,
+		CookieDomain:        cfg.API.CookieDomain,
 		APIPublicBaseURL:    cfg.API.PublicBaseURL,
 		AppPublicBaseURL:    cfg.App.PublicBaseURL,
 		AppAllowedOrigins:   cfg.App.AllowedOrigins,

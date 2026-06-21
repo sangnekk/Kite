@@ -66,6 +66,10 @@ type APIConfig struct {
 	PublicBaseURL string `toml:"public_base_url" validate:"required"`
 	SecureCookies bool   `toml:"secure_cookies"`
 	StrictCookies bool   `toml:"strict_cookies"`
+	// CookieDomain scopes the session cookie to a registrable domain (e.g.
+	// ".vibehost.vn") so it is shared across subdomains — required when the AI
+	// microservice runs on a sibling subdomain. Empty keeps it host-only.
+	CookieDomain string `toml:"cookie_domain"`
 }
 
 type AppConfig struct {
