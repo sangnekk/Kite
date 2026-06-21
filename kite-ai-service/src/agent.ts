@@ -1,4 +1,3 @@
-import { gateway } from "@ai-sdk/gateway";
 import {
   convertToModelMessages,
   stepCountIs,
@@ -9,9 +8,15 @@ import { config, resolveModel } from "./config";
 import { consumeCredit } from "./kite";
 import { buildSystemPrompt } from "./prompt";
 import { buildTools } from "./tools";
+import { createDeepSeek } from "@ai-sdk/deepseek";
 
 // streamChat runs one agent turn and returns a UIMessage stream Response for the
 // browser's useChat to consume (rendered with ai-elements).
+
+const provider = createDeepSeek({
+  apiKey: process.env.DEEPSEEK_API_KEY,
+});
+
 export async function streamChat(opts: {
   messages: UIMessage[];
   flow: unknown;
@@ -23,7 +28,7 @@ export async function streamChat(opts: {
 }): Promise<Response> {
   const mode = opts.mode ?? "editor";
   const result = streamText({
-    model: gateway(resolveModel(opts.modelKey)),
+    model: provider(resolveModel(opts.modelKey)),
     system: buildSystemPrompt(opts.flow, opts.context, mode),
     messages: await convertToModelMessages(opts.messages),
     tools: buildTools(mode, opts.appId, opts.cookie),
@@ -35,7 +40,7 @@ export async function streamChat(opts: {
       const charge = await consumeCredit(
         opts.appId,
         opts.modelKey ?? "",
-        opts.cookie
+        opts.cookie,
       );
       if (!charge.ok) {
         console.error("failed to charge AI credit:", charge.message);

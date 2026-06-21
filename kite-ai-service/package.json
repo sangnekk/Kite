@@ -7,6 +7,7 @@
     "start": "bun run src/index.ts"
   },
   "dependencies": {
+    "@ai-sdk/deepseek": "^2.0.39",
     "@ai-sdk/gateway": "^3.0.133",
     "@elysiajs/cors": "^1.4.2",
     "ai": "^6.0.208",
