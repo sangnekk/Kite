@@ -1,0 +1,21 @@
+{
+  "name": "kite-ai-service",
+  "version": "1.0.50",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts"
+  },
+  "dependencies": {
+    "@ai-sdk/gateway": "^3.0.133",
+    "@elysiajs/cors": "^1.4.2",
+    "ai": "^6.0.208",
+    "elysia": "^1.4.29",
+    "smol-toml": "^1.6.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  },
+  "module": "src/index.ts"
+}
