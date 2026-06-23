@@ -14,36 +14,64 @@ type NodeInfo = {
   creditsCost: number | null;
 };
 
+type CatalogNode = NodeInfo & { type: string };
+
+// The node catalog is a static asset (static/flow-nodes.json) generated from the
+// flow editor's source of truth via `npm run gen:catalog` in kite-web. It is
+// served by the docs site itself, so no Next.js backend is required for embed /
+// static builds. Fetch it once and share it across every NodeInfoExplorer.
+let catalogPromise: Promise<Record<string, NodeInfo>> | null = null;
+
+function loadCatalog(baseUrl: string): Promise<Record<string, NodeInfo>> {
+  if (!catalogPromise) {
+    catalogPromise = fetch(`${baseUrl}flow-nodes.json`)
+      .then((res) => res.json())
+      .then((json: { nodes: CatalogNode[] }) => {
+        const byType: Record<string, NodeInfo> = {};
+        for (const node of json.nodes) {
+          byType[node.type] = node;
+        }
+        return byType;
+      })
+      .catch((error) => {
+        // Allow a later mount to retry instead of caching the failure forever.
+        catalogPromise = null;
+        throw error;
+      });
+  }
+  return catalogPromise;
+}
+
 export default function NodeInfoExplorer({ type }: { type: string }) {
   const [tab, setTab] = useState<"data" | "result">("result");
   const [data, setData] = useState<NodeInfo | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   const {
-    siteConfig: { customFields },
+    siteConfig: { baseUrl },
   } = useDocusaurusContext();
 
   useEffect(() => {
-    const abortController = new AbortController();
+    let active = true;
 
-    fetch(`${customFields.appBaseUrl}/api/flow/nodes/${type}`, {
-      signal: abortController.signal,
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("data", data);
-        setData(data);
+    loadCatalog(baseUrl)
+      .then((byType) => {
+        if (active) {
+          setData(byType[type] ?? null);
+          setLoaded(true);
+        }
       })
       .catch((error) => {
-        // Only log errors that aren't from cancellation
-        if (error.name !== "AbortError") {
-          console.error("Failed to fetch node info:", error);
+        console.error("Failed to load node info:", error);
+        if (active) {
+          setLoaded(true);
         }
       });
 
     return () => {
-      abortController.abort();
+      active = false;
     };
-  }, [type]);
+  }, [type, baseUrl]);
 
   useEffect(() => {
     if (data?.resultSchema) {
@@ -53,8 +81,14 @@ export default function NodeInfoExplorer({ type }: { type: string }) {
     }
   }, [data]);
 
-  if (!data) {
+  if (!loaded) {
     return <div>Loading...</div>;
+  }
+
+  // Loaded, but this node type isn't in the catalog (e.g. not yet registered in
+  // the flow editor's nodeTypes). Render nothing rather than hang on "Loading".
+  if (!data) {
+    return null;
   }
 
   const schema = tab === "data" ? data.dataSchema : data.resultSchema;

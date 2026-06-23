@@ -1,0 +1,6367 @@
+{
+  "nodes": [
+    {
+      "type": "entry_command",
+      "category": "entry",
+      "section": "Khởi đầu",
+      "contextTypes": null,
+      "title": "Lệnh",
+      "description": "Khởi đầu lệnh. Thả các hành động và tùy chọn vào đây!",
+      "icon": "square-slash",
+      "color": "#eab308",
+      "dataFields": [
+        "name",
+        "description",
+        "command_types"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "pattern": "^[-_a-z0-9]{1,32}( [-_a-z0-9]{1,32}){0,2}$"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "command_disable_slash": {
+            "type": "boolean"
+          },
+          "command_enable_prefix": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "description"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": null
+    },
+    {
+      "type": "entry_event",
+      "category": "entry",
+      "section": "Khởi đầu",
+      "contextTypes": null,
+      "title": "Lắng nghe sự kiện",
+      "description": "Lắng nghe sự kiện để kích hoạt luồng. Thả các hành động vào đây!",
+      "icon": "satellite-dish",
+      "color": "#eab308",
+      "dataFields": [
+        "event_type",
+        "description"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "event_type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_type"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": null
+    },
+    {
+      "type": "entry_component_button",
+      "category": "entry",
+      "section": "Khởi đầu",
+      "contextTypes": null,
+      "title": "Nút",
+      "description": "Kích hoạt khi người dùng nhấn nút. Thả các hành động vào đây!",
+      "icon": "mouse-pointer-click",
+      "color": "#eab308",
+      "dataFields": [],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": null
+    },
+    {
+      "type": "action_response_create",
+      "category": "action",
+      "section": "Phản hồi",
+      "contextTypes": [
+        "command",
+        "component_button"
+      ],
+      "title": "Tạo tin nhắn phản hồi",
+      "description": "Bot trả lời tương tác bằng tin nhắn",
+      "icon": "message-circle-reply",
+      "color": "#3b82f6",
+      "dataFields": [
+        "message_template_id",
+        "message_data",
+        "message_ephemeral",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "message_data": {
+            "type": "object",
+            "properties": {
+              "content": {
+                "type": "string",
+                "maxLength": 2000
+              },
+              "allowed_mentions": {
+                "type": "object",
+                "properties": {
+                  "parse": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "users",
+                        "roles",
+                        "everyone"
+                      ]
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "content"
+            ],
+            "additionalProperties": false
+          },
+          "message_template_id": {
+            "type": "string"
+          },
+          "message_ephemeral": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the message"
+          },
+          "channel_id": {
+            "type": "string",
+            "description": "The ID of the channel the message was sent in"
+          },
+          "content": {
+            "type": "string",
+            "description": "The content of the message"
+          },
+          "author": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "The ID of the user"
+              },
+              "username": {
+                "type": "string",
+                "description": "The username of the user"
+              },
+              "discriminator": {
+                "type": "string",
+                "description": "The discriminator of the user"
+              },
+              "display_name": {
+                "type": "string",
+                "description": "The display name of the user"
+              },
+              "avatar_url": {
+                "type": "string",
+                "description": "The avatar URL of the user"
+              }
+            },
+            "required": [
+              "id",
+              "username",
+              "discriminator",
+              "display_name",
+              "avatar_url"
+            ],
+            "additionalProperties": false,
+            "description": "The author of the message if it's a DM"
+          },
+          "member": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "The ID of the user"
+              },
+              "username": {
+                "type": "string",
+                "description": "The username of the user"
+              },
+              "discriminator": {
+                "type": "string",
+                "description": "The discriminator of the user"
+              },
+              "display_name": {
+                "type": "string",
+                "description": "The display name of the user"
+              },
+              "avatar_url": {
+                "type": "string",
+                "description": "The avatar URL of the member"
+              },
+              "nick": {
+                "type": "string",
+                "description": "The nickname of the member"
+              }
+            },
+            "required": [
+              "id",
+              "username",
+              "discriminator",
+              "display_name",
+              "avatar_url",
+              "nick"
+            ],
+            "additionalProperties": false,
+            "description": "The author of the message if it's in a server"
+          }
+        },
+        "required": [
+          "id",
+          "channel_id",
+          "content",
+          "author"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "producesResult": true,
+      "resultKind": "object",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_response_edit",
+      "category": "action",
+      "section": "Phản hồi",
+      "contextTypes": [
+        "command",
+        "component_button"
+      ],
+      "title": "Sửa tin nhắn phản hồi",
+      "description": "Bot chỉnh sửa tin nhắn phản hồi tương tác hiện có",
+      "icon": "pen",
+      "color": "#3b82f6",
+      "dataFields": [
+        "response_target",
+        "message_template_id",
+        "message_data",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "message_target": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                  }
+                ]
+              },
+              {
+                "type": "string",
+                "const": "@original"
+              }
+            ]
+          },
+          "message_data": {
+            "type": "object",
+            "properties": {
+              "content": {
+                "type": "string",
+                "maxLength": 2000
+              },
+              "allowed_mentions": {
+                "type": "object",
+                "properties": {
+                  "parse": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "users",
+                        "roles",
+                        "everyone"
+                      ]
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "content"
+            ],
+            "additionalProperties": false
+          },
+          "message_template_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message_target"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the message"
+          },
+          "channel_id": {
+            "type": "string",
+            "description": "The ID of the channel the message was sent in"
+          },
+          "content": {
+            "type": "string",
+            "description": "The content of the message"
+          },
+          "author": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "The ID of the user"
+              },
+              "username": {
+                "type": "string",
+                "description": "The username of the user"
+              },
+              "discriminator": {
+                "type": "string",
+                "description": "The discriminator of the user"
+              },
+              "display_name": {
+                "type": "string",
+                "description": "The display name of the user"
+              },
+              "avatar_url": {
+                "type": "string",
+                "description": "The avatar URL of the user"
+              }
+            },
+            "required": [
+              "id",
+              "username",
+              "discriminator",
+              "display_name",
+              "avatar_url"
+            ],
+            "additionalProperties": false,
+            "description": "The author of the message if it's a DM"
+          },
+          "member": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "The ID of the user"
+              },
+              "username": {
+                "type": "string",
+                "description": "The username of the user"
+              },
+              "discriminator": {
+                "type": "string",
+                "description": "The discriminator of the user"
+              },
+              "display_name": {
+                "type": "string",
+                "description": "The display name of the user"
+              },
+              "avatar_url": {
+                "type": "string",
+                "description": "The avatar URL of the member"
+              },
+              "nick": {
+                "type": "string",
+                "description": "The nickname of the member"
+              }
+            },
+            "required": [
+              "id",
+              "username",
+              "discriminator",
+              "display_name",
+              "avatar_url",
+              "nick"
+            ],
+            "additionalProperties": false,
+            "description": "The author of the message if it's in a server"
+          }
+        },
+        "required": [
+          "id",
+          "channel_id",
+          "content",
+          "author"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "producesResult": true,
+      "resultKind": "object",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_response_delete",
+      "category": "action",
+      "section": "Phản hồi",
+      "contextTypes": [
+        "command",
+        "component_button"
+      ],
+      "title": "Xóa tin nhắn phản hồi",
+      "description": "Bot xóa tin nhắn phản hồi tương tác hiện có",
+      "icon": "message-circle-x",
+      "color": "#3b82f6",
+      "dataFields": [
+        "response_target",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "message_target": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                  }
+                ]
+              },
+              {
+                "type": "string",
+                "const": "@original"
+              }
+            ]
+          },
+          "audit_log_reason": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "message_target"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_response_defer",
+      "category": "action",
+      "section": "Phản hồi",
+      "contextTypes": [
+        "command",
+        "component_button"
+      ],
+      "title": "Trì hoãn phản hồi",
+      "description": "Bot trì hoãn phản hồi tương tác để có thêm thời gian xử lý",
+      "icon": "message-circle-question",
+      "color": "#3b82f6",
+      "dataFields": [
+        "message_ephemeral",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "message_ephemeral": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_message_create",
+      "category": "action",
+      "section": "Tin nhắn",
+      "contextTypes": null,
+      "title": "Tạo tin nhắn kênh",
+      "description": "Bot gửi tin nhắn đến kênh",
+      "icon": "message-circle-plus",
+      "color": "#3b82f6",
+      "dataFields": [
+        "channel_target",
+        "message_template_id",
+        "message_data",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "channel_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ],
+            "description": "The channel to send the message to"
+          },
+          "message_data": {
+            "type": "object",
+            "properties": {
+              "content": {
+                "type": "string",
+                "maxLength": 2000
+              },
+              "allowed_mentions": {
+                "type": "object",
+                "properties": {
+                  "parse": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "users",
+                        "roles",
+                        "everyone"
+                      ]
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "content"
+            ],
+            "additionalProperties": false
+          },
+          "message_template_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel_target"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the message"
+          },
+          "channel_id": {
+            "type": "string",
+            "description": "The ID of the channel the message was sent in"
+          },
+          "content": {
+            "type": "string",
+            "description": "The content of the message"
+          },
+          "author": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "The ID of the user"
+              },
+              "username": {
+                "type": "string",
+                "description": "The username of the user"
+              },
+              "discriminator": {
+                "type": "string",
+                "description": "The discriminator of the user"
+              },
+              "display_name": {
+                "type": "string",
+                "description": "The display name of the user"
+              },
+              "avatar_url": {
+                "type": "string",
+                "description": "The avatar URL of the user"
+              }
+            },
+            "required": [
+              "id",
+              "username",
+              "discriminator",
+              "display_name",
+              "avatar_url"
+            ],
+            "additionalProperties": false,
+            "description": "The author of the message if it's a DM"
+          },
+          "member": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "The ID of the user"
+              },
+              "username": {
+                "type": "string",
+                "description": "The username of the user"
+              },
+              "discriminator": {
+                "type": "string",
+                "description": "The discriminator of the user"
+              },
+              "display_name": {
+                "type": "string",
+                "description": "The display name of the user"
+              },
+              "avatar_url": {
+                "type": "string",
+                "description": "The avatar URL of the member"
+              },
+              "nick": {
+                "type": "string",
+                "description": "The nickname of the member"
+              }
+            },
+            "required": [
+              "id",
+              "username",
+              "discriminator",
+              "display_name",
+              "avatar_url",
+              "nick"
+            ],
+            "additionalProperties": false,
+            "description": "The author of the message if it's in a server"
+          }
+        },
+        "required": [
+          "id",
+          "channel_id",
+          "content",
+          "author"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "producesResult": true,
+      "resultKind": "object",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_message_edit",
+      "category": "action",
+      "section": "Tin nhắn",
+      "contextTypes": null,
+      "title": "Sửa tin nhắn kênh",
+      "description": "Bot chỉnh sửa tin nhắn hiện có trong kênh",
+      "icon": "pen",
+      "color": "#3b82f6",
+      "dataFields": [
+        "channel_target",
+        "message_target",
+        "message_template_id",
+        "message_data",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "channel_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "message_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "message_data": {
+            "type": "object",
+            "properties": {
+              "content": {
+                "type": "string",
+                "maxLength": 2000
+              },
+              "allowed_mentions": {
+                "type": "object",
+                "properties": {
+                  "parse": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "users",
+                        "roles",
+                        "everyone"
+                      ]
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "content"
+            ],
+            "additionalProperties": false
+          },
+          "message_template_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel_target",
+          "message_target"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the message"
+          },
+          "channel_id": {
+            "type": "string",
+            "description": "The ID of the channel the message was sent in"
+          },
+          "content": {
+            "type": "string",
+            "description": "The content of the message"
+          },
+          "author": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "The ID of the user"
+              },
+              "username": {
+                "type": "string",
+                "description": "The username of the user"
+              },
+              "discriminator": {
+                "type": "string",
+                "description": "The discriminator of the user"
+              },
+              "display_name": {
+                "type": "string",
+                "description": "The display name of the user"
+              },
+              "avatar_url": {
+                "type": "string",
+                "description": "The avatar URL of the user"
+              }
+            },
+            "required": [
+              "id",
+              "username",
+              "discriminator",
+              "display_name",
+              "avatar_url"
+            ],
+            "additionalProperties": false,
+            "description": "The author of the message if it's a DM"
+          },
+          "member": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "The ID of the user"
+              },
+              "username": {
+                "type": "string",
+                "description": "The username of the user"
+              },
+              "discriminator": {
+                "type": "string",
+                "description": "The discriminator of the user"
+              },
+              "display_name": {
+                "type": "string",
+                "description": "The display name of the user"
+              },
+              "avatar_url": {
+                "type": "string",
+                "description": "The avatar URL of the member"
+              },
+              "nick": {
+                "type": "string",
+                "description": "The nickname of the member"
+              }
+            },
+            "required": [
+              "id",
+              "username",
+              "discriminator",
+              "display_name",
+              "avatar_url",
+              "nick"
+            ],
+            "additionalProperties": false,
+            "description": "The author of the message if it's in a server"
+          }
+        },
+        "required": [
+          "id",
+          "channel_id",
+          "content",
+          "author"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "producesResult": true,
+      "resultKind": "object",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_private_message_create",
+      "category": "action",
+      "section": "Tin nhắn",
+      "contextTypes": null,
+      "title": "Gửi tin nhắn riêng",
+      "description": "Bot gửi tin nhắn riêng cho người dùng nếu người dùng cho phép",
+      "icon": "message-circle-plus",
+      "color": "#3b82f6",
+      "dataFields": [
+        "user_target",
+        "message_data",
+        "message_template_id",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "user_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "message_data": {
+            "type": "object",
+            "properties": {
+              "content": {
+                "type": "string",
+                "maxLength": 2000
+              },
+              "allowed_mentions": {
+                "type": "object",
+                "properties": {
+                  "parse": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "users",
+                        "roles",
+                        "everyone"
+                      ]
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "content"
+            ],
+            "additionalProperties": false
+          },
+          "message_template_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_target"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the message"
+          },
+          "channel_id": {
+            "type": "string",
+            "description": "The ID of the channel the message was sent in"
+          },
+          "content": {
+            "type": "string",
+            "description": "The content of the message"
+          },
+          "author": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "The ID of the user"
+              },
+              "username": {
+                "type": "string",
+                "description": "The username of the user"
+              },
+              "discriminator": {
+                "type": "string",
+                "description": "The discriminator of the user"
+              },
+              "display_name": {
+                "type": "string",
+                "description": "The display name of the user"
+              },
+              "avatar_url": {
+                "type": "string",
+                "description": "The avatar URL of the user"
+              }
+            },
+            "required": [
+              "id",
+              "username",
+              "discriminator",
+              "display_name",
+              "avatar_url"
+            ],
+            "additionalProperties": false,
+            "description": "The author of the message if it's a DM"
+          },
+          "member": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "The ID of the user"
+              },
+              "username": {
+                "type": "string",
+                "description": "The username of the user"
+              },
+              "discriminator": {
+                "type": "string",
+                "description": "The discriminator of the user"
+              },
+              "display_name": {
+                "type": "string",
+                "description": "The display name of the user"
+              },
+              "avatar_url": {
+                "type": "string",
+                "description": "The avatar URL of the member"
+              },
+              "nick": {
+                "type": "string",
+                "description": "The nickname of the member"
+              }
+            },
+            "required": [
+              "id",
+              "username",
+              "discriminator",
+              "display_name",
+              "avatar_url",
+              "nick"
+            ],
+            "additionalProperties": false,
+            "description": "The author of the message if it's in a server"
+          }
+        },
+        "required": [
+          "id",
+          "channel_id",
+          "content",
+          "author"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "producesResult": true,
+      "resultKind": "object",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_message_delete",
+      "category": "action",
+      "section": "Tin nhắn",
+      "contextTypes": null,
+      "title": "Xóa tin nhắn kênh",
+      "description": "Bot xóa tin nhắn hiện có trong kênh",
+      "icon": "message-circle-x",
+      "color": "#3b82f6",
+      "dataFields": [
+        "channel_target",
+        "message_target",
+        "audit_log_reason",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "channel_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "message_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "audit_log_reason": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "channel_target",
+          "message_target"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_message_reaction_create",
+      "category": "action",
+      "section": "Tin nhắn",
+      "contextTypes": null,
+      "title": "Thả cảm xúc",
+      "description": "Bot thả biểu tượng cảm xúc (reaction) vào tin nhắn",
+      "icon": "smile-plus",
+      "color": "#3b82f6",
+      "dataFields": [
+        "channel_target",
+        "message_target",
+        "emoji_data",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "channel_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "message_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "emoji_data": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "channel_target",
+          "message_target",
+          "emoji_data"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_message_reaction_delete",
+      "category": "action",
+      "section": "Tin nhắn",
+      "contextTypes": null,
+      "title": "Gỡ cảm xúc",
+      "description": "Bot gỡ biểu tượng cảm xúc (reaction) khỏi tin nhắn",
+      "icon": "frown",
+      "color": "#3b82f6",
+      "dataFields": [
+        "channel_target",
+        "message_target",
+        "emoji_data",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "channel_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "message_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "emoji_data": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "channel_target",
+          "message_target",
+          "emoji_data"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_message_pin",
+      "category": "action",
+      "section": "Tin nhắn",
+      "contextTypes": null,
+      "title": "Ghim tin nhắn",
+      "description": "Bot ghim một tin nhắn trong kênh",
+      "icon": "pin",
+      "color": "#3b82f6",
+      "dataFields": [
+        "channel_target",
+        "message_target",
+        "audit_log_reason",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "channel_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "message_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "audit_log_reason": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "channel_target",
+          "message_target"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_message_unpin",
+      "category": "action",
+      "section": "Tin nhắn",
+      "contextTypes": null,
+      "title": "Bỏ ghim tin nhắn",
+      "description": "Bot bỏ ghim một tin nhắn trong kênh",
+      "icon": "pin-off",
+      "color": "#3b82f6",
+      "dataFields": [
+        "channel_target",
+        "message_target",
+        "audit_log_reason",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "channel_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "message_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "audit_log_reason": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "channel_target",
+          "message_target"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_message_purge",
+      "category": "action",
+      "section": "Tin nhắn",
+      "contextTypes": null,
+      "title": "Xóa hàng loạt",
+      "description": "Bot xóa nhiều tin nhắn gần nhất trong kênh",
+      "icon": "trash-2",
+      "color": "#3b82f6",
+      "dataFields": [
+        "channel_target",
+        "message_purge_count",
+        "audit_log_reason",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "channel_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "message_purge_count": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "audit_log_reason": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "channel_target",
+          "message_purge_count"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": true,
+      "resultKind": "number",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_channel_slowmode",
+      "category": "action",
+      "section": "Kênh",
+      "contextTypes": null,
+      "title": "Đặt slowmode",
+      "description": "Bot đặt thời gian chờ giữa các tin nhắn trong kênh",
+      "icon": "timer",
+      "color": "#3b82f6",
+      "dataFields": [
+        "channel_target",
+        "channel_slowmode_seconds",
+        "audit_log_reason",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "channel_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "channel_slowmode_seconds": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "audit_log_reason": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "channel_target",
+          "channel_slowmode_seconds"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_member_ban",
+      "category": "action",
+      "section": "Thành viên",
+      "contextTypes": null,
+      "title": "Cấm thành viên",
+      "description": "Cấm thành viên khỏi server",
+      "icon": "user-round-x",
+      "color": "#3b82f6",
+      "dataFields": [
+        "user_target",
+        "member_ban_delete_message_duration_seconds",
+        "audit_log_reason",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "user_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "member_ban_delete_message_duration_seconds": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "audit_log_reason": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "user_target"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_member_unban",
+      "category": "action",
+      "section": "Thành viên",
+      "contextTypes": null,
+      "title": "Bỏ cấm thành viên",
+      "description": "Bỏ cấm thành viên khỏi server",
+      "icon": "user-round-check",
+      "color": "#3b82f6",
+      "dataFields": [
+        "user_target",
+        "audit_log_reason",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "user_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "audit_log_reason": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "user_target"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_member_kick",
+      "category": "action",
+      "section": "Thành viên",
+      "contextTypes": null,
+      "title": "Đuổi thành viên",
+      "description": "Đuổi thành viên khỏi server",
+      "icon": "user-round-minus",
+      "color": "#3b82f6",
+      "dataFields": [
+        "user_target",
+        "audit_log_reason",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "user_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "audit_log_reason": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "user_target"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_member_timeout",
+      "category": "action",
+      "section": "Thành viên",
+      "contextTypes": null,
+      "title": "Tạm khóa thành viên",
+      "description": "Tạm khóa thành viên trong server",
+      "icon": "message-circle-off",
+      "color": "#3b82f6",
+      "dataFields": [
+        "user_target",
+        "member_timeout_duration_seconds",
+        "audit_log_reason",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "user_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "member_timeout_duration_seconds": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "audit_log_reason": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "user_target",
+          "member_timeout_duration_seconds"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_member_edit",
+      "category": "action",
+      "section": "Thành viên",
+      "contextTypes": null,
+      "title": "Sửa biệt danh thành viên",
+      "description": "Sửa biệt danh của thành viên trong server",
+      "icon": "user-round-pen",
+      "color": "#3b82f6",
+      "dataFields": [
+        "user_target",
+        "member_nick",
+        "audit_log_reason",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "user_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "member_data": {
+            "type": "object",
+            "properties": {
+              "nick": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "nick"
+            ],
+            "additionalProperties": false
+          },
+          "audit_log_reason": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "user_target",
+          "member_data"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_member_role_add",
+      "category": "action",
+      "section": "Vai trò",
+      "contextTypes": null,
+      "title": "Thêm vai trò cho thành viên",
+      "description": "Thêm vai trò cho thành viên",
+      "icon": "bookmark-plus",
+      "color": "#3b82f6",
+      "dataFields": [
+        "user_target",
+        "role_target",
+        "audit_log_reason",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "user_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "role_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "audit_log_reason": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "user_target",
+          "role_target"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_member_role_remove",
+      "category": "action",
+      "section": "Vai trò",
+      "contextTypes": null,
+      "title": "Xóa vai trò khỏi thành viên",
+      "description": "Xóa vai trò khỏi thành viên",
+      "icon": "bookmark-minus",
+      "color": "#3b82f6",
+      "dataFields": [
+        "user_target",
+        "role_target",
+        "audit_log_reason",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "user_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "role_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "audit_log_reason": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "user_target",
+          "role_target"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_member_get",
+      "category": "action",
+      "section": "Thành viên",
+      "contextTypes": null,
+      "title": "Lấy thành viên",
+      "description": "Lấy thành viên theo ID",
+      "icon": "user-round-search",
+      "color": "#3b82f6",
+      "dataFields": [
+        "guild_target",
+        "user_target",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "guild_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "user_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "temporary_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_target"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the user"
+          },
+          "username": {
+            "type": "string",
+            "description": "The username of the user"
+          },
+          "discriminator": {
+            "type": "string",
+            "description": "The discriminator of the user"
+          },
+          "display_name": {
+            "type": "string",
+            "description": "The display name of the user"
+          },
+          "avatar_url": {
+            "type": "string",
+            "description": "The avatar URL of the member"
+          },
+          "nick": {
+            "type": "string",
+            "description": "The nickname of the member"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "discriminator",
+          "display_name",
+          "avatar_url",
+          "nick"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "producesResult": true,
+      "resultKind": "object",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_user_get",
+      "category": "action",
+      "section": "Người dùng",
+      "contextTypes": null,
+      "title": "Lấy người dùng",
+      "description": "Lấy người dùng theo ID",
+      "icon": "user-round-search",
+      "color": "#3b82f6",
+      "dataFields": [
+        "user_target",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "user_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "temporary_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_target"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_channel_get",
+      "category": "action",
+      "section": "Kênh",
+      "contextTypes": null,
+      "title": "Lấy kênh",
+      "description": "Lấy kênh theo ID",
+      "icon": "folder-search",
+      "color": "#3b82f6",
+      "dataFields": [
+        "channel_target",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "channel_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "temporary_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel_target"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the channel"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the channel"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "voice",
+              "category",
+              "news",
+              "store",
+              "stage"
+            ],
+            "description": "The type of the channel"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "producesResult": true,
+      "resultKind": "object",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_channel_create",
+      "category": "action",
+      "section": "Kênh",
+      "contextTypes": null,
+      "title": "Tạo kênh",
+      "description": "Tạo một kênh mới",
+      "icon": "folder-plus",
+      "color": "#3b82f6",
+      "dataFields": [
+        "guild_target",
+        "channel_data",
+        "audit_log_reason",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "guild_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "channel_data": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              "type": {
+                "type": "number"
+              },
+              "topic": {
+                "type": "string",
+                "maxLength": 1000,
+                "minLength": 1
+              },
+              "nsfw": {
+                "type": "boolean"
+              },
+              "bitrate": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                  }
+                ]
+              },
+              "user_limit": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                  }
+                ]
+              },
+              "position": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                  }
+                ]
+              },
+              "parent": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                  }
+                ]
+              },
+              "permission_overwrites": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[0-9]+$"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                        }
+                      ]
+                    },
+                    "type": {
+                      "type": "number",
+                      "enum": [
+                        0,
+                        1
+                      ]
+                    },
+                    "allow": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[0-9]+$"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                        }
+                      ]
+                    },
+                    "deny": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[0-9]+$"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "allow",
+                    "deny"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "invitable": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "additionalProperties": false
+          },
+          "audit_log_reason": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "temporary_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel_data"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the channel"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the channel"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "voice",
+              "category",
+              "news",
+              "store",
+              "stage"
+            ],
+            "description": "The type of the channel"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "producesResult": true,
+      "resultKind": "object",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_channel_edit",
+      "category": "action",
+      "section": "Kênh",
+      "contextTypes": null,
+      "title": "Sửa kênh",
+      "description": "Sửa kênh hoặc luồng",
+      "icon": "folder-pen",
+      "color": "#3b82f6",
+      "dataFields": [
+        "channel_target",
+        "channel_data",
+        "audit_log_reason",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "channel_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "channel_data": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              "type": {
+                "type": "number"
+              },
+              "topic": {
+                "type": "string",
+                "maxLength": 1000,
+                "minLength": 1
+              },
+              "nsfw": {
+                "type": "boolean"
+              },
+              "bitrate": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                  }
+                ]
+              },
+              "user_limit": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                  }
+                ]
+              },
+              "position": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                  }
+                ]
+              },
+              "parent": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                  }
+                ]
+              },
+              "permission_overwrites": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[0-9]+$"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                        }
+                      ]
+                    },
+                    "type": {
+                      "type": "number",
+                      "enum": [
+                        0,
+                        1
+                      ]
+                    },
+                    "allow": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[0-9]+$"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                        }
+                      ]
+                    },
+                    "deny": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[0-9]+$"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "allow",
+                    "deny"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "invitable": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "additionalProperties": false
+          },
+          "audit_log_reason": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "temporary_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel_target",
+          "channel_data"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the channel"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the channel"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "voice",
+              "category",
+              "news",
+              "store",
+              "stage"
+            ],
+            "description": "The type of the channel"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "producesResult": true,
+      "resultKind": "object",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_channel_delete",
+      "category": "action",
+      "section": "Kênh",
+      "contextTypes": null,
+      "title": "Xóa kênh",
+      "description": "Xóa kênh hoặc luồng",
+      "icon": "folder-x",
+      "color": "#3b82f6",
+      "dataFields": [
+        "channel_target",
+        "audit_log_reason",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "channel_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "audit_log_reason": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "channel_target"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_thread_create",
+      "category": "action",
+      "section": "Luồng & Diễn đàn",
+      "contextTypes": null,
+      "title": "Tạo luồng",
+      "description": "Tạo một luồng mới",
+      "icon": "message-circle-plus",
+      "color": "#3b82f6",
+      "dataFields": [
+        "thread_data",
+        "audit_log_reason",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "message_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "channel_data": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              "type": {
+                "type": "number"
+              },
+              "topic": {
+                "type": "string",
+                "maxLength": 1000,
+                "minLength": 1
+              },
+              "nsfw": {
+                "type": "boolean"
+              },
+              "bitrate": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                  }
+                ]
+              },
+              "user_limit": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                  }
+                ]
+              },
+              "position": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                  }
+                ]
+              },
+              "parent": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                  }
+                ]
+              },
+              "permission_overwrites": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[0-9]+$"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                        }
+                      ]
+                    },
+                    "type": {
+                      "type": "number",
+                      "enum": [
+                        0,
+                        1
+                      ]
+                    },
+                    "allow": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[0-9]+$"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                        }
+                      ]
+                    },
+                    "deny": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[0-9]+$"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "allow",
+                    "deny"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "invitable": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "additionalProperties": false
+          },
+          "audit_log_reason": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "channel_data"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the channel"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the channel"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "voice",
+              "category",
+              "news",
+              "store",
+              "stage"
+            ],
+            "description": "The type of the channel"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "producesResult": true,
+      "resultKind": "object",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_forum_post_create",
+      "category": "action",
+      "section": "Luồng & Diễn đàn",
+      "contextTypes": null,
+      "title": "Tạo bài diễn đàn",
+      "description": "Tạo bài đăng trên diễn đàn",
+      "icon": "message-circle-plus",
+      "color": "#3b82f6",
+      "dataFields": [
+        "channel_target",
+        "channel_data",
+        "audit_log_reason",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "channel_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "channel_data": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              "type": {
+                "type": "number"
+              },
+              "topic": {
+                "type": "string",
+                "maxLength": 1000,
+                "minLength": 1
+              },
+              "nsfw": {
+                "type": "boolean"
+              },
+              "bitrate": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                  }
+                ]
+              },
+              "user_limit": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                  }
+                ]
+              },
+              "position": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                  }
+                ]
+              },
+              "parent": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                  }
+                ]
+              },
+              "permission_overwrites": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[0-9]+$"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                        }
+                      ]
+                    },
+                    "type": {
+                      "type": "number",
+                      "enum": [
+                        0,
+                        1
+                      ]
+                    },
+                    "allow": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[0-9]+$"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                        }
+                      ]
+                    },
+                    "deny": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[0-9]+$"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "allow",
+                    "deny"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "invitable": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "additionalProperties": false
+          },
+          "audit_log_reason": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "channel_target",
+          "channel_data"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the channel"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the channel"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "voice",
+              "category",
+              "news",
+              "store",
+              "stage"
+            ],
+            "description": "The type of the channel"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "producesResult": true,
+      "resultKind": "object",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_thread_member_add",
+      "category": "action",
+      "section": "Luồng & Diễn đàn",
+      "contextTypes": null,
+      "title": "Thêm thành viên vào luồng",
+      "description": "Thêm thành viên vào luồng",
+      "icon": "user-plus",
+      "color": "#3b82f6",
+      "dataFields": [
+        "channel_target",
+        "user_target",
+        "audit_log_reason",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "channel_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "user_target": {
+            "type": "string"
+          },
+          "audit_log_reason": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "channel_target",
+          "user_target"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_thread_member_remove",
+      "category": "action",
+      "section": "Luồng & Diễn đàn",
+      "contextTypes": null,
+      "title": "Xóa thành viên khỏi luồng",
+      "description": "Xóa thành viên khỏi luồng",
+      "icon": "user-minus",
+      "color": "#3b82f6",
+      "dataFields": [
+        "channel_target",
+        "user_target",
+        "audit_log_reason",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "channel_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "user_target": {
+            "type": "string"
+          },
+          "audit_log_reason": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "channel_target",
+          "user_target"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_role_get",
+      "category": "action",
+      "section": "Vai trò",
+      "contextTypes": null,
+      "title": "Lấy vai trò",
+      "description": "Lấy vai trò theo ID",
+      "icon": "bookmark",
+      "color": "#3b82f6",
+      "dataFields": [
+        "guild_target",
+        "role_target",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "guild_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "role_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "temporary_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "role_target"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the role"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the role"
+          },
+          "color": {
+            "type": "string",
+            "description": "The color of the role"
+          },
+          "hoist": {
+            "type": "boolean",
+            "description": "Whether the role is hoisted"
+          },
+          "mentionable": {
+            "type": "boolean",
+            "description": "Whether the role is mentionable"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "color",
+          "hoist",
+          "mentionable"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "producesResult": true,
+      "resultKind": "object",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_guild_get",
+      "category": "action",
+      "section": "Máy chủ",
+      "contextTypes": null,
+      "title": "Lấy server",
+      "description": "Lấy server / guild theo ID",
+      "icon": "server",
+      "color": "#3b82f6",
+      "dataFields": [
+        "guild_target",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "guild_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "temporary_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "guild_target"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the guild"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the guild"
+          },
+          "icon_url": {
+            "type": "string",
+            "description": "The icon URL of the guild"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "icon_url"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "producesResult": true,
+      "resultKind": "object",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_message_get",
+      "category": "action",
+      "section": "Tin nhắn",
+      "contextTypes": null,
+      "title": "Lấy tin nhắn kênh",
+      "description": "Lấy tin nhắn từ kênh",
+      "icon": "mail-search",
+      "color": "#3b82f6",
+      "dataFields": [
+        "message_target",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "channel_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "message_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "temporary_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message_target"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the message"
+          },
+          "channel_id": {
+            "type": "string",
+            "description": "The ID of the channel the message was sent in"
+          },
+          "content": {
+            "type": "string",
+            "description": "The content of the message"
+          },
+          "author": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "The ID of the user"
+              },
+              "username": {
+                "type": "string",
+                "description": "The username of the user"
+              },
+              "discriminator": {
+                "type": "string",
+                "description": "The discriminator of the user"
+              },
+              "display_name": {
+                "type": "string",
+                "description": "The display name of the user"
+              },
+              "avatar_url": {
+                "type": "string",
+                "description": "The avatar URL of the user"
+              }
+            },
+            "required": [
+              "id",
+              "username",
+              "discriminator",
+              "display_name",
+              "avatar_url"
+            ],
+            "additionalProperties": false,
+            "description": "The author of the message if it's a DM"
+          },
+          "member": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "The ID of the user"
+              },
+              "username": {
+                "type": "string",
+                "description": "The username of the user"
+              },
+              "discriminator": {
+                "type": "string",
+                "description": "The discriminator of the user"
+              },
+              "display_name": {
+                "type": "string",
+                "description": "The display name of the user"
+              },
+              "avatar_url": {
+                "type": "string",
+                "description": "The avatar URL of the member"
+              },
+              "nick": {
+                "type": "string",
+                "description": "The nickname of the member"
+              }
+            },
+            "required": [
+              "id",
+              "username",
+              "discriminator",
+              "display_name",
+              "avatar_url",
+              "nick"
+            ],
+            "additionalProperties": false,
+            "description": "The author of the message if it's in a server"
+          }
+        },
+        "required": [
+          "id",
+          "channel_id",
+          "content",
+          "author"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "producesResult": true,
+      "resultKind": "object",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_variable_set",
+      "category": "data",
+      "section": "Biến lưu trữ",
+      "contextTypes": null,
+      "title": "Đặt biến lưu trữ",
+      "description": "Đặt giá trị của biến lưu trữ",
+      "icon": "variable",
+      "color": "#3b82f6",
+      "dataFields": [
+        "variable_id",
+        "variable_scope",
+        "variable_operation",
+        "variable_value",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "variable_id": {
+            "type": "string"
+          },
+          "variable_scope": {
+            "type": "string"
+          },
+          "variable_value": {
+            "type": "string"
+          },
+          "variable_operation": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "overwrite",
+                          "append"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "const": "prepend"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "string",
+                    "const": "increment"
+                  }
+                ]
+              },
+              {
+                "type": "string",
+                "const": "decrement"
+              }
+            ]
+          }
+        },
+        "required": [
+          "variable_id",
+          "variable_value",
+          "variable_operation"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": true,
+      "resultKind": "any",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_variable_delete",
+      "category": "data",
+      "section": "Biến lưu trữ",
+      "contextTypes": null,
+      "title": "Xóa biến lưu trữ",
+      "description": "Xóa giá trị của biến lưu trữ",
+      "icon": "variable",
+      "color": "#3b82f6",
+      "dataFields": [
+        "variable_id",
+        "variable_scope",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "variable_id": {
+            "type": "string"
+          },
+          "variable_scope": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "variable_id"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_variable_get",
+      "category": "data",
+      "section": "Biến lưu trữ",
+      "contextTypes": null,
+      "title": "Lấy biến lưu trữ",
+      "description": "Lấy giá trị của biến lưu trữ",
+      "icon": "variable",
+      "color": "#3b82f6",
+      "dataFields": [
+        "variable_id",
+        "variable_scope",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "variable_id": {
+            "type": "string"
+          },
+          "variable_scope": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "variable_id"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": true,
+      "resultKind": "any",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_http_request",
+      "category": "data",
+      "section": "Tích hợp (HTTP)",
+      "contextTypes": null,
+      "title": "Gửi yêu cầu API",
+      "description": "Gửi yêu cầu API đến server bên ngoài",
+      "icon": "webhook",
+      "color": "#3b82f6",
+      "dataFields": [
+        "http_request_data",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "http_request_data": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "method": {
+                "anyOf": [
+                  {
+                    "anyOf": [
+                      {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              "GET",
+                              "POST"
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "const": "PUT"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "const": "PATCH"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "string",
+                    "const": "DELETE"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "url",
+              "method"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "http_request_data"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 3
+    },
+    {
+      "type": "action_expression_evaluate",
+      "category": "data",
+      "section": "Ngẫu nhiên & Biểu thức",
+      "contextTypes": null,
+      "title": "Tính toán giá trị",
+      "description": "Thực hiện tính toán hoặc biểu thức logic và sử dụng kết quả sau",
+      "icon": "calculator",
+      "color": "#3b82f6",
+      "dataFields": [
+        "expression",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "expression": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "expression"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": true,
+      "resultKind": "any",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_random_generate",
+      "category": "data",
+      "section": "Ngẫu nhiên & Biểu thức",
+      "contextTypes": null,
+      "title": "Tạo số ngẫu nhiên",
+      "description": "Tạo số ngẫu nhiên trong khoảng",
+      "icon": "dices",
+      "color": "#3b82f6",
+      "dataFields": [
+        "random_min",
+        "random_max",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "random_min": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "random_max": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          }
+        },
+        "required": [
+          "random_min",
+          "random_max"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": true,
+      "resultKind": "number",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_time_now",
+      "category": "data",
+      "section": "Thời gian",
+      "contextTypes": null,
+      "title": "Lấy thời gian hiện tại",
+      "description": "Lấy thời gian hiện tại theo định dạng đã chọn",
+      "icon": "clock",
+      "color": "#3b82f6",
+      "dataFields": [
+        "time_format",
+        "time_timezone",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "time_format": {
+            "type": "string"
+          },
+          "time_timezone": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": true,
+      "resultKind": "string",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_list_pick",
+      "category": "data",
+      "section": "Danh sách & JSON",
+      "contextTypes": null,
+      "title": "Chọn ngẫu nhiên từ danh sách",
+      "description": "Chọn ngẫu nhiên một phần tử trong danh sách",
+      "icon": "shuffle",
+      "color": "#3b82f6",
+      "dataFields": [
+        "list_pick_input",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "list_pick_input": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "list_pick_input"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": true,
+      "resultKind": "any",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_text_transform",
+      "category": "data",
+      "section": "Văn bản",
+      "contextTypes": null,
+      "title": "Biến đổi văn bản",
+      "description": "Chuyển hoa/thường, cắt khoảng trắng, thay thế, tách văn bản",
+      "icon": "type",
+      "color": "#3b82f6",
+      "dataFields": [
+        "text_input",
+        "text_operation",
+        "text_arg1",
+        "text_arg2",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "text_input": {
+            "type": "string"
+          },
+          "text_operation": {
+            "type": "string"
+          },
+          "text_arg1": {
+            "type": "string"
+          },
+          "text_arg2": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text_input",
+          "text_operation"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": true,
+      "resultKind": "string",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_number_format",
+      "category": "data",
+      "section": "Số",
+      "contextTypes": null,
+      "title": "Định dạng số",
+      "description": "Định dạng số: dấu phẩy nghìn, rút gọn K/M, hoặc số thập phân",
+      "icon": "hash",
+      "color": "#3b82f6",
+      "dataFields": [
+        "number_input",
+        "number_style",
+        "number_decimals",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "number_input": {
+            "type": "string"
+          },
+          "number_style": {
+            "type": "string"
+          },
+          "number_decimals": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "number_input"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": true,
+      "resultKind": "string",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_list_format",
+      "category": "data",
+      "section": "Danh sách & JSON",
+      "contextTypes": null,
+      "title": "Định dạng danh sách",
+      "description": "Render mỗi phần tử theo mẫu rồi nối lại (vd bảng xếp hạng)",
+      "icon": "list",
+      "color": "#3b82f6",
+      "dataFields": [
+        "list_input",
+        "list_item_template",
+        "list_joiner",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "list_input": {
+            "type": "string"
+          },
+          "list_item_template": {
+            "type": "string"
+          },
+          "list_joiner": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "list_input",
+          "list_item_template"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": true,
+      "resultKind": "string",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_list_join",
+      "category": "data",
+      "section": "Danh sách & JSON",
+      "contextTypes": null,
+      "title": "Nối danh sách",
+      "description": "Nối các phần tử của danh sách thành một chuỗi",
+      "icon": "list",
+      "color": "#3b82f6",
+      "dataFields": [
+        "list_input",
+        "list_joiner",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "list_input": {
+            "type": "string"
+          },
+          "list_joiner": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "list_input"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": true,
+      "resultKind": "string",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_list_length",
+      "category": "data",
+      "section": "Danh sách & JSON",
+      "contextTypes": null,
+      "title": "Độ dài danh sách",
+      "description": "Đếm số phần tử trong danh sách",
+      "icon": "list-ordered",
+      "color": "#3b82f6",
+      "dataFields": [
+        "list_input",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "list_input": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "list_input"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": true,
+      "resultKind": "number",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_json_parse",
+      "category": "data",
+      "section": "Danh sách & JSON",
+      "contextTypes": null,
+      "title": "Phân tích JSON",
+      "description": "Chuyển chuỗi JSON thành đối tượng để truy cập các trường",
+      "icon": "braces",
+      "color": "#3b82f6",
+      "dataFields": [
+        "json_input",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "json_input": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "json_input"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": true,
+      "resultKind": "any",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_json_build",
+      "category": "data",
+      "section": "Danh sách & JSON",
+      "contextTypes": null,
+      "title": "Tạo JSON",
+      "description": "Chuyển một giá trị thành chuỗi JSON",
+      "icon": "braces",
+      "color": "#3b82f6",
+      "dataFields": [
+        "json_input",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "json_input": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "json_input"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": true,
+      "resultKind": "string",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_balance_get",
+      "category": "data",
+      "section": "Số dư (Kinh tế)",
+      "contextTypes": null,
+      "title": "Xem số dư",
+      "description": "Lấy số dư của một người dùng",
+      "icon": "wallet",
+      "color": "#3b82f6",
+      "dataFields": [
+        "variable_id",
+        "economy_user_target",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "variable_id": {
+            "type": "string"
+          },
+          "economy_user_target": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "variable_id"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": true,
+      "resultKind": "number",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_balance_add",
+      "category": "data",
+      "section": "Số dư (Kinh tế)",
+      "contextTypes": null,
+      "title": "Cộng số dư",
+      "description": "Cộng tiền vào số dư của một người dùng",
+      "icon": "circle-plus",
+      "color": "#3b82f6",
+      "dataFields": [
+        "variable_id",
+        "economy_user_target",
+        "economy_amount",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "variable_id": {
+            "type": "string"
+          },
+          "economy_user_target": {
+            "type": "string"
+          },
+          "economy_amount": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "variable_id",
+          "economy_amount"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": true,
+      "resultKind": "number",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_balance_remove",
+      "category": "data",
+      "section": "Số dư (Kinh tế)",
+      "contextTypes": null,
+      "title": "Trừ số dư",
+      "description": "Trừ tiền khỏi số dư của một người dùng",
+      "icon": "circle-minus",
+      "color": "#3b82f6",
+      "dataFields": [
+        "variable_id",
+        "economy_user_target",
+        "economy_amount",
+        "economy_allow_negative",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "variable_id": {
+            "type": "string"
+          },
+          "economy_user_target": {
+            "type": "string"
+          },
+          "economy_amount": {
+            "type": "string"
+          },
+          "economy_allow_negative": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "variable_id",
+          "economy_amount"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": true,
+      "resultKind": "number",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_balance_set",
+      "category": "data",
+      "section": "Số dư (Kinh tế)",
+      "contextTypes": null,
+      "title": "Đặt số dư",
+      "description": "Đặt số dư của một người dùng thành giá trị cố định",
+      "icon": "equal",
+      "color": "#3b82f6",
+      "dataFields": [
+        "variable_id",
+        "economy_user_target",
+        "economy_amount",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "variable_id": {
+            "type": "string"
+          },
+          "economy_user_target": {
+            "type": "string"
+          },
+          "economy_amount": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "variable_id",
+          "economy_amount"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": true,
+      "resultKind": "number",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_balance_transfer",
+      "category": "data",
+      "section": "Số dư (Kinh tế)",
+      "contextTypes": null,
+      "title": "Chuyển tiền",
+      "description": "Chuyển tiền từ một người dùng sang người khác",
+      "icon": "arrow-left-right",
+      "color": "#3b82f6",
+      "dataFields": [
+        "variable_id",
+        "economy_user_target",
+        "economy_recipient",
+        "economy_amount",
+        "economy_allow_negative",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "variable_id": {
+            "type": "string"
+          },
+          "economy_user_target": {
+            "type": "string"
+          },
+          "economy_recipient": {
+            "type": "string"
+          },
+          "economy_amount": {
+            "type": "string"
+          },
+          "economy_allow_negative": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "variable_id",
+          "economy_recipient",
+          "economy_amount"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": true,
+      "resultKind": "object",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_balance_leaderboard",
+      "category": "data",
+      "section": "Số dư (Kinh tế)",
+      "contextTypes": null,
+      "title": "Bảng xếp hạng",
+      "description": "Lấy danh sách những người có số dư cao nhất",
+      "icon": "trophy",
+      "color": "#3b82f6",
+      "dataFields": [
+        "variable_id",
+        "economy_limit",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "variable_id": {
+            "type": "string"
+          },
+          "economy_limit": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "variable_id"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": true,
+      "resultKind": "list",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_cooldown_check",
+      "category": "data",
+      "section": "Cooldown",
+      "contextTypes": null,
+      "title": "Kiểm tra cooldown",
+      "description": "Kiểm tra và đặt lại thời gian chờ theo người dùng",
+      "icon": "timer",
+      "color": "#3b82f6",
+      "dataFields": [
+        "variable_id",
+        "cooldown_scope",
+        "cooldown_duration",
+        "cooldown_peek",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "variable_id": {
+            "type": "string"
+          },
+          "cooldown_scope": {
+            "type": "string"
+          },
+          "cooldown_duration": {
+            "type": "string"
+          },
+          "cooldown_peek": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "variable_id",
+          "cooldown_duration"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": true,
+      "resultKind": "object",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_log",
+      "category": "data",
+      "section": "Nhật ký",
+      "contextTypes": null,
+      "title": "Ghi nhật ký",
+      "description": "Ghi lại nội dung chỉ hiển thị trong nhật ký ứng dụng",
+      "icon": "scroll-text",
+      "color": "#3b82f6",
+      "dataFields": [
+        "log_level",
+        "log_message",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "log_level": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "debug",
+                      "info"
+                    ]
+                  },
+                  {
+                    "type": "string",
+                    "const": "warn"
+                  }
+                ]
+              },
+              {
+                "type": "string",
+                "const": "error"
+              }
+            ]
+          },
+          "log_message": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "log_level",
+          "log_message"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "control_condition_compare",
+      "category": "control_flow",
+      "section": "Điều kiện",
+      "contextTypes": null,
+      "title": "Điều kiện so sánh",
+      "description": "Thực hiện hành động dựa trên sự khác biệt giữa hai giá trị.",
+      "icon": "arrow-left-right",
+      "color": "#22c55e",
+      "dataFields": [
+        "condition_compare_base_value",
+        "condition_allow_multiple",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "condition_base_value": {
+            "type": "string"
+          },
+          "condition_allow_multiple": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "condition_base_value"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": true,
+      "creditsCost": null
+    },
+    {
+      "type": "control_condition_item_compare",
+      "category": "control_flow",
+      "section": "Cấu trúc con",
+      "contextTypes": null,
+      "title": "Điều kiện khớp",
+      "description": "Thực hiện hành động nếu hai giá trị bằng nhau.",
+      "icon": "circle-help",
+      "color": "#22c55e",
+      "dataFields": [
+        "condition_item_compare_mode",
+        "condition_item_compare_value"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "condition_item_value": {
+            "type": "string"
+          },
+          "condition_item_mode": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "anyOf": [
+                      {
+                        "anyOf": [
+                          {
+                            "anyOf": [
+                              {
+                                "anyOf": [
+                                  {
+                                    "anyOf": [
+                                      {
+                                        "anyOf": [
+                                          {
+                                            "anyOf": [
+                                              {
+                                                "anyOf": [
+                                                  {
+                                                    "anyOf": [
+                                                      {
+                                                        "type": "string",
+                                                        "enum": [
+                                                          "equal",
+                                                          "not_equal"
+                                                        ]
+                                                      },
+                                                      {
+                                                        "type": "string",
+                                                        "const": "greater_than"
+                                                      }
+                                                    ]
+                                                  },
+                                                  {
+                                                    "type": "string",
+                                                    "const": "less_than"
+                                                  }
+                                                ]
+                                              },
+                                              {
+                                                "type": "string",
+                                                "const": "greater_than_or_equal"
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "type": "string",
+                                            "const": "less_than_or_equal"
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "contains"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "const": "starts_with"
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "const": "ends_with"
+                              }
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "const": "has_role"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "const": "not_has_role"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "string",
+                    "const": "has_permission"
+                  }
+                ]
+              },
+              {
+                "type": "string",
+                "const": "not_has_permission"
+              }
+            ]
+          }
+        },
+        "required": [
+          "condition_item_mode"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": null
+    },
+    {
+      "type": "control_condition_user",
+      "category": "control_flow",
+      "section": "Điều kiện",
+      "contextTypes": null,
+      "title": "Điều kiện người dùng",
+      "description": "Thực hiện hành động dựa trên người dùng.",
+      "icon": "user-search",
+      "color": "#22c55e",
+      "dataFields": [
+        "condition_user_base_value",
+        "condition_allow_multiple",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "condition_base_value": {
+            "type": "string"
+          },
+          "condition_allow_multiple": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "condition_base_value"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": true,
+      "creditsCost": null
+    },
+    {
+      "type": "control_condition_item_user",
+      "category": "control_flow",
+      "section": "Cấu trúc con",
+      "contextTypes": null,
+      "title": "Khớp người dùng",
+      "description": "Thực hiện hành động nếu người dùng đáp ứng tiêu chí.",
+      "icon": "circle-help",
+      "color": "#22c55e",
+      "dataFields": [
+        "condition_item_user_mode",
+        "condition_item_user_value"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "condition_item_value": {
+            "type": "string"
+          },
+          "condition_item_mode": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "anyOf": [
+                      {
+                        "anyOf": [
+                          {
+                            "anyOf": [
+                              {
+                                "anyOf": [
+                                  {
+                                    "anyOf": [
+                                      {
+                                        "anyOf": [
+                                          {
+                                            "anyOf": [
+                                              {
+                                                "anyOf": [
+                                                  {
+                                                    "anyOf": [
+                                                      {
+                                                        "type": "string",
+                                                        "enum": [
+                                                          "equal",
+                                                          "not_equal"
+                                                        ]
+                                                      },
+                                                      {
+                                                        "type": "string",
+                                                        "const": "greater_than"
+                                                      }
+                                                    ]
+                                                  },
+                                                  {
+                                                    "type": "string",
+                                                    "const": "less_than"
+                                                  }
+                                                ]
+                                              },
+                                              {
+                                                "type": "string",
+                                                "const": "greater_than_or_equal"
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "type": "string",
+                                            "const": "less_than_or_equal"
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "contains"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "const": "starts_with"
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "const": "ends_with"
+                              }
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "const": "has_role"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "const": "not_has_role"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "string",
+                    "const": "has_permission"
+                  }
+                ]
+              },
+              {
+                "type": "string",
+                "const": "not_has_permission"
+              }
+            ]
+          }
+        },
+        "required": [
+          "condition_item_mode"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": null
+    },
+    {
+      "type": "control_condition_channel",
+      "category": "control_flow",
+      "section": "Điều kiện",
+      "contextTypes": null,
+      "title": "Điều kiện kênh",
+      "description": "Thực hiện hành động dựa trên kênh.",
+      "icon": "folder-search",
+      "color": "#22c55e",
+      "dataFields": [
+        "condition_channel_base_value",
+        "condition_allow_multiple",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "condition_base_value": {
+            "type": "string"
+          },
+          "condition_allow_multiple": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "condition_base_value"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": true,
+      "creditsCost": null
+    },
+    {
+      "type": "control_condition_item_channel",
+      "category": "control_flow",
+      "section": "Cấu trúc con",
+      "contextTypes": null,
+      "title": "Khớp kênh",
+      "description": "Thực hiện hành động nếu kênh đáp ứng tiêu chí.",
+      "icon": "circle-help",
+      "color": "#22c55e",
+      "dataFields": [
+        "condition_item_channel_mode",
+        "condition_item_channel_value"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "condition_item_value": {
+            "type": "string"
+          },
+          "condition_item_mode": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "anyOf": [
+                      {
+                        "anyOf": [
+                          {
+                            "anyOf": [
+                              {
+                                "anyOf": [
+                                  {
+                                    "anyOf": [
+                                      {
+                                        "anyOf": [
+                                          {
+                                            "anyOf": [
+                                              {
+                                                "anyOf": [
+                                                  {
+                                                    "anyOf": [
+                                                      {
+                                                        "type": "string",
+                                                        "enum": [
+                                                          "equal",
+                                                          "not_equal"
+                                                        ]
+                                                      },
+                                                      {
+                                                        "type": "string",
+                                                        "const": "greater_than"
+                                                      }
+                                                    ]
+                                                  },
+                                                  {
+                                                    "type": "string",
+                                                    "const": "less_than"
+                                                  }
+                                                ]
+                                              },
+                                              {
+                                                "type": "string",
+                                                "const": "greater_than_or_equal"
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "type": "string",
+                                            "const": "less_than_or_equal"
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "contains"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "const": "starts_with"
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "const": "ends_with"
+                              }
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "const": "has_role"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "const": "not_has_role"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "string",
+                    "const": "has_permission"
+                  }
+                ]
+              },
+              {
+                "type": "string",
+                "const": "not_has_permission"
+              }
+            ]
+          }
+        },
+        "required": [
+          "condition_item_mode"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": null
+    },
+    {
+      "type": "control_condition_role",
+      "category": "control_flow",
+      "section": "Điều kiện",
+      "contextTypes": null,
+      "title": "Điều kiện vai trò",
+      "description": "Thực hiện hành động dựa trên vai trò.",
+      "icon": "bookmark",
+      "color": "#22c55e",
+      "dataFields": [
+        "condition_role_base_value",
+        "condition_allow_multiple",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "condition_base_value": {
+            "type": "string"
+          },
+          "condition_allow_multiple": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "condition_base_value"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": true,
+      "creditsCost": null
+    },
+    {
+      "type": "control_condition_item_role",
+      "category": "control_flow",
+      "section": "Cấu trúc con",
+      "contextTypes": null,
+      "title": "Khớp vai trò",
+      "description": "Thực hiện hành động nếu vai trò đáp ứng tiêu chí.",
+      "icon": "circle-help",
+      "color": "#22c55e",
+      "dataFields": [
+        "condition_item_role_mode",
+        "condition_item_role_value"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "condition_item_value": {
+            "type": "string"
+          },
+          "condition_item_mode": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "anyOf": [
+                      {
+                        "anyOf": [
+                          {
+                            "anyOf": [
+                              {
+                                "anyOf": [
+                                  {
+                                    "anyOf": [
+                                      {
+                                        "anyOf": [
+                                          {
+                                            "anyOf": [
+                                              {
+                                                "anyOf": [
+                                                  {
+                                                    "anyOf": [
+                                                      {
+                                                        "type": "string",
+                                                        "enum": [
+                                                          "equal",
+                                                          "not_equal"
+                                                        ]
+                                                      },
+                                                      {
+                                                        "type": "string",
+                                                        "const": "greater_than"
+                                                      }
+                                                    ]
+                                                  },
+                                                  {
+                                                    "type": "string",
+                                                    "const": "less_than"
+                                                  }
+                                                ]
+                                              },
+                                              {
+                                                "type": "string",
+                                                "const": "greater_than_or_equal"
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "type": "string",
+                                            "const": "less_than_or_equal"
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "contains"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "const": "starts_with"
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "const": "ends_with"
+                              }
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "const": "has_role"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "const": "not_has_role"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "string",
+                    "const": "has_permission"
+                  }
+                ]
+              },
+              {
+                "type": "string",
+                "const": "not_has_permission"
+              }
+            ]
+          }
+        },
+        "required": [
+          "condition_item_mode"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": null
+    },
+    {
+      "type": "control_condition_item_else",
+      "category": "control_flow",
+      "section": "Cấu trúc con",
+      "contextTypes": null,
+      "title": "Ngược lại",
+      "description": "Thực hiện hành động nếu không có điều kiện nào khác thỏa mãn.",
+      "icon": "circle-x",
+      "color": "#ef4444",
+      "dataFields": [],
+      "dataSchema": null,
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": null
+    },
+    {
+      "type": "control_error_handler",
+      "category": "control_flow",
+      "section": "Lỗi",
+      "contextTypes": null,
+      "title": "Xử lý lỗi",
+      "description": "Xử lý lỗi xảy ra trong luồng sau khối này.",
+      "icon": "circle-alert",
+      "color": "#ef4444",
+      "dataFields": [
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": null,
+      "resultSchema": null,
+      "producesResult": true,
+      "resultKind": "string",
+      "ownsChildren": true,
+      "creditsCost": null
+    },
+    {
+      "type": "control_loop",
+      "category": "control_flow",
+      "section": "Vòng lặp",
+      "contextTypes": null,
+      "title": "Chạy vòng lặp",
+      "description": "Chạy một tập hành động nhiều lần.",
+      "icon": "repeat-2",
+      "color": "#22c55e",
+      "dataFields": [
+        "loop_count",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "loop_count": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          }
+        },
+        "required": [
+          "loop_count"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": true,
+      "creditsCost": null
+    },
+    {
+      "type": "control_loop_each",
+      "category": "control_flow",
+      "section": "Cấu trúc con",
+      "contextTypes": null,
+      "title": "Mỗi lần lặp",
+      "description": "Thực hiện hành động cho mỗi lần lặp.",
+      "icon": "repeat-2",
+      "color": "#22c55e",
+      "dataFields": [],
+      "dataSchema": null,
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": null
+    },
+    {
+      "type": "control_loop_end",
+      "category": "control_flow",
+      "section": "Cấu trúc con",
+      "contextTypes": null,
+      "title": "Sau vòng lặp",
+      "description": "Thực hiện hành động sau khi vòng lặp kết thúc.",
+      "icon": "corner-down-right",
+      "color": "#22c55e",
+      "dataFields": [],
+      "dataSchema": null,
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": null
+    },
+    {
+      "type": "control_loop_exit",
+      "category": "control_flow",
+      "section": "Vòng lặp",
+      "contextTypes": null,
+      "title": "Thoát vòng lặp",
+      "description": "Thoát khỏi vòng lặp.",
+      "icon": "log-out",
+      "color": "#22c55e",
+      "dataFields": [],
+      "dataSchema": null,
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": null
+    },
+    {
+      "type": "control_sleep",
+      "category": "control_flow",
+      "section": "Tạm dừng",
+      "contextTypes": null,
+      "title": "Chờ",
+      "description": "Tạm dừng luồng trong một khoảng thời gian.",
+      "icon": "timer",
+      "color": "#22c55e",
+      "dataFields": [
+        "sleep_duration_seconds"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "sleep_duration_seconds": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+(\\.[0-9]+)?$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          }
+        },
+        "required": [
+          "sleep_duration_seconds"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": null
+    },
+    {
+      "type": "option_command_argument",
+      "category": "option",
+      "section": "Lệnh",
+      "contextTypes": [
+        "command"
+      ],
+      "title": "Tham số lệnh",
+      "description": "Tham số cho lệnh.",
+      "icon": "text-cursor-input",
+      "color": "#8b5cf6",
+      "dataFields": [
+        "name",
+        "description",
+        "command_argument_type",
+        "command_argument_required",
+        "command_argument_min_value",
+        "command_argument_max_value",
+        "command_argument_max_length",
+        "command_argument_choices"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "command_argument_type": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "anyOf": [
+                      {
+                        "anyOf": [
+                          {
+                            "anyOf": [
+                              {
+                                "anyOf": [
+                                  {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "enum": [
+                                          "string",
+                                          "integer"
+                                        ]
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "boolean"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "const": "user"
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "const": "channel"
+                              }
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "const": "role"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "const": "mentionable"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "string",
+                    "const": "number"
+                  }
+                ]
+              },
+              {
+                "type": "string",
+                "const": "attachment"
+              }
+            ]
+          },
+          "command_argument_required": {
+            "type": "boolean"
+          },
+          "min_value": {
+            "type": "number"
+          },
+          "max_value": {
+            "type": "number"
+          },
+          "max_length": {
+            "type": "number"
+          },
+          "choices": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "value": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                }
+              },
+              "required": [
+                "name",
+                "value"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "name",
+          "description",
+          "command_argument_type"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": null
+    },
+    {
+      "type": "option_command_permissions",
+      "category": "option",
+      "section": "Lệnh",
+      "contextTypes": [
+        "command"
+      ],
+      "title": "Quyền lệnh",
+      "description": "Chỉ cho phép người dùng có quyền nhất định sử dụng lệnh.",
+      "icon": "shield-check",
+      "color": "#8b5cf6",
+      "dataFields": [
+        "command_permissions"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "command_permissions": {
+            "type": "string",
+            "pattern": "^[0-9]+$"
+          }
+        },
+        "required": [
+          "command_permissions"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": null
+    },
+    {
+      "type": "option_command_contexts",
+      "category": "option",
+      "section": "Lệnh",
+      "contextTypes": [
+        "command"
+      ],
+      "title": "Ngữ cảnh lệnh",
+      "description": "Xác định nơi lệnh có thể sử dụng. Mặc định, lệnh sẽ khả dụng mọi nơi.",
+      "icon": "map-pin",
+      "color": "#8b5cf6",
+      "dataFields": [
+        "command_contexts",
+        "command_integrations"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "command_disabled_contexts": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "guild",
+                    "bot_dm"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "const": "private_channel"
+                }
+              ]
+            }
+          },
+          "command_disabled_integrations": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "guild_install",
+                "user_install"
+              ]
+            }
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": null
+    },
+    {
+      "type": "option_event_filter",
+      "category": "option",
+      "section": "Sự kiện",
+      "contextTypes": [
+        "event_discord"
+      ],
+      "title": "Bộ lọc sự kiện",
+      "description": "Lọc sự kiện dựa trên thuộc tính.",
+      "icon": "filter",
+      "color": "#8b5cf6",
+      "dataFields": [
+        "event_filter_target",
+        "event_filter_mode",
+        "event_filter_value"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "event_filter_target": {
+            "type": "string"
+          },
+          "event_filter_mode": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "anyOf": [
+                      {
+                        "anyOf": [
+                          {
+                            "anyOf": [
+                              {
+                                "anyOf": [
+                                  {
+                                    "anyOf": [
+                                      {
+                                        "anyOf": [
+                                          {
+                                            "anyOf": [
+                                              {
+                                                "anyOf": [
+                                                  {
+                                                    "anyOf": [
+                                                      {
+                                                        "type": "string",
+                                                        "enum": [
+                                                          "equal",
+                                                          "not_equal"
+                                                        ]
+                                                      },
+                                                      {
+                                                        "type": "string",
+                                                        "const": "greater_than"
+                                                      }
+                                                    ]
+                                                  },
+                                                  {
+                                                    "type": "string",
+                                                    "const": "less_than"
+                                                  }
+                                                ]
+                                              },
+                                              {
+                                                "type": "string",
+                                                "const": "greater_than_or_equal"
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "type": "string",
+                                            "const": "less_than_or_equal"
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "contains"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "const": "starts_with"
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "const": "ends_with"
+                              }
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "const": "has_role"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "const": "not_has_role"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "string",
+                    "const": "has_permission"
+                  }
+                ]
+              },
+              {
+                "type": "string",
+                "const": "not_has_permission"
+              }
+            ]
+          },
+          "event_filter_value": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "event_filter_target",
+          "event_filter_mode",
+          "event_filter_value"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": null
+    },
+    {
+      "type": "suspend_response_modal",
+      "category": "action",
+      "section": "Phản hồi",
+      "contextTypes": [
+        "command",
+        "component_button"
+      ],
+      "title": "Hiển thị Modal",
+      "description": "Hiển thị modal cho người dùng và tạm dừng luồng cho đến khi người dùng gửi modal.",
+      "icon": "picture-in-picture-2",
+      "color": "#d946ef",
+      "dataFields": [
+        "modal_data",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "modal_data": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "maxLength": 45,
+                "minLength": 1
+              },
+              "components": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "components": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "custom_id": {
+                            "type": "string",
+                            "maxLength": 100,
+                            "minLength": 1
+                          },
+                          "label": {
+                            "type": "string",
+                            "maxLength": 45,
+                            "minLength": 1
+                          },
+                          "style": {
+                            "type": "number",
+                            "enum": [
+                              1,
+                              2
+                            ]
+                          },
+                          "required": {
+                            "type": "boolean"
+                          },
+                          "min_length": {
+                            "type": "number"
+                          },
+                          "max_length": {
+                            "type": "number"
+                          },
+                          "value": {
+                            "type": "string",
+                            "maxLength": 4000,
+                            "minLength": 1
+                          },
+                          "placeholder": {
+                            "type": "string",
+                            "maxLength": 4000,
+                            "minLength": 1
+                          }
+                        },
+                        "required": [
+                          "custom_id",
+                          "label",
+                          "style"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "minItems": 1,
+                      "maxItems": 1
+                    }
+                  },
+                  "required": [
+                    "components"
+                  ],
+                  "additionalProperties": false
+                },
+                "minItems": 1,
+                "maxItems": 5
+              }
+            },
+            "required": [
+              "title",
+              "components"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "modal_data"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": null
+    }
+  ]
+}
