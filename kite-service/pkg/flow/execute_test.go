@@ -354,6 +354,22 @@ func TestFlowExecuteListPick(t *testing.T) {
 	assert.Contains(t, []string{"a", "b", "c"}, c.GetNodeResult("0").String())
 }
 
+func TestFlowExecuteListPickRawJSON(t *testing.T) {
+	c := newEconomyTestContext(t, &TestEconomyProvider{})
+	defer c.Cancel()
+
+	// A raw JSON array typed without the {{ }} template wrapper should still
+	// be treated as a list instead of returning nothing.
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionListPick,
+		Data: FlowNodeData{ListPickInput: `["heads", "tails"]`},
+	}
+
+	require.NoError(t, node.Execute(c))
+	assert.Contains(t, []string{"heads", "tails"}, c.GetNodeResult("0").String())
+}
+
 func TestFlowExecuteListPickEmpty(t *testing.T) {
 	c := newEconomyTestContext(t, &TestEconomyProvider{})
 	defer c.Cancel()

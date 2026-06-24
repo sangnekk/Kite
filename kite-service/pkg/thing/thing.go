@@ -590,6 +590,23 @@ func (w Thing) AsList() []Thing {
 		return w.Array()
 	}
 
+	// A string that looks like a JSON array (e.g. `["a", "b"]` typed directly
+	// into a list input without the {{ }} template wrapper) is parsed so list
+	// blocks treat it as an actual list instead of a single text value.
+	if s, ok := w.Value.(string); ok {
+		trimmed := strings.TrimSpace(s)
+		if strings.HasPrefix(trimmed, "[") && strings.HasSuffix(trimmed, "]") {
+			var parsed []any
+			if err := json.Unmarshal([]byte(trimmed), &parsed); err == nil {
+				out := make([]Thing, len(parsed))
+				for i, e := range parsed {
+					out[i] = FromAny(e)
+				}
+				return out
+			}
+		}
+	}
+
 	rv := reflect.ValueOf(w.Value)
 	if rv.Kind() != reflect.Slice {
 		return nil
