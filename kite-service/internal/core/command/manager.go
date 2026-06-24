@@ -17,6 +17,7 @@ type CommandManager struct {
 
 func NewCommandManager(
 	appStore store.AppStore,
+	logStore store.LogStore,
 	commandStore store.CommandStore,
 	pluginInstanceStore store.PluginInstanceStore,
 	pluginRegistry *plugin.Registry,
@@ -24,6 +25,7 @@ func NewCommandManager(
 ) *CommandManager {
 	return &CommandManager{
 		appStore:            appStore,
+		logStore:            logStore,
 		commandStore:        commandStore,
 		pluginInstanceStore: pluginInstanceStore,
 		pluginRegistry:      pluginRegistry,

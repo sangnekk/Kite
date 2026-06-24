@@ -92,7 +92,7 @@ func StartServer(c context.Context, cfg *config.Config) error {
 	)
 	engine.Run(ctx)
 
-	commandManager := command.NewCommandManager(pg, pg, pg, pluginRegistry, tokenCrypt)
+	commandManager := command.NewCommandManager(pg, pg, pg, pg, pluginRegistry, tokenCrypt)
 
 	handler := event.NewEventHandlerWrapper(engine, pg)
 
