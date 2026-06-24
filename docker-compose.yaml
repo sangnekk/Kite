@@ -46,6 +46,9 @@ services:
       args:
         # Baked into the embedded frontend so the browser knows the AI service URL.
         NEXT_PUBLIC_AI_SERVICE_URL: http://localhost:3008
+        # Build label shown under the app name; override in .env. Defaults to
+        # "Stable build" here; unset entirely it would show "Developer build".
+        NEXT_PUBLIC_BUILD_LABEL: ${NEXT_PUBLIC_BUILD_LABEL:-Stable build}
     restart: always
     ports:
       - "8080:8080"

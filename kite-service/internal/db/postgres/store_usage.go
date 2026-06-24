@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -20,6 +21,62 @@ func (c *Client) CreateUsageRecord(ctx context.Context, record model.UsageRecord
 		CreditsUsed:     int32(record.CreditsUsed),
 		CreatedAt:       pgtype.Timestamp{Time: record.CreatedAt, Valid: true},
 	})
+}
+
+// ChargeUsageWithinDailyLimit inserts one usage record only if the app's usage of
+// usageType in [start, end] plus cost stays within limitPerDay, so two concurrent
+// charges can't both pass the gate and overspend the budget. Returns true when a
+// row was inserted (charged).
+//
+// The gate-and-charge can't be made atomic by a single INSERT ... SELECT: under
+// Postgres' default READ COMMITTED isolation, INSERT ... SELECT ... WHERE (SELECT
+// SUM(...)) takes no lock on the summed rows, so two concurrent transactions each
+// read a snapshot without the other's uncommitted insert, both pass the limit
+// check, and both insert. We instead serialize per (app, usageType) with a
+// transaction-scoped advisory lock: the second charger blocks until the first
+// commits and releases the lock, after which its INSERT statement takes a fresh
+// READ COMMITTED snapshot that includes the committed row, so its SUM reflects the
+// prior charge.
+func (c *Client) ChargeUsageWithinDailyLimit(
+	ctx context.Context,
+	appID string,
+	usageType model.UsageRecordType,
+	cost, limitPerDay int,
+	start, end, now time.Time,
+) (bool, error) {
+	tx, err := c.DB.Begin(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to begin usage charge transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	// hashtext returns int4, which resolves to the single-arg bigint overload of
+	// pg_advisory_xact_lock. A hash collision only serializes two unrelated keys
+	// (a safe slowdown), never a correctness problem.
+	if _, err := tx.Exec(ctx,
+		`SELECT pg_advisory_xact_lock(hashtext($1))`,
+		string(usageType)+":"+appID,
+	); err != nil {
+		return false, fmt.Errorf("failed to acquire usage charge lock: %w", err)
+	}
+
+	tag, err := tx.Exec(ctx, `
+INSERT INTO usage_records (type, app_id, credits_used, created_at)
+SELECT $1, $2, $3, $4
+WHERE (
+    SELECT COALESCE(SUM(credits_used), 0)
+    FROM usage_records
+    WHERE app_id = $2 AND type = $1 AND created_at BETWEEN $5 AND $6
+) + $3 <= $7
+`, string(usageType), appID, cost, now, start, end, limitPerDay)
+	if err != nil {
+		return false, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return false, fmt.Errorf("failed to commit usage charge: %w", err)
+	}
+	return tag.RowsAffected() > 0, nil
 }
 
 func (c *Client) UsageRecordsBetween(ctx context.Context, appID string, start time.Time, end time.Time) ([]model.UsageRecord, error) {

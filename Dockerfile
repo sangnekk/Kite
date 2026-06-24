@@ -13,8 +13,13 @@ RUN npm ci
 # Build the static export.
 COPY kite-web/ ./
 ARG NEXT_PUBLIC_AI_SERVICE_URL=http://localhost:3008
+# Build/deploy label shown under the app name. Defaults to "Stable build" for
+# images; override via build arg. When the var is absent entirely the frontend
+# falls back to "Developer build" (e.g. a local `npm run dev`).
+ARG NEXT_PUBLIC_BUILD_LABEL="Stable build"
 ENV NEXT_PUBLIC_API_PUBLIC_BASE_URL=http://localhost:8080
 ENV NEXT_PUBLIC_AI_SERVICE_URL=${NEXT_PUBLIC_AI_SERVICE_URL}
+ENV NEXT_PUBLIC_BUILD_LABEL=${NEXT_PUBLIC_BUILD_LABEL}
 ENV OUTPUT=export
 RUN npm run build
 

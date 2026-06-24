@@ -23,6 +23,7 @@ import {
   ToolOutput,
 } from "../ai-elements/tool";
 import Markdown from "../common/Markdown";
+import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import {
   Select,
@@ -69,8 +70,20 @@ export default function FlowCopilotPanel({
       let nodes = (flowData?.nodes ?? []) as Node<NodeData>[];
       let edges = (flowData?.edges ?? []) as Edge[];
 
+      // Guard against clobbering the canvas: applyFlow REPLACES all nodes, so an
+      // empty or entry-less flow would wipe the editor's trigger node. Throwing
+      // here surfaces an error tool-result the agent can see and correct, instead
+      // of silently destroying the user's flow.
+      if (nodes.length === 0) {
+        throw new Error("flow rỗng — không có gì để áp dụng");
+      }
       const existingEntry = getNodes().find((n) => n.type?.startsWith("entry_"));
       const aiEntry = nodes.find((n) => n.type?.startsWith("entry_"));
+      if (!aiEntry) {
+        throw new Error(
+          "flow không có node entry_*; giữ entry hiện tại và gửi lại flow đầy đủ (kèm node entry)"
+        );
+      }
       if (existingEntry && aiEntry && aiEntry.id !== existingEntry.id) {
         const remap = (id: string) =>
           id === aiEntry.id ? existingEntry.id : id;
@@ -171,7 +184,12 @@ export default function FlowCopilotPanel({
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border flex-none">
         <SparklesIcon className="size-5 text-primary" />
         <div className="flex-auto">
-          <div className="font-bold text-foreground leading-tight">Trợ lý AI</div>
+          <div className="flex items-center gap-2 leading-tight">
+            <span className="font-bold text-foreground">Trợ lý AI</span>
+            <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+              Beta
+            </Badge>
+          </div>
           {credits && (
             <div className="text-xs text-muted-foreground">
               Còn {credits.remaining}/{credits.limit_per_day} credit AI hôm nay

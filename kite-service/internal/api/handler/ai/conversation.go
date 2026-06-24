@@ -81,6 +81,10 @@ func (h *AIHandler) HandleAIConversationUpsert(c *handler.Context, req wire.AICo
 		CreatedAt:  now,
 		UpdatedAt:  now,
 	}); err != nil {
+		// The id belongs to a different app (or doesn't exist for this app).
+		if errors.Is(err, store.ErrNotFound) {
+			return nil, handler.ErrNotFound("unknown_conversation", "Conversation not found")
+		}
 		return nil, err
 	}
 

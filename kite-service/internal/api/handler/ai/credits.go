@@ -2,7 +2,6 @@ package ai
 
 import (
 	"fmt"
-	"log/slog"
 	"time"
 
 	"github.com/kitecloud/kite/kite-service/internal/api/handler"
@@ -64,17 +63,39 @@ func (h *AIHandler) HandleAICheckCredit(c *handler.Context, req wire.AIConsumeCr
 	}, nil
 }
 
-// HandleAIConsumeCredit gates one AI turn by plan + daily budget and charges
-// the selected model's credit cost. Called by the AI service after a turn
-// completes successfully (so failed turns are not charged).
+// HandleAIConsumeCredit charges one AI turn's credit cost, gated by plan + daily
+// budget. The gate-and-charge is serialized per app+type, so concurrent turns
+// can't both pass at the limit and overspend, and a DB write failure is never
+// reported as a successful charge. Called by the AI service after a turn completes.
 func (h *AIHandler) HandleAIConsumeCredit(c *handler.Context, req wire.AIConsumeCreditRequest) (*wire.AIConsumeCreditResponse, error) {
-	cost := h.turnCreditCost(req.Model)
-
-	if err := h.checkAIQuota(c, cost); err != nil {
-		return nil, err
+	if !c.Features.AIIncluded {
+		return nil, handler.ErrForbidden(
+			"ai_not_included",
+			"Gói của bạn không bao gồm trợ lý AI.",
+		)
 	}
 
-	h.chargeAIUsage(c, cost)
+	cost := h.turnCreditCost(req.Model)
+	start, end, now := aiDayWindow()
+
+	charged, err := h.usageStore.ChargeUsageWithinDailyLimit(
+		c.Context(), c.App.ID, model.UsageRecordTypeAIFlowAssist,
+		cost, c.Features.AICreditPerDay, start, end, now,
+	)
+	if err != nil {
+		return nil, handler.ErrInternal("failed to charge AI usage")
+	}
+	if !charged {
+		// Boundary trade-off: this is called after the turn already streamed to the
+		// user. At the daily-budget edge, concurrent turns that all passed the
+		// read-only pre-stream check can land here once the budget is spent, so a
+		// few turns are delivered un-charged. That overspend is bounded by the AI
+		// service's per-app concurrency cap (maxConcurrentChatsPerApp), not unbounded.
+		return nil, handler.ErrForbidden(
+			"ai_daily_limit",
+			fmt.Sprintf("Đã hết credit AI hôm nay (giới hạn %d/ngày).", c.Features.AICreditPerDay),
+		)
+	}
 
 	used, err := h.aiCreditsUsedToday(c)
 	if err != nil {
@@ -113,10 +134,17 @@ func (h *AIHandler) checkAIQuota(c *handler.Context, cost int) error {
 	return nil
 }
 
+// aiDayWindow returns today's UTC day boundaries plus the current time, used for
+// both reading and atomically charging the per-day AI budget.
+func aiDayWindow() (start, end, now time.Time) {
+	now = time.Now().UTC()
+	start = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	end = start.AddDate(0, 0, 1).Add(-time.Nanosecond)
+	return start, end, now
+}
+
 func (h *AIHandler) aiCreditsUsedToday(c *handler.Context) (int, error) {
-	now := time.Now().UTC()
-	start := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
-	end := start.AddDate(0, 0, 1).Add(-time.Nanosecond)
+	start, end, _ := aiDayWindow()
 
 	byType, err := h.usageStore.UsageCreditsUsedByTypeBetween(c.Context(), c.App.ID, start, end)
 	if err != nil {
@@ -130,18 +158,4 @@ func (h *AIHandler) aiCreditsUsedToday(c *handler.Context) (int, error) {
 	}
 
 	return 0, nil
-}
-
-// chargeAIUsage records one copilot turn against the app's AI credit budget.
-func (h *AIHandler) chargeAIUsage(c *handler.Context, cost int) {
-	err := h.usageStore.CreateUsageRecord(c.Context(), model.UsageRecord{
-		AppID:       c.App.ID,
-		Type:        model.UsageRecordTypeAIFlowAssist,
-		CreditsUsed: cost,
-		CreatedAt:   time.Now().UTC(),
-	})
-	if err != nil {
-		slog.With("error", err).With("app_id", c.App.ID).
-			Error("Failed to record AI usage")
-	}
 }

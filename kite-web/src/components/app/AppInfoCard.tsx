@@ -6,6 +6,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAppStateStatusQuery, useUserQuery } from "@/lib/api/queries";
+import env from "@/lib/env/client";
 import { useApp, useResponseData, useUsageCredits } from "@/lib/hooks/api";
 import { formatDate } from "@/lib/utils";
 import { CopyIcon } from "lucide-react";
@@ -89,7 +90,7 @@ export default function AppInfoCard() {
         <div className="grid gap-3">
           <div className="font-semibold">Gói đăng ký</div>
           <div>
-            <Badge className="px-3 py-1">Bản Beta</Badge>
+            <Badge className="px-3 py-1">{env.NEXT_PUBLIC_BUILD_LABEL}</Badge>
           </div>
         </div>
       </CardContent>

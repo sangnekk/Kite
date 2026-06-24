@@ -22,10 +22,12 @@ export default function OpenBetaPopup() {
   return (
     <Card className="shadow-md max-w-96 fixed bottom-5 right-5 ml-5 z-50">
       <CardHeader className="px-5 py-4">
-        <CardTitle className="text-lg">Vibe Bot Beta 🪁</CardTitle>
+        <CardTitle className="text-lg">
+          Vibe Bot {env.NEXT_PUBLIC_BUILD_LABEL} 🪁
+        </CardTitle>
         <CardDescription>
-          Vibe Bot đang trong giai đoạn beta mở. Bạn có thể gặp lỗi bất cứ
-          lúc nào!
+          Cảm ơn bạn đã sử dụng Vibe Bot! Nếu gặp vấn đề hoặc có góp ý, hãy
+          tham gia Discord của chúng tôi.
         </CardDescription>
         <Button
           variant="ghost"

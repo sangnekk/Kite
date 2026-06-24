@@ -98,10 +98,21 @@ const nodes = Object.entries(nodeTypes).map(([type, v]: [string, any]) => {
   };
 });
 
-const out = path.join(
-  __dirname,
-  "../../kite-ai-service/src/generated/flow-nodes.json"
-);
-mkdirSync(path.dirname(out), { recursive: true });
-writeFileSync(out, JSON.stringify({ nodes }, null, 2) + "\n");
-console.log(`Wrote ${nodes.length} nodes -> ${out}`);
+const payload = JSON.stringify({ nodes }, null, 2) + "\n";
+
+// Consumers of the catalog. Each gets the exact same file so they can never
+// drift from the flow editor's source of truth.
+const outputs = [
+  // AI agent (microservice) — needs to know every block.
+  "../../kite-ai-service/src/generated/flow-nodes.json",
+  // Docs site (Docusaurus) — served as a static asset so NodeInfoExplorer can
+  // render node schemas without a running Next.js backend (embed/static build).
+  "../../kite-docs/static/flow-nodes.json",
+];
+
+for (const rel of outputs) {
+  const out = path.join(__dirname, rel);
+  mkdirSync(path.dirname(out), { recursive: true });
+  writeFileSync(out, payload);
+  console.log(`Wrote ${nodes.length} nodes -> ${out}`);
+}

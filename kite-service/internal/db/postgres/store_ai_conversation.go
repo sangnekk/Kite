@@ -54,13 +54,24 @@ func (c *Client) AIConversation(ctx context.Context, appID, id string) (*model.A
 
 func (c *Client) UpsertAIConversation(ctx context.Context, conv *model.AIConversation) error {
 	now := time.Now().UTC()
-	_, err := c.DB.Exec(ctx, `
+	// id is a global primary key and comes from the client, so guard the conflict
+	// update with app_id: a PUT must never overwrite a conversation owned by a
+	// different app. When the existing row belongs to another app the update
+	// matches no row (0 affected) and we surface that as not-found.
+	tag, err := c.DB.Exec(ctx, `
 INSERT INTO ai_conversations (id, app_id, context_key, title, messages, created_at, updated_at)
 VALUES ($1, $2, $3, $4, $5, $6, $6)
-ON CONFLICT (id)
-DO UPDATE SET title = EXCLUDED.title, messages = EXCLUDED.messages, updated_at = EXCLUDED.updated_at
+ON CONFLICT (id) DO UPDATE
+SET title = EXCLUDED.title, messages = EXCLUDED.messages, updated_at = EXCLUDED.updated_at
+WHERE ai_conversations.app_id = EXCLUDED.app_id
 `, conv.ID, conv.AppID, conv.ContextKey, conv.Title, conv.Messages, now)
-	return err
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return store.ErrNotFound
+	}
+	return nil
 }
 
 func (c *Client) DeleteAIConversation(ctx context.Context, appID, id string) error {

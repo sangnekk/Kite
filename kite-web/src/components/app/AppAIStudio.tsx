@@ -27,6 +27,7 @@ import {
 import Markdown from "../common/Markdown";
 import FlowReadOnly from "../flow/FlowReadOnly";
 import MessagePreview from "../message/MessagePreview";
+import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import {
   Select,
@@ -279,8 +280,11 @@ export default function AppAIStudio() {
         <div className="flex items-center gap-2 border-b border-border px-3 py-3 sm:px-4">
           <SparklesIcon className="size-5 text-primary" />
           <div className="flex-auto">
-            <div className="font-bold leading-tight text-foreground">
-              AI Studio
+            <div className="flex items-center gap-2 leading-tight">
+              <span className="font-bold text-foreground">AI Studio</span>
+              <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+                Beta
+              </Badge>
             </div>
             {credits && (
               <div className="text-xs text-muted-foreground">

@@ -13,6 +13,15 @@ export const config = {
   maxSteps: Number(process.env.MAX_STEPS ?? 8),
   // Path to the mounted kite.toml (single source of AI model config).
   kiteConfigPath: process.env.KITE_CONFIG_PATH ?? "/app/kite.toml",
+  // Max number of /chat turns allowed to run concurrently per app. The pre-stream
+  // credit check is read-only (it doesn't reserve budget), so without this a burst
+  // of concurrent requests would all pass the gate and all hit the LLM provider,
+  // running far more provider tokens than the daily credit cap permits. Capping
+  // in-flight turns per app bounds that burst. (In-memory, so per instance; a
+  // multi-instance deployment needs a shared counter for a global guarantee.)
+  maxConcurrentChatsPerApp: Number(
+    process.env.MAX_CONCURRENT_CHATS_PER_APP ?? 3
+  ),
 };
 
 // Models are read from kite.toml [ai] so the service uses exactly the models the
