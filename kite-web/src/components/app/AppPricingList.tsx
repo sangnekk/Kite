@@ -225,7 +225,7 @@ export default function AppPricingList() {
                   <CheckIcon className="text-green-500" />{" "}
                   <h3 className="ml-2">
                     {formatNumber(pricing.feature_usage_credits_per_month)}{" "}
-                    Credits / tháng
+                    Credit thao tác / tháng
                   </h3>
                 </span>
                 <span className="flex">
@@ -260,9 +260,14 @@ export default function AppPricingList() {
                 )}
                 {pricing.feature_ai_included && (
                   <span className="flex">
-                    <CheckIcon className="text-green-500" />{" "}
+                    <CheckIcon className="text-green-500 shrink-0" />{" "}
                     <h3 className="ml-2">
-                      Trợ lý AI · {pricing.feature_ai_credit_per_day} credit/ngày
+                      Trợ lý AI ·{" "}
+                      {formatNumber(pricing.feature_ai_credit_per_day)} credit /
+                      ngày
+                      <span className="block text-xs text-muted-foreground">
+                        làm mới mỗi ngày, không cộng dồn
+                      </span>
                     </h3>
                   </span>
                 )}
