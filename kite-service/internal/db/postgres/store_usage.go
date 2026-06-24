@@ -60,14 +60,21 @@ func (c *Client) ChargeUsageWithinDailyLimit(
 		return false, fmt.Errorf("failed to acquire usage charge lock: %w", err)
 	}
 
+	// $3 (cost) is cast to bigint at every use on purpose. Without the casts it is
+	// deduced as integer from the credits_used insert column AND as bigint from
+	// `SUM(...) + $3` (SUM of an int column is bigint). Under the extended query
+	// protocol pgx uses, Postgres rejects that with "inconsistent types deduced for
+	// parameter $3 (bigint versus integer)" at Parse time, so the charge errored and
+	// nothing was ever recorded. The casts pin $3 (and $7) to bigint everywhere;
+	// the bigint value assigns cleanly into the int4 credits_used column.
 	tag, err := tx.Exec(ctx, `
 INSERT INTO usage_records (type, app_id, credits_used, created_at)
-SELECT $1, $2, $3, $4
+SELECT $1, $2, $3::bigint, $4
 WHERE (
     SELECT COALESCE(SUM(credits_used), 0)
     FROM usage_records
     WHERE app_id = $2 AND type = $1 AND created_at BETWEEN $5 AND $6
-) + $3 <= $7
+) + $3::bigint <= $7::bigint
 `, string(usageType), appID, cost, now, start, end, limitPerDay)
 	if err != nil {
 		return false, err
