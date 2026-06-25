@@ -3,15 +3,23 @@ sidebar_position: 40
 ---
 
 import EmbedFlowNode from "../../../../src/components/EmbedFlowNode";
+import NodeInfoExplorer from "../../../../src/components/NodeInfoExplorer";
 
 # Xử lý lỗi
 
 <EmbedFlowNode type="control_error_handler" />
 
-Khối `Handle Errors` cho phép bạn chạy logic tùy chỉnh khi có lỗi xảy ra trong các khối con của nó.
+> Cho phép flow tiếp tục ngay cả khi một khối phía sau gặp lỗi.
 
-Thông báo lỗi có sẵn dưới dạng kết quả của khối này. Bạn có thể dùng nó để hiển thị tin nhắn cho người dùng hoặc xử lý lỗi theo cách khác.
+## Khi nào dùng
 
-Điều này hữu ích nếu bạn không muốn dùng cơ chế xử lý lỗi mặc định. Nếu vẫn muốn ghi log lỗi, bạn có thể dùng khối `Log Message`.
+- Tránh để flow dừng giữa chừng khi một khối lỗi.
+- Xử lý lỗi gọi API/AI một cách mềm mại.
 
-![Error Handler](./img/control_error_handler.png)
+## Lưu ý & liên quan
+
+- Bình thường lỗi sẽ **dừng** flow. Đặt khối này phía trước phần có thể lỗi để flow vẫn chạy tiếp.
+- Khối này **không tốn credit**.
+- [Các khối](/reference/blocks/)
+
+<NodeInfoExplorer type="control_error_handler" />

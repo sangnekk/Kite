@@ -9,8 +9,32 @@ import NodeInfoExplorer from "../../../../src/components/NodeInfoExplorer";
 
 <EmbedFlowNode type="action_http_request" />
 
-Khối `Send API Request` cho phép bạn gửi HTTP request tới API hoặc dịch vụ web bên ngoài. Bạn có thể gửi GET, POST, PUT, DELETE và các phương thức HTTP khác với header và body tùy chỉnh.
+> Gửi HTTP request tới API/dịch vụ web bên ngoài và nhận về dữ liệu.
 
-Điều này hữu ích khi tích hợp dịch vụ bên ngoài, lấy dữ liệu từ API hoặc kích hoạt webhook.
+## Khi nào dùng
+
+- Tích hợp dịch vụ ngoài: thời tiết, game, cơ sở dữ liệu...
+- Kích hoạt webhook.
+- Lấy dữ liệu động để đưa vào tin nhắn.
+
+## Cấu hình
+
+> `Yêu cầu` — phương thức, URL, header và body của HTTP request.
+
+## Kết quả trả về
+
+Đặt một `id` cho khối, rồi truy cập phản hồi bằng `result('id')` — ví dụ `result('id').data().tenTruong` để lấy một trường trong JSON trả về.
+
+## Ví dụ
+
+Gọi một API JSON:
+1. **Gửi yêu cầu API**: phương thức `GET`, URL của API. Đặt `id` = `api`.
+2. Lấy trường trong phản hồi bằng `{{ result('api').data().tenTruong }}`.
+
+## Lưu ý & liên quan
+
+- Tốn **3 credit** mỗi lần chạy. Xem [Hệ thống credit](/reference/credit-system).
+- [Phân tích JSON](/reference/blocks/actions/action_json_parse)
+- [Biểu thức](/reference/expressions)
 
 <NodeInfoExplorer type="action_http_request" />

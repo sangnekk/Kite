@@ -9,36 +9,35 @@ import NodeInfoExplorer from "../../../../src/components/NodeInfoExplorer";
 
 <EmbedFlowNode type="action_channel_create" />
 
-Khối `Create channel` được dùng để tạo một kênh trong danh mục đã chọn.
+> Tạo một kênh mới trong server.
 
-Bạn có thể chọn nhiều loại kênh khác nhau, bao gồm:
+## Khi nào dùng
 
-> `Text`
->
-> `Voice`
->
-> `Category`
->
-> `Announcement`
->
-> `Stage`
->
-> `Forum`
->
-> `Media`
+- Tạo kênh riêng theo yêu cầu (ticket, phòng tạm).
+- Tự thiết lập kênh khi cần.
 
-### Tùy chọn
+## Cấu hình
 
-> `Name` Tên của kênh.
+> `Server` — server liên quan (thường là `{{ guild.id }}`).
 >
-> `Topic` Chủ đề của kênh.
+> `Thông tin kênh` — tên, loại và thiết lập của kênh.
 >
-> `Category` Danh mục mà kênh sẽ được tạo trong đó.
->
-> `Position` Vị trí của kênh.
+> `Lý do` — ghi chú hiển thị trong audit log của Discord.
 
-### Ghi đè quyền
+## Kết quả trả về
 
-Tại đây bạn có thể chọn role và người dùng nào có quyền truy cập kênh. Để trống nếu muốn cho phép tất cả role và người dùng truy cập.
+Đặt một `id` cho khối rồi tham chiếu kết quả ở các bước sau (thay `id` bằng ID của khối):
+
+| Trường | Ý nghĩa |
+| --- | --- |
+| `result('id').id` | ID kênh |
+| `result('id').name` | Tên kênh |
+| `result('id').type` | Loại kênh |
+
+## Lưu ý & liên quan
+
+- Tốn **1 credit** mỗi lần chạy. Xem [Hệ thống credit](/reference/credit-system).
+- [Sửa kênh](/reference/blocks/actions/action_channel_edit)
+- [Xóa kênh](/reference/blocks/actions/action_channel_delete)
 
 <NodeInfoExplorer type="action_channel_create" />

@@ -9,15 +9,27 @@ import NodeInfoExplorer from "../../../../src/components/NodeInfoExplorer";
 
 <EmbedFlowNode type="action_balance_leaderboard" />
 
-Khối `Balance leaderboard` lấy danh sách những người có số dư cao nhất cho một loại tiền tệ, sắp xếp giảm dần.
+> Lấy danh sách những người có số dư cao nhất.
 
-### Cài đặt
+## Khi nào dùng
 
-> `Variable` Biến lưu số dư.
+- Lệnh `/top` xếp hạng giàu nhất.
+- Bảng vinh danh.
+
+## Cấu hình
+
+> `Biến` — chọn một [biến lưu trữ](/reference/variable).
 >
-> `Số lượng` Số người muốn lấy (mặc định 10, tối đa 100).
+> `Số lượng` — số người hiển thị trong bảng xếp hạng.
 
-### Đầu ra
-Kết quả là một mảng các đối tượng `{ rank, scope, balance }`. Dùng khối `Định dạng danh sách` để hiển thị thành nhiều dòng.
+## Kết quả trả về
+
+Đặt một `id` cho khối, rồi dùng [Định dạng danh sách](/reference/blocks/actions/action_list_format) trên `result('id')` để render bảng xếp hạng.
+
+## Lưu ý & liên quan
+
+- Tốn **1 credit** mỗi lần chạy. Xem [Hệ thống credit](/reference/credit-system).
+- [Định dạng danh sách](/reference/blocks/actions/action_list_format)
+- [Xem số dư](/reference/blocks/actions/action_balance_get)
 
 <NodeInfoExplorer type="action_balance_leaderboard" />

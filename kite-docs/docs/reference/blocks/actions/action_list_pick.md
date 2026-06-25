@@ -9,13 +9,24 @@ import NodeInfoExplorer from "../../../../src/components/NodeInfoExplorer";
 
 <EmbedFlowNode type="action_list_pick" />
 
-Khối `Pick from list` chọn ngẫu nhiên một phần tử trong một danh sách. Hữu ích cho giveaway hoặc phần thưởng ngẫu nhiên.
+> Chọn ngẫu nhiên một phần tử từ danh sách.
 
-### Cài đặt
+## Khi nào dùng
 
-> `Danh sách` Một danh sách (ví dụ kết quả của một khối khác, hoặc `{{["a", "b", "c"]}}`).
+- Bốc thăm, chọn người thắng ngẫu nhiên.
+- Trả lời ngẫu nhiên từ danh sách câu sẵn.
 
-### Đầu ra
-Phần tử được chọn. Nếu danh sách rỗng, kết quả là rỗng.
+## Cấu hình
+
+> `Danh sách` — danh sách để chọn ngẫu nhiên.
+
+## Kết quả trả về
+
+Đặt một `id` cho khối rồi lấy phần tử được chọn bằng `result('id')`.
+
+## Lưu ý & liên quan
+
+- Tốn **1 credit** mỗi lần chạy. Xem [Hệ thống credit](/reference/credit-system).
+- [Tạo số ngẫu nhiên](/reference/blocks/actions/action_random_generate)
 
 <NodeInfoExplorer type="action_list_pick" />

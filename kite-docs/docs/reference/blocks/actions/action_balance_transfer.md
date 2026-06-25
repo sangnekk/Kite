@@ -9,21 +9,36 @@ import NodeInfoExplorer from "../../../../src/components/NodeInfoExplorer";
 
 <EmbedFlowNode type="action_balance_transfer" />
 
-Khối `Transfer balance` chuyển tiền từ một người dùng sang người khác **một cách nguyên tử** (cả hai thay đổi cùng thành công hoặc cùng thất bại). Mặc định sẽ báo lỗi nếu người gửi không đủ tiền.
+> Chuyển tiền từ một người dùng sang người khác.
 
-### Cài đặt
+## Khi nào dùng
 
-> `Variable` Biến lưu số dư.
->
-> `Người dùng` Người gửi, mặc định `{{user.id}}`.
->
-> `Người nhận` Người nhận tiền.
->
-> `Số tiền` Số tiền chuyển.
->
-> `Cho phép số dư âm` Nếu bật, số dư người gửi có thể xuống dưới 0.
+- Lệnh `/pay @người số_tiền`.
+- Giao dịch giữa người chơi.
 
-### Đầu ra
-Kết quả là một đối tượng `{ from_balance, to_balance }` — số dư mới của người gửi và người nhận.
+## Cấu hình
+
+> `Biến` — chọn một [biến lưu trữ](/reference/variable).
+>
+> `Người dùng` — chủ số dư (mặc định là người chạy lệnh `{{ user.id }}`).
+>
+> `Người nhận` — người nhận tiền khi chuyển.
+>
+> `Số tiền` — số lượng cần cộng/trừ/đặt.
+>
+> `Cho phép âm` — cho phép số dư xuống dưới 0 hay không.
+
+## Ví dụ
+
+Lệnh `/pay`:
+1. [Đối số lệnh](/reference/blocks/options/option_command_argument) `nguoinhan` (kiểu người dùng) và `sotien` (số).
+2. **Chuyển tiền**: `Người dùng` = `{{ user.id }}`, `Người nhận` = `{{ arg('nguoinhan') }}`, `Số tiền` = `{{ arg('sotien') }}`.
+
+## Lưu ý & liên quan
+
+- Tắt `Cho phép âm` để người gửi không chuyển quá số dư.
+- Tốn **1 credit** mỗi lần chạy. Xem [Hệ thống credit](/reference/credit-system).
+- [Cộng số dư](/reference/blocks/actions/action_balance_add)
+- [Xem số dư](/reference/blocks/actions/action_balance_get)
 
 <NodeInfoExplorer type="action_balance_transfer" />

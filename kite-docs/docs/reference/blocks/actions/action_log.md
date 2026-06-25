@@ -9,8 +9,22 @@ import NodeInfoExplorer from "../../../../src/components/NodeInfoExplorer";
 
 <EmbedFlowNode type="action_log" />
 
-Khối `Log Message` cho phép bạn ghi các tin nhắn văn bản chỉ hiển thị trong nhật ký ứng dụng. Điều này hữu ích khi gỡ lỗi, theo dõi hoặc ghi nhận quá trình thực thi flow.
+> Ghi một dòng vào nhật ký ứng dụng (chỉ bạn thấy, để gỡ lỗi).
 
-Bạn có thể chọn các mức log khác nhau (info, warning, error) để phân loại nhật ký.
+## Khi nào dùng
+
+- Theo dõi giá trị khi gỡ lỗi flow.
+- Ghi lại hoạt động để kiểm tra.
+
+## Cấu hình
+
+> `Mức độ` — mức log (info, warn, error...).
+>
+> `Nội dung` — nội dung ghi vào nhật ký ứng dụng.
+
+## Lưu ý & liên quan
+
+- Tốn **1 credit** mỗi lần chạy. Xem [Hệ thống credit](/reference/credit-system).
+- [Lệnh tùy chỉnh](/reference/command)
 
 <NodeInfoExplorer type="action_log" />

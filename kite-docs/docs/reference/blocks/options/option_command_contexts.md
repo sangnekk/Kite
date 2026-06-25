@@ -9,8 +9,23 @@ import NodeInfoExplorer from "../../../../src/components/NodeInfoExplorer";
 
 <EmbedFlowNode type="option_command_contexts" />
 
-Khối `Command Contexts` cho phép bạn xác định nơi lệnh sẽ khả dụng. Bạn có thể chỉ định lệnh dùng trong server, DM hoặc cả hai, và integration nào được phép truy cập.
+> Xác định nơi lệnh có thể dùng: trong server, DM, hay mọi nơi.
 
-Mặc định, lệnh khả dụng ở mọi nơi, nhưng bạn có thể giới hạn vào các bối cảnh cụ thể.
+## Khi nào dùng
+
+- Cho lệnh chạy được trong tin nhắn riêng.
+- Giới hạn lệnh chỉ trong server.
+
+## Cấu hình
+
+> `Ngữ cảnh` — nơi lệnh dùng được: server, DM riêng, tin nhắn riêng với người khác.
+>
+> `Kiểu cài đặt` — áp dụng khi cài theo server và/hoặc theo người dùng.
+
+## Lưu ý & liên quan
+
+- Khối này **không tốn credit**.
+- [Lệnh](/reference/blocks/entries/entry_command)
+- [Ứng dụng cài cho người dùng](/guides/user-installable-apps)
 
 <NodeInfoExplorer type="option_command_contexts" />

@@ -9,8 +9,21 @@ import NodeInfoExplorer from "../../../../src/components/NodeInfoExplorer";
 
 <EmbedFlowNode type="option_command_permissions" />
 
-Khối `Command Permissions` cho phép bạn giới hạn lệnh cho những người dùng có quyền cụ thể. Bạn có thể chỉ định các quyền Discord bắt buộc để sử dụng lệnh.
+> Giới hạn lệnh chỉ cho người dùng có quyền Discord nhất định.
 
-Điều này hữu ích khi tạo lệnh chỉ dành cho quản trị viên hoặc lệnh yêu cầu quyền server cụ thể.
+## Khi nào dùng
+
+- Khoá lệnh quản trị cho mod/admin.
+- Ẩn lệnh với người không đủ quyền.
+
+## Cấu hình
+
+> `Quyền` — quyền Discord người dùng phải có để dùng lệnh.
+
+## Lưu ý & liên quan
+
+- Khối này **không tốn credit**.
+- [Lệnh](/reference/blocks/entries/entry_command)
+- [Điều kiện vai trò](/reference/blocks/controls/control_condition_role)
 
 <NodeInfoExplorer type="option_command_permissions" />

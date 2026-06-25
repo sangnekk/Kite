@@ -9,17 +9,29 @@ import NodeInfoExplorer from "../../../../src/components/NodeInfoExplorer";
 
 <EmbedFlowNode type="action_list_format" />
 
-Khối `Format list` duyệt qua từng phần tử của một danh sách, render mỗi phần tử theo một mẫu, rồi nối lại thành một chuỗi. Rất hợp để tạo bảng xếp hạng nhiều dòng.
+> Render mỗi phần tử của danh sách theo một mẫu rồi nối lại (vd bảng xếp hạng).
 
-### Cài đặt
+## Khi nào dùng
 
-> `Danh sách` Danh sách đầu vào.
+- Tạo bảng xếp hạng từ dữ liệu.
+- Liệt kê danh sách có định dạng đẹp.
+
+## Cấu hình
+
+> `Danh sách` — danh sách đầu vào.
 >
-> `Mẫu mỗi phần tử` Mẫu áp dụng cho từng phần tử. Dùng `{{item}}` cho phần tử và `{{index}}` cho vị trí (bắt đầu từ 0). Với phần tử là đối tượng, dùng `{{item.field}}`.
+> `Mẫu phần tử` — cách render mỗi phần tử (dùng biểu thức).
 >
-> `Ký tự nối` Chuỗi nối giữa các phần tử (mặc định xuống dòng; dùng `\n`, `\t`).
+> `Ký tự nối` — chuỗi chèn giữa các phần tử.
 
-### Ví dụ
-Bảng xếp hạng: `#{{item.rank}} <@{{item.scope}}>: {{item.balance}}` nối bằng xuống dòng.
+## Kết quả trả về
+
+Đặt một `id` cho khối rồi lấy chuỗi đã ghép bằng `result('id')`.
+
+## Lưu ý & liên quan
+
+- Tốn **1 credit** mỗi lần chạy. Xem [Hệ thống credit](/reference/credit-system).
+- [Nối danh sách](/reference/blocks/actions/action_list_join)
+- [Bảng xếp hạng](/reference/blocks/actions/action_balance_leaderboard)
 
 <NodeInfoExplorer type="action_list_format" />

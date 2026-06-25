@@ -9,8 +9,27 @@ import NodeInfoExplorer from "../../../../src/components/NodeInfoExplorer";
 
 <EmbedFlowNode type="action_ai_web_search" />
 
-Khối `Search the Web` cho phép bạn tìm kiếm internet để lấy thông tin mới nhất bằng AI. Điều này hữu ích khi cần thông tin hiện tại có thể chưa có trong dữ liệu huấn luyện của AI.
+> Để AI tìm kiếm thông tin trên internet rồi trả lời.
 
-Khối này dùng AI để xử lý và tóm tắt kết quả tìm kiếm web, cung cấp thông tin liên quan và cập nhật.
+## Khi nào dùng
+
+- Trả lời câu hỏi cần thông tin mới/thời sự.
+- Tra cứu dữ kiện ngoài kiến thức sẵn có của mô hình.
+
+## Cấu hình
+
+> `Mô hình` — chọn mô hình AI; chi phí credit khác nhau theo mô hình.
+>
+> `Truy vấn` — nội dung cần tìm kiếm. Hỗ trợ [biểu thức](/reference/expressions).
+
+## Kết quả trả về
+
+Đặt một `id` cho khối rồi dùng `result('id')` để lấy kết quả tìm kiếm cho các bước sau.
+
+## Lưu ý & liên quan
+
+- Tốn rất nhiều credit, tùy mô hình: từ **25** đến **500** mỗi lần chạy. Xem [Hệ thống credit](/reference/credit-system).
+- [Hỏi AI](/reference/blocks/actions/action_ai_chat_completion)
+- [Hệ thống credit](/reference/credit-system)
 
 <NodeInfoExplorer type="action_ai_web_search" />

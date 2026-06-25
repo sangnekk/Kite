@@ -9,10 +9,35 @@ import NodeInfoExplorer from "../../../../src/components/NodeInfoExplorer";
 
 <EmbedFlowNode type="action_response_edit" />
 
-Khối `Edit response message` được dùng để chỉnh sửa phản hồi đã tạo trước đó. Hiện tại bạn chỉ có thể chỉnh sửa phản hồi gốc (đầu tiên).
+> Chỉnh sửa nội dung của một phản hồi đã gửi.
 
-Bạn có thể cấu hình tin nhắn trực tiếp trong khối hoặc sử dụng mẫu tin nhắn. Trong cả hai trường hợp, bạn đều có thể thêm embed và thành phần tương tác. Mẫu tin nhắn phù hợp hơn khi bạn muốn tái sử dụng cùng một phản hồi ở nhiều nơi.
+## Khi nào dùng
 
-Nếu tin nhắn chứa thành phần tương tác, flow sẽ tạm dừng cho đến khi người dùng tương tác với tin nhắn. Xem [Sub-Flows](/reference/sub-flows) để biết thêm về cách các thành phần tương tác hoạt động.
+- Cập nhật phản hồi sau khi xử lý xong (vd sau khi gọi API hoặc hỏi AI).
+- Đổi nội dung khi người dùng bấm nút.
+
+## Cấu hình
+
+> `Phản hồi` — phản hồi cần thao tác (thường là phản hồi đã tạo trước đó).
+>
+> `Nội dung tin nhắn` — soạn trực tiếp trong khối hoặc chọn một [mẫu tin nhắn](/reference/message). Hỗ trợ embed, tệp đính kèm và nút bấm.
+
+## Kết quả trả về
+
+Đặt một `id` cho khối rồi tham chiếu kết quả ở các bước sau (thay `id` bằng ID của khối):
+
+| Trường | Ý nghĩa |
+| --- | --- |
+| `result('id').id` | ID của tin nhắn |
+| `result('id').channel_id` | ID kênh chứa tin nhắn |
+| `result('id').content` | Nội dung tin nhắn |
+| `result('id').author` | Người gửi (khi là tin nhắn riêng) |
+| `result('id').member` | Người gửi (khi trong server) |
+
+## Lưu ý & liên quan
+
+- Tốn **1 credit** mỗi lần chạy. Xem [Hệ thống credit](/reference/credit-system).
+- [Tạo tin nhắn phản hồi](/reference/blocks/actions/action_response_create)
+- [Trì hoãn phản hồi](/reference/blocks/actions/action_response_defer)
 
 <NodeInfoExplorer type="action_response_edit" />

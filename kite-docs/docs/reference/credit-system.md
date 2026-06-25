@@ -31,3 +31,9 @@ Các khối điều kiện, vòng lặp và khối điều khiển luồng khác
 ## Mẹo sử dụng
 
 Vì mỗi hành động trong flow đều tiêu tốn credit, bạn nên chỉ chạy hành động khi cần thiết. Ví dụ, thường không nên chạy hành động với mọi tin nhắn. Thay vào đó, hãy dùng điều kiện để chỉ chạy khi đáp ứng tiêu chí cụ thể.
+
+## Liên quan
+
+- [Các khối](/reference/blocks/) — xem chi phí theo từng nhóm khối
+- [Hỏi AI](/reference/blocks/actions/action_ai_chat_completion), [Tìm kiếm web](/reference/blocks/actions/action_ai_web_search) — các khối tốn nhiều credit nhất
+- [Khối điều khiển luồng](/reference/blocks/#khối-điều-khiển-luồng) — miễn phí, dùng để giới hạn số lần chạy hành động

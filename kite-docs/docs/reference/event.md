@@ -8,6 +8,8 @@ Bộ lắng nghe sự kiện cho phép bot của bạn tự động phản hồi
 
 Mỗi bộ lắng nghe sự kiện là một flow độc lập. Khi sự kiện bạn chọn xảy ra, flow sẽ được kích hoạt và thực thi tự động.
 
+Sự kiện là **điểm vào** thứ hai để khởi động flow, bên cạnh [lệnh](/reference/command) (xem [lược đồ tổng thể](/)). Khác với lệnh do người dùng chủ động gọi, sự kiện được kích hoạt tự động bởi hoạt động trong server.
+
 ![Ví dụ luồng sự kiện](./img/example-event-flow.png)
 
 ## Tạo bộ lắng nghe sự kiện
@@ -120,3 +122,10 @@ Xem thêm tại [Bộ lọc sự kiện](./blocks/options/option_event_filter.md
 - Bạn chỉ có thể tạo tối đa **5 bộ lắng nghe sự kiện** cho mỗi ứng dụng.
 - Vibe Bot bỏ qua tin nhắn từ bot cho sự kiện **Message Create** và **Message Update**.
 - **Member Join** và **Member Leave** yêu cầu **Server Members Intent** (xem ở trên).
+
+## Liên quan
+
+- [Khối Lắng nghe sự kiện](/reference/blocks/entries/entry_event) — điểm bắt đầu của flow sự kiện
+- [Bộ lọc sự kiện](/reference/blocks/options/option_event_filter) — giới hạn khi nào flow chạy
+- [Lệnh tùy chỉnh](/reference/command) — điểm vào còn lại để người dùng chủ động gọi
+- [Biến lưu trữ](/reference/variable) — lưu dữ liệu khi ghi log hoặc đếm sự kiện

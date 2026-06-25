@@ -9,8 +9,23 @@ import NodeInfoExplorer from "../../../../src/components/NodeInfoExplorer";
 
 <EmbedFlowNode type="control_condition_role" />
 
-Khối `Role Condition` cho phép bạn tạo logic điều kiện dựa trên thuộc tính role. Bạn có thể thiết lập nhiều nhánh điều kiện theo role để thực thi hành động khác nhau.
+> Rẽ nhánh flow dựa trên vai trò của người dùng.
 
-Điều này hữu ích khi tạo quyền theo role hoặc hành vi riêng theo role.
+## Khi nào dùng
+
+- Chỉ cho phép người có vai trò nhất định (vd Admin).
+- Trao quyền theo vai trò.
+
+## Cấu hình
+
+> `Vai trò` — vai trò đem ra so khớp ở các nhánh.
+>
+> `Cho phép nhiều nhánh` — chạy mọi nhánh khớp thay vì chỉ nhánh đầu tiên.
+
+## Lưu ý & liên quan
+
+- Khối này **không tốn credit**.
+- [Điều kiện người dùng](/reference/blocks/controls/control_condition_user)
+- [Thêm vai trò cho thành viên](/reference/blocks/actions/action_member_role_add)
 
 <NodeInfoExplorer type="control_condition_role" />

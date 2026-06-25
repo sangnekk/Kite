@@ -9,6 +9,20 @@ import NodeInfoExplorer from "../../../../src/components/NodeInfoExplorer";
 
 <EmbedFlowNode type="control_sleep" />
 
-Khối `Wait` tạm dừng thực thi flow trong một khoảng thời gian xác định. Điều này hữu ích khi tạo độ trễ, giới hạn tần suất hoặc lên lịch hành động chạy sau một khoảng thời gian.
+> Tạm dừng flow trong một khoảng thời gian rồi chạy tiếp.
+
+## Khi nào dùng
+
+- Giãn cách giữa các tin nhắn.
+- Chờ trước khi xử lý bước sau.
+
+## Cấu hình
+
+> `Thời lượng` — thời gian tạm dừng (giây).
+
+## Lưu ý & liên quan
+
+- Khối này **không tốn credit**.
+- [Chạy vòng lặp](/reference/blocks/controls/control_loop)
 
 <NodeInfoExplorer type="control_sleep" />

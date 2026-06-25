@@ -6,6 +6,8 @@ sidebar_position: 5
 
 Vibe Bot hỗ trợ tính toán và biến đổi dữ liệu bằng biểu thức. Biểu thức có thể dùng trong khối `Evaluate Expression` (**hỗ trợ cả nhập nhiều dòng**) và trong mọi placeholder được bao bởi `{{` và `}}`.
 
+Trong [lược đồ tổng thể](/), biểu thức là **chất keo** nối các phần lại: bạn dùng nó để đọc đối số lệnh (`arg`), kết quả khối trước (`result`), nội dung người dùng nhập (`input`) và [biến lưu trữ](/reference/variable), rồi tính toán hoặc ghép chuỗi động.
+
 ## Cú pháp biểu thức
 
 Biểu thức sử dụng ngôn ngữ [Expr](https://expr-lang.org). Bạn có thể xem chi tiết về tính năng và cú pháp [tại đây](https://expr-lang.org/docs/language-definition).
@@ -101,3 +103,10 @@ Biểu thức này trả về giá trị trường `somefield` trong JSON respon
 ```python
 {{ result('owlspush').data().somefield }}
 ```
+
+## Liên quan
+
+- [Tính biểu thức](/reference/blocks/actions/action_expression_evaluate) — khối chạy biểu thức nhiều dòng
+- [Biến lưu trữ](/reference/variable) — nguồn dữ liệu bền vững cho biểu thức
+- [Lệnh tùy chỉnh](/reference/command) — đọc đối số bằng `arg('tên')`
+- [Các khối](/reference/blocks/) — tham chiếu kết quả khối trước bằng `result('id')`

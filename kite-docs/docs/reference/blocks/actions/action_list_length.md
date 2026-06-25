@@ -9,13 +9,24 @@ import NodeInfoExplorer from "../../../../src/components/NodeInfoExplorer";
 
 <EmbedFlowNode type="action_list_length" />
 
-Khối `List length` đếm số phần tử trong một danh sách.
+> Đếm số phần tử trong một danh sách.
 
-### Cài đặt
+## Khi nào dùng
 
-> `Danh sách` Danh sách cần đếm.
+- Kiểm tra danh sách có bao nhiêu phần tử trước khi xử lý.
+- Hiển thị số lượng.
 
-### Đầu ra
-Một số nguyên là số phần tử.
+## Cấu hình
+
+> `Danh sách` — danh sách đầu vào.
+
+## Kết quả trả về
+
+Đặt một `id` cho khối rồi lấy số lượng bằng `result('id')`.
+
+## Lưu ý & liên quan
+
+- Tốn **1 credit** mỗi lần chạy. Xem [Hệ thống credit](/reference/credit-system).
+- [Nối danh sách](/reference/blocks/actions/action_list_join)
 
 <NodeInfoExplorer type="action_list_length" />

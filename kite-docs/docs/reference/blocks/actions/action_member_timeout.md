@@ -9,6 +9,25 @@ import NodeInfoExplorer from "../../../../src/components/NodeInfoExplorer";
 
 <EmbedFlowNode type="action_member_timeout" />
 
-Khối `Timeout member` được dùng để giới hạn trò chuyện một thành viên trong máy chủ.
+> Tạm khóa một thành viên: họ không nhắn/nói được trong một khoảng thời gian.
+
+## Khi nào dùng
+
+- Phạt nhẹ mà không cần đuổi/cấm.
+- Hạ nhiệt tình huống tạm thời.
+
+## Cấu hình
+
+> `Người dùng` — người cần tác động (ID hoặc `{{ user.id }}`).
+>
+> `Thời lượng` — thời gian tạm khóa (giây).
+>
+> `Lý do` — ghi chú hiển thị trong audit log của Discord.
+
+## Lưu ý & liên quan
+
+- Tốn **1 credit** mỗi lần chạy. Xem [Hệ thống credit](/reference/credit-system).
+- [Đuổi thành viên](/reference/blocks/actions/action_member_kick)
+- [Cấm thành viên](/reference/blocks/actions/action_member_ban)
 
 <NodeInfoExplorer type="action_member_timeout" />

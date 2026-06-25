@@ -9,46 +9,28 @@ import NodeInfoExplorer from "../../../../src/components/NodeInfoExplorer";
 
 <EmbedFlowNode type="option_command_argument" />
 
-Khối `Command Argument` cho phép bạn định nghĩa đối số cho slash command. Bạn có thể chỉ định tên, mô tả và kiểu đối số để tạo trải nghiệm lệnh tương tác.
+> Khai báo một đối số (tham số) cho lệnh để người dùng nhập.
 
-## Trường dữ liệu
+## Khi nào dùng
 
-### Tên
-Nhập tên cho đối số của bạn.
+- Cho phép `/say nội_dung`, `/ban @người`...
+- Nhận dữ liệu đầu vào cho lệnh.
 
-### Mô tả
-Nhập mô tả cho đối số của bạn.
+## Cấu hình
 
-### Kiểu
-Tại đây bạn có thể chọn loại tùy chọn muốn sử dụng.
-
-### Danh sách kiểu:
-> `Text`: Cho phép người dùng nhập văn bản.
+> `Tên` / `Mô tả` — tên và mô tả của đối số.
 >
-> `Whole number`: Cho phép người dùng nhập số nguyên.
+> `Kiểu` — kiểu dữ liệu (văn bản, số, người dùng, kênh...).
 >
-> `True/False`: Cho phép người dùng chọn giữa True và False.
+> `Bắt buộc` — người dùng có buộc phải nhập không.
 >
-> `User`: Cho phép người dùng chọn một người dùng.
->
-> `Channel`: Cho phép người dùng chọn một kênh.
->
-> `Mentionable`: Cho phép người dùng chọn role hoặc người dùng.
->
-> `Attachment`: Cho phép người dùng đính kèm tệp.
+> `Giới hạn / Lựa chọn` — min/max, độ dài tối đa, hoặc danh sách lựa chọn cố định.
 
-### Lựa chọn
-Lựa chọn cho phép người dùng chọn một giá trị từ tập tùy chọn được định nghĩa trước.
+## Lưu ý & liên quan
 
-## Đầu ra
-
-Để dùng kết quả của tùy chọn ở các bước sau trong flow, bạn sử dụng biến
-`{{arg('ARGNAME')}}`.
-
-:::tip
-
-`ARGNAME` cần được thay bằng tên đối số bạn đã chọn.
-
-:::
+- Đọc giá trị đối số trong [biểu thức](/reference/expressions) bằng `arg('tên')`.
+- Khối này **không tốn credit**.
+- [Lệnh](/reference/blocks/entries/entry_command)
+- [Biểu thức](/reference/expressions)
 
 <NodeInfoExplorer type="option_command_argument" />

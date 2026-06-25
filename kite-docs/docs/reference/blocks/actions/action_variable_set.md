@@ -9,17 +9,35 @@ import NodeInfoExplorer from "../../../../src/components/NodeInfoExplorer";
 
 <EmbedFlowNode type="action_variable_set" />
 
-Khối `Set stored variable` được dùng để lưu một giá trị vào biến, sau đó có thể lấy lại bằng khối `Get stored variable`.
+> Lưu một giá trị vào biến để dùng lại sau này, kể cả ở các lần chạy khác.
 
-### Cài đặt
+## Khi nào dùng
 
-> `Variable` Chọn một biến từ danh sách [Stored Variables](https://docs.kite.onl/reference/variable).
-> 
-> `Operation` Biến sẽ thực hiện thao tác gì?
+- Đếm số lần dùng lệnh, lưu điểm, ghi nhớ lựa chọn của người dùng.
+- Lưu giá trị ngữ cảnh trước khi vào [sub-flow](/reference/sub-flows).
+
+## Cấu hình
+
+> `Biến` — chọn một [biến lưu trữ](/reference/variable).
 >
-> `Value` Giá trị cần thay đổi.
+> `Phạm vi` — khóa phân tách giá trị (vd theo người dùng, kênh, hoặc server).
+>
+> `Thao tác` — cách thay đổi giá trị: gán, cộng, trừ, nối...
+>
+> `Giá trị` — giá trị dùng cho thao tác.
 
-### Đầu ra
-Để sử dụng biến này ở các bước tiếp theo, bạn dùng khối `Get Variable`.
+## Ví dụ
+
+Đếm lượt dùng lệnh theo người dùng:
+1. `Biến` = `counter`, `Phạm vi` = `{{ user.id }}`.
+2. `Thao tác` = **cộng**, `Giá trị` = `1`.
+3. Đọc lại bằng [Lấy biến lưu trữ](/reference/blocks/actions/action_variable_get).
+
+## Lưu ý & liên quan
+
+- Tốn **1 credit** mỗi lần chạy. Xem [Hệ thống credit](/reference/credit-system).
+- [Lấy biến lưu trữ](/reference/blocks/actions/action_variable_get)
+- [Xóa biến lưu trữ](/reference/blocks/actions/action_variable_delete)
+- [Biến lưu trữ](/reference/variable)
 
 <NodeInfoExplorer type="action_variable_set" />

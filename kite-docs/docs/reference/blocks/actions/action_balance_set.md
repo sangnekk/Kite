@@ -9,14 +9,25 @@ import NodeInfoExplorer from "../../../../src/components/NodeInfoExplorer";
 
 <EmbedFlowNode type="action_balance_set" />
 
-Khối `Set balance` đặt số dư của một người dùng thành một giá trị cố định, ghi đè giá trị cũ.
+> Đặt số dư của một người dùng thành một giá trị cố định.
 
-### Cài đặt
+## Khi nào dùng
 
-> `Variable` Biến lưu số dư.
+- Khởi tạo hoặc reset số dư.
+- Sửa số dư thủ công (lệnh admin).
+
+## Cấu hình
+
+> `Biến` — chọn một [biến lưu trữ](/reference/variable).
 >
-> `Người dùng` Người cần đặt số dư, mặc định `{{user.id}}`.
+> `Người dùng` — chủ số dư (mặc định là người chạy lệnh `{{ user.id }}`).
 >
-> `Số tiền` Giá trị số dư mới.
+> `Số tiền` — số lượng cần cộng/trừ/đặt.
+
+## Lưu ý & liên quan
+
+- Tốn **1 credit** mỗi lần chạy. Xem [Hệ thống credit](/reference/credit-system).
+- [Cộng số dư](/reference/blocks/actions/action_balance_add)
+- [Trừ số dư](/reference/blocks/actions/action_balance_remove)
 
 <NodeInfoExplorer type="action_balance_set" />

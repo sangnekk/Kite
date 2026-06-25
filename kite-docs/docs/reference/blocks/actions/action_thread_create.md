@@ -9,18 +9,32 @@ import NodeInfoExplorer from "../../../../src/components/NodeInfoExplorer";
 
 <EmbedFlowNode type="action_thread_create" />
 
-Khối `Create thread` được dùng để tạo một thread trong kênh đã chọn.
+> Tạo một luồng (thread) mới.
 
-### Tùy chọn
+## Khi nào dùng
 
-> `Parent Channel` Kênh cha nơi thread sẽ được tạo.
+- Mở luồng thảo luận riêng cho một chủ đề.
+- Tạo luồng ticket cho từng người dùng.
+
+## Cấu hình
+
+> `Thông tin luồng` — tên và thiết lập của luồng.
 >
-> `Message Target` Tin nhắn dùng để bắt đầu thread. Để trống để tạo thread độc lập.
->
-> `Type`
->
-> `Name` Tên của thread.
->
-> `Invitable` Cho phép thành viên không phải moderator thêm người vào thread hay không.
+> `Lý do` — ghi chú hiển thị trong audit log của Discord.
+
+## Kết quả trả về
+
+Đặt một `id` cho khối rồi tham chiếu kết quả ở các bước sau (thay `id` bằng ID của khối):
+
+| Trường | Ý nghĩa |
+| --- | --- |
+| `result('id').id` | ID kênh |
+| `result('id').name` | Tên kênh |
+| `result('id').type` | Loại kênh |
+
+## Lưu ý & liên quan
+
+- Tốn **1 credit** mỗi lần chạy. Xem [Hệ thống credit](/reference/credit-system).
+- [Thêm thành viên vào luồng](/reference/blocks/actions/action_thread_member_add)
 
 <NodeInfoExplorer type="action_thread_create" />

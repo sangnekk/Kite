@@ -9,8 +9,22 @@ import NodeInfoExplorer from "../../../../src/components/NodeInfoExplorer";
 
 <EmbedFlowNode type="suspend_response_modal" />
 
-Thay vì tạo phản hồi tin nhắn, bạn cũng có thể hiển thị modal để yêu cầu thêm thông tin từ người dùng. Modal có thể chứa nhiều ô nhập liệu và bạn có thể truy cập chúng bằng biến `input(...)` sau khi modal được gửi.
+> Hiện một form (modal) cho người dùng điền và tạm dừng flow đến khi họ gửi.
 
-Phản hồi bằng modal sẽ khởi chạy một sub-flow và tạm dừng cho đến khi người dùng gửi modal. Xem [Sub-Flows](/reference/sub-flows) để biết thêm cách modal hoạt động.
+## Khi nào dùng
+
+- Thu thập dữ liệu nhập tay: form đăng ký, khảo sát, báo cáo...
+- Khi cần nhiều ô nhập trước khi xử lý tiếp.
+
+## Cấu hình
+
+> `Form` — các ô nhập của modal.
+
+## Lưu ý & liên quan
+
+- Modal là một [sub-flow](/reference/sub-flows). Đọc giá trị người dùng nhập bằng `input('id')` trong [biểu thức](/reference/expressions).
+- Khối này **không tốn credit**.
+- [Sub-flow](/reference/sub-flows)
+- [Biểu thức](/reference/expressions)
 
 <NodeInfoExplorer type="suspend_response_modal" />

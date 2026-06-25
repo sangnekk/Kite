@@ -9,15 +9,26 @@ import NodeInfoExplorer from "../../../../src/components/NodeInfoExplorer";
 
 <EmbedFlowNode type="action_time_now" />
 
-Khối `Current time` trả về thời gian hiện tại theo định dạng đã chọn.
+> Lấy thời gian hiện tại theo định dạng và múi giờ đã chọn.
 
-### Cài đặt
+## Khi nào dùng
 
-> `Định dạng` Kiểu trả về: `unix` (giây), `unix_ms` (mili giây), `iso` (ISO 8601), `date`, `time`, `datetime`, hoặc một layout Go tùy chỉnh.
+- Đóng dấu thời gian cho log/tin nhắn.
+- Hiển thị giờ hiện tại.
+
+## Cấu hình
+
+> `Định dạng` — kiểu hiển thị thời gian.
 >
-> `Múi giờ` Tên múi giờ IANA (ví dụ `Asia/Ho_Chi_Minh`), để trống là UTC.
+> `Múi giờ` — múi giờ áp dụng.
 
-### Đầu ra
-Định dạng `unix` rất hợp để so sánh thời gian (ví dụ với khối Cooldown).
+## Kết quả trả về
+
+Đặt một `id` cho khối rồi lấy chuỗi thời gian bằng `result('id')`.
+
+## Lưu ý & liên quan
+
+- Tốn **1 credit** mỗi lần chạy. Xem [Hệ thống credit](/reference/credit-system).
+- [Định dạng số](/reference/blocks/actions/action_number_format)
 
 <NodeInfoExplorer type="action_time_now" />

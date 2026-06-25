@@ -9,19 +9,32 @@ import NodeInfoExplorer from "../../../../src/components/NodeInfoExplorer";
 
 <EmbedFlowNode type="action_cooldown_check" />
 
-Khối `Cooldown check` kiểm tra xem một người dùng có được phép thực hiện hành động lại hay chưa, dựa trên thời gian chờ. Dùng cho các lệnh như `/daily`, `/work` hoặc để chống spam. Cooldown được lưu (dưới dạng unix timestamp) trong một [biến lưu trữ](https://docs.kite.onl/reference/variable) có bật phạm vi.
+> Kiểm tra (và đặt lại) thời gian chờ theo người dùng cho một hành động.
 
-### Cài đặt
+## Khi nào dùng
 
-> `Variable` Biến dùng để lưu thời điểm thực hiện gần nhất.
->
-> `Phạm vi` Ai bị cooldown, mặc định `{{user.id}}`. Để trống nghĩa là cooldown toàn cục.
->
-> `Thời gian chờ (giây)` Độ dài cooldown, ví dụ `86400` cho một ngày.
->
-> `Chỉ kiểm tra` Nếu bật, chỉ kiểm tra mà không đặt lại mốc thời gian.
+- Giới hạn lệnh `/daily`, `/work` mỗi X giờ một lần.
+- Chống spam lệnh.
 
-### Đầu ra
-Kết quả là một đối tượng `{ allowed, remaining }`. Dùng khối `Điều kiện` để rẽ nhánh theo `allowed`.
+## Cấu hình
+
+> `Biến` — chọn một [biến lưu trữ](/reference/variable).
+>
+> `Phạm vi` — tính cooldown theo người dùng, kênh hay server.
+>
+> `Thời gian chờ` — độ dài của cooldown.
+>
+> `Chỉ kiểm tra` — chỉ xem thời gian còn lại mà không đặt lại cooldown.
+
+## Kết quả trả về
+
+Đặt một `id` cho khối rồi dùng `result('id')` để biết còn trong thời gian chờ hay không, và thời gian còn lại.
+
+## Lưu ý & liên quan
+
+- Bật `Chỉ kiểm tra` nếu chỉ muốn xem thời gian còn lại mà không đặt lại cooldown.
+- Tốn **1 credit** mỗi lần chạy. Xem [Hệ thống credit](/reference/credit-system).
+- [Cộng số dư](/reference/blocks/actions/action_balance_add)
+- [Điều kiện so sánh](/reference/blocks/controls/control_condition_compare)
 
 <NodeInfoExplorer type="action_cooldown_check" />

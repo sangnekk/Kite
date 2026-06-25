@@ -9,20 +9,34 @@ import NodeInfoExplorer from "../../../../src/components/NodeInfoExplorer";
 
 <EmbedFlowNode type="action_channel_edit" />
 
-Khối `Edit channel` được dùng để chỉnh sửa một kênh trong danh mục đã chọn.
+> Chỉnh sửa một kênh hoặc luồng đã có.
 
-### Tùy chọn
+## Khi nào dùng
 
-> `Name` Tên của kênh.
+- Đổi tên, chủ đề, quyền của kênh.
+- Khoá/mở kênh theo flow.
+
+## Cấu hình
+
+> `Kênh` — kênh đích (ID hoặc biểu thức như `{{ channel.id }}`).
 >
-> `Topic` Chủ đề của kênh.
+> `Thông tin kênh` — tên, loại và thiết lập của kênh.
 >
-> `Category` Danh mục mà kênh sẽ được chỉnh sửa trong đó.
->
-> `Position` Vị trí của kênh.
+> `Lý do` — ghi chú hiển thị trong audit log của Discord.
 
-### Ghi đè quyền
+## Kết quả trả về
 
-Tại đây bạn có thể chọn role và người dùng nào có quyền truy cập kênh. Để trống nếu muốn cho phép tất cả role và người dùng truy cập.
+Đặt một `id` cho khối rồi tham chiếu kết quả ở các bước sau (thay `id` bằng ID của khối):
+
+| Trường | Ý nghĩa |
+| --- | --- |
+| `result('id').id` | ID kênh |
+| `result('id').name` | Tên kênh |
+| `result('id').type` | Loại kênh |
+
+## Lưu ý & liên quan
+
+- Tốn **1 credit** mỗi lần chạy. Xem [Hệ thống credit](/reference/credit-system).
+- [Tạo kênh](/reference/blocks/actions/action_channel_create)
 
 <NodeInfoExplorer type="action_channel_edit" />

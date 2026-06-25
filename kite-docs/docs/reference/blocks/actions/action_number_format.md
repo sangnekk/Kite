@@ -9,14 +9,29 @@ import NodeInfoExplorer from "../../../../src/components/NodeInfoExplorer";
 
 <EmbedFlowNode type="action_number_format" />
 
-Khối `Format number` định dạng một số để hiển thị đẹp hơn, ví dụ thêm dấu phẩy ngăn cách hàng nghìn cho số dư.
+> Định dạng số cho dễ đọc: dấu phẩy nghìn, rút gọn K/M, số thập phân.
 
-### Cài đặt
+## Khi nào dùng
 
-> `Số` Số cần định dạng.
+- Hiển thị số dư/điểm gọn gàng (vd `1.2K`).
+- Làm tròn số thập phân.
+
+## Cấu hình
+
+> `Số` — số cần định dạng.
 >
-> `Kiểu định dạng` `thousands` (`1,234,567`), `compact` (`1.2M`) hoặc `decimal` (số chữ số thập phân cố định).
+> `Kiểu` — dấu phẩy nghìn, rút gọn K/M, hoặc số thập phân.
 >
-> `Số chữ số thập phân` Tùy chọn, số chữ số sau dấu phẩy.
+> `Số chữ số thập phân`.
+
+## Kết quả trả về
+
+Đặt một `id` cho khối rồi lấy chuỗi đã định dạng bằng `result('id')`.
+
+## Lưu ý & liên quan
+
+- Tốn **1 credit** mỗi lần chạy. Xem [Hệ thống credit](/reference/credit-system).
+- [Biến đổi văn bản](/reference/blocks/actions/action_text_transform)
+- [Xem số dư](/reference/blocks/actions/action_balance_get)
 
 <NodeInfoExplorer type="action_number_format" />
