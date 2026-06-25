@@ -4,6 +4,7 @@ import {
   RefObject,
   useCallback,
   useImperativeHandle,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -184,6 +185,8 @@ const PlaceholderInput = forwardRef<
 
   const ac = usePlaceholderAutocomplete(value, onChange, suggestions, innerRef);
 
+  const selectionRef = useRef<{ start: number; end: number } | null>(null);
+
   const syncScroll = useCallback((e: any) => {
     if (renderRef.current) {
       renderRef.current.scrollTop = e.target.scrollTop;
@@ -208,12 +211,30 @@ const PlaceholderInput = forwardRef<
     });
   }, [value]);
 
+  // Restore the caret after `value` actually changes in the DOM. The value
+  // flows back through an external store (React Flow / Zustand) and may land in
+  // a later commit than the keystroke. Keying this to [value] makes the restore
+  // run on the commit where the new value is applied — instead of on every
+  // render, which would consume selectionRef on a stale-value commit and let
+  // the caret jump to the end on the next one.
+  useLayoutEffect(() => {
+    const el = innerRef.current;
+    if (el && selectionRef.current && document.activeElement === el) {
+      el.setSelectionRange(selectionRef.current.start, selectionRef.current.end);
+      selectionRef.current = null;
+    }
+  }, [value]);
+
   return (
     <div className="relative h-10 w-full">
       <Input
         onScroll={syncScroll}
         value={value}
         onChange={(e) => {
+          selectionRef.current = {
+            start: e.target.selectionStart ?? 0,
+            end: e.target.selectionEnd ?? 0,
+          };
           onChange(e.target.value);
           ac.onCaret(e.target);
         }}
@@ -268,11 +289,31 @@ export const PlaceholderTextarea = forwardRef<
 
   const ac = usePlaceholderAutocomplete(value, onChange, suggestions, innerRef);
 
+  const selectionRef = useRef<{ start: number; end: number } | null>(null);
+
+  // Restore the caret after `value` actually changes in the DOM. The value
+  // flows back through an external store (React Flow / Zustand) and may land in
+  // a later commit than the keystroke. Keying this to [value] makes the restore
+  // run on the commit where the new value is applied — instead of on every
+  // render, which would consume selectionRef on a stale-value commit and let
+  // the caret jump to the end on the next one.
+  useLayoutEffect(() => {
+    const el = innerRef.current;
+    if (el && selectionRef.current && document.activeElement === el) {
+      el.setSelectionRange(selectionRef.current.start, selectionRef.current.end);
+      selectionRef.current = null;
+    }
+  }, [value]);
+
   return (
     <div className="relative w-full">
       <Textarea
         value={value}
         onChange={(e) => {
+          selectionRef.current = {
+            start: e.target.selectionStart ?? 0,
+            end: e.target.selectionEnd ?? 0,
+          };
           onChange(e.target.value);
           ac.onCaret(e.target);
         }}
