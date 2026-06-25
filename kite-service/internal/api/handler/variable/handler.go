@@ -63,6 +63,9 @@ func (h *VariableHandler) HandleVariableCreate(c *handler.Context, req wire.Vari
 		UpdatedAt: time.Now().UTC(),
 	})
 	if err != nil {
+		if errors.Is(err, store.ErrAlreadyExists) {
+			return nil, handler.ErrBadRequest("already_exists", fmt.Sprintf("Bạn đã có biến \"%s\" rồi", req.Name))
+		}
 		return nil, fmt.Errorf("failed to create variable: %w", err)
 	}
 
