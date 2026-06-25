@@ -1,29 +1,29 @@
-# Security
+# Bảo mật
 
-We care about security and try to implement strong security mechanisms while providing the best service to our users.
+Chúng tôi coi trọng vấn đề bảo mật và luôn cố gắng xây dựng các cơ chế bảo vệ vững chắc trong khi vẫn mang lại dịch vụ tốt nhất cho người dùng.
 
-Learning from data breaches of other Discord related service providers, we don't want to make the same mistakes and therefore take data protection and security seriously. If you have any further questions please reach out to us at contact@kite.onl
+Rút kinh nghiệm từ các vụ rò rỉ dữ liệu của các nhà cung cấp dịch vụ Discord khác, chúng tôi không muốn lặp lại những sai lầm đó, vì vậy chúng tôi đặt bảo vệ dữ liệu và bảo mật lên hàng đầu. Nếu bạn có thêm câu hỏi, hãy liên hệ với chúng tôi tại contact@kite.onl.
 
-## Preventing Data Misuse
+## Ngăn chặn lạm dụng dữ liệu
 
-To prevent attackers or other third parties from accessing any data we store, we use the following mechanisms:
+Để ngăn kẻ tấn công hoặc bên thứ ba truy cập vào dữ liệu chúng tôi lưu trữ, chúng tôi áp dụng các biện pháp sau:
 
-- We only work together with ISO 27001 certified hosting providers
-- All data is encrypted at rest to prevent unauthorized physical access
-- Discord bot tokens are additionally encrypted to prevent unauthorized remote access
-- Once a Discord bot token has been stored it can't be read back by the user
-- All communication over the public internet is encrypted using TLS
+- Chỉ hợp tác với các nhà cung cấp hosting đạt chứng nhận ISO 27001
+- Toàn bộ dữ liệu được mã hóa khi lưu trữ để ngăn truy cập vật lý trái phép
+- Token bot Discord được mã hóa thêm một lớp để ngăn truy cập từ xa trái phép
+- Sau khi token bot Discord được lưu, người dùng không thể đọc lại giá trị gốc
+- Mọi giao tiếp qua internet công cộng đều được mã hóa bằng TLS
 
-## Preventing Data Loss
+## Ngăn chặn mất dữ liệu
 
-To prevent data loss we use the following mechanisms:
+Để tránh mất dữ liệu, chúng tôi áp dụng các biện pháp sau:
 
-- We make frequent backups of all data to a secondary storage location
-- Backups are encrypted using SSE-C
-- Backups are kept for a reasonable period to allow data recovery
+- Sao lưu dữ liệu thường xuyên sang vị trí lưu trữ dự phòng
+- Bản sao lưu được mã hóa bằng SSE-C
+- Bản sao lưu được giữ trong một khoảng thời gian hợp lý để có thể khôi phục khi cần
 
-## Incident Response
+## Xử lý sự cố
 
-While we try to prevent security breaches or data loss, things can always go wrong. When we learn about a security breach we commit to act immediately and fix the problem. If necessary we take down any affected systems to prevent further access until we are sure that we have fixed the issue.
+Dù chúng tôi luôn cố gắng phòng ngừa, sự cố vẫn có thể xảy ra. Khi phát hiện vi phạm bảo mật, chúng tôi cam kết xử lý ngay lập tức và khắc phục sự cố. Nếu cần thiết, chúng tôi sẽ tạm ngừng các hệ thống bị ảnh hưởng để ngăn chặn truy cập thêm cho đến khi vấn đề được giải quyết triệt để.
 
-Once we are certain that we have fully understood the incident and its implications we will inform our users and any affected third parties about it.
+Khi đã hiểu rõ toàn bộ sự cố và tầm ảnh hưởng, chúng tôi sẽ thông báo đến người dùng và các bên liên quan.

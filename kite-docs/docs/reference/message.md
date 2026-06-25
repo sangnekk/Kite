@@ -2,16 +2,16 @@
 sidebar_position: 2
 ---
 
-# Message Template
+# Mẫu tin nhắn
 
-Message Templates are the best way to create highly customized Discord messages. These templates can then be used as a standalone message inside Discord or as a response to commands and events.
+Mẫu tin nhắn là cách tốt nhất để tạo ra các tin nhắn Discord được tùy chỉnh hoàn toàn theo ý muốn. Sau khi tạo, bạn có thể gửi mẫu tin nhắn trực tiếp vào kênh Discord hoặc dùng làm phản hồi cho lệnh và sự kiện.
 
-Right now message templates support all the Discord embed features, file attachments, and interactive components.
+Mẫu tin nhắn hỗ trợ đầy đủ tính năng embed của Discord, đính kèm tệp, và các thành phần tương tác.
 
-![Example Message](./img/example-message.png)
+![Ví dụ tin nhắn](./img/example-message.png)
 
-## Interactive Components
+## Thành phần tương tác
 
-You can add interactive components like buttons to your message which your users can interact with.
+Bạn có thể thêm các thành phần tương tác như nút bấm vào tin nhắn để người dùng tương tác.
 
-![Example Message](./img/example-component.png)
+![Ví dụ tin nhắn với nút bấm](./img/example-component.png)

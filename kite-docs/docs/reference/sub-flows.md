@@ -2,33 +2,33 @@
 sidebar_position: 6
 ---
 
-# Sub-flows
+# Sub-flow
 
-Some flow blocks can be used to create sub-flows. These blocks act as a boundary between the main flow and the sub-flow and are highlighted in pink in the flow editor.
+Một số khối trong flow có thể tạo ra sub-flow. Các khối này đóng vai trò ranh giới giữa flow chính và sub-flow, và được hiển thị màu hồng trong trình soạn thảo.
 
 :::warning
-Contextual placeholders like the `interaction` placeholders of the main flow aren't available in the sub-flow and are replaced with the `interaction` placeholder of the sub-flow. Node results and temporary variables on the other hand remain available.
+Các placeholder ngữ cảnh như placeholder `interaction` của flow chính không khả dụng bên trong sub-flow — chúng được thay thế bởi placeholder `interaction` của chính sub-flow đó. Ngược lại, kết quả của các khối và biến tạm thời vẫn có thể truy cập bình thường.
 
-To work around this, you can use a `Calculate Value` block to create a temporary variable with the value of contextual placeholder before entering the sub-flow. This way you can still access the value in the sub-flow.
+Để giải quyết vấn đề này, hãy dùng khối `Tính toán giá trị` để lưu giá trị của placeholder ngữ cảnh vào một biến tạm thời trước khi vào sub-flow. Nhờ vậy bạn vẫn có thể dùng giá trị đó bên trong sub-flow.
 
 <details>
-<summary>Show Example</summary>
+<summary>Xem ví dụ</summary>
 
-![Calculate Contextual Variable](./img/example-calculate-var.png)
+![Tính toán biến ngữ cảnh](./img/example-calculate-var.png)
 
 </details>
 :::
 
-## Modals
+## Modal
 
-![Modal Node](./img/example-node-modal.png)
+![Khối Modal](./img/example-node-modal.png)
 
-Modals are a special type of sub-flow. They are used to create interactive experiences. When a modal is opened, the flow execution is suspended and the modal is displayed to the user. The flow execution is resumed when the modal is submitted. You can then access the results of the modal in the main flow using the `interaction.components` placeholder.
+Modal là một loại sub-flow đặc biệt dùng để tạo trải nghiệm tương tác với người dùng. Khi modal được mở, flow tạm dừng và hiển thị form cho người dùng điền. Sau khi người dùng gửi form, flow tiếp tục thực thi. Bạn có thể truy cập nội dung người dùng đã nhập thông qua placeholder `interaction.components`.
 
-Modals can be used to create interactive experiences like forms, quizzes, etc.
+Modal thường được dùng để tạo form nhập liệu, khảo sát, hoặc các trải nghiệm tương tác khác.
 
-## Interactive Messages
+## Tin nhắn có nút bấm
 
-![Interactive Message Node](./img/example-node-message-buttons.png)
+![Khối tin nhắn có nút bấm](./img/example-node-message-buttons.png)
 
-When adding buttons to a message, the message becomes interactive. When an interactive message is sent and a user interacts with it, the execution resumes from the corresponding button in the flow. Just attach the blocks you want to each button.
+Khi bạn thêm nút bấm vào tin nhắn, tin nhắn đó trở nên tương tác. Sau khi tin nhắn được gửi và người dùng bấm vào một nút, flow tiếp tục thực thi từ nhánh tương ứng với nút đó. Bạn chỉ cần kéo các khối hành động và nối vào từng nút.
