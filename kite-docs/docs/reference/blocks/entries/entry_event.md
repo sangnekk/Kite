@@ -26,7 +26,7 @@ import NodeInfoExplorer from "../../../../src/components/NodeInfoExplorer";
 
 Khối này **không tạo `result()`**. Khi sự kiện kích hoạt, dùng dữ liệu qua các placeholder như `{{ user.mention }}`, `{{ message.content }}`, `{{ channel.id }}` trong [biểu thức](/reference/expressions).
 
-Mỗi loại sự kiện cung cấp placeholder khác nhau, và nhiều loại hiện chưa cung cấp dữ liệu nào. Xem bảng đầy đủ tại [Dữ liệu của sự kiện](/reference/event#dữ-liệu-của-sự-kiện).
+Mỗi loại sự kiện cung cấp placeholder khác nhau (ví dụ reaction có `event.emoji`, voice có `event.voice`, xóa hàng loạt có `event.message_ids`). Xem bảng đầy đủ tại [Dữ liệu của sự kiện](/reference/event#dữ-liệu-của-sự-kiện).
 
 ## Lưu ý & liên quan
 

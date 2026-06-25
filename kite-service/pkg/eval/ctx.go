@@ -227,11 +227,14 @@ func (c ComponentEnv) String() string {
 type EventEnv struct {
 	event ws.Event
 
-	User    any           `expr:"user" json:"user"`
-	Member  any           `expr:"member" json:"member"`
-	Channel *SnowflakeEnv `expr:"channel" json:"channel"`
-	Message *MessageEnv   `expr:"message" json:"message"`
-	Guild   *SnowflakeEnv `expr:"guild" json:"guild"`
+	User       any            `expr:"user" json:"user"`
+	Member     any            `expr:"member" json:"member"`
+	Channel    *ChannelEnv    `expr:"channel" json:"channel"`
+	Message    *MessageEnv    `expr:"message" json:"message"`
+	Guild      *SnowflakeEnv  `expr:"guild" json:"guild"`
+	Emoji      *EmojiEnv      `expr:"emoji" json:"emoji"`
+	MessageIDs []string       `expr:"message_ids" json:"message_ids"`
+	Voice      *VoiceStateEnv `expr:"voice" json:"voice"`
 }
 
 func NewEventEnv(event ws.Event) *EventEnv {
@@ -248,7 +251,7 @@ func NewEventEnv(event ws.Event) *EventEnv {
 			env.User = NewUserEnv(e.Author)
 			env.Member = env.User
 		}
-		env.Channel = NewSnowflakeEnv(e.ChannelID)
+		env.Channel = NewChannelEnvFromID(e.ChannelID)
 		if e.GuildID != 0 {
 			env.Guild = NewSnowflakeEnv(e.GuildID)
 		}
@@ -261,7 +264,7 @@ func NewEventEnv(event ws.Event) *EventEnv {
 			env.User = NewUserEnv(e.Author)
 			env.Member = env.User
 		}
-		env.Channel = NewSnowflakeEnv(e.ChannelID)
+		env.Channel = NewChannelEnvFromID(e.ChannelID)
 		if e.GuildID != 0 {
 			env.Guild = NewSnowflakeEnv(e.GuildID)
 		}
@@ -270,7 +273,46 @@ func NewEventEnv(event ws.Event) *EventEnv {
 		env.Message = NewMessageEnv(discord.Message{
 			ID: e.ID,
 		})
-		env.Channel = NewSnowflakeEnv(e.ChannelID)
+		env.Channel = NewChannelEnvFromID(e.ChannelID)
+		if e.GuildID != 0 {
+			env.Guild = NewSnowflakeEnv(e.GuildID)
+		}
+	case *gateway.MessageDeleteBulkEvent:
+		env.Channel = NewChannelEnvFromID(e.ChannelID)
+		if e.GuildID != 0 {
+			env.Guild = NewSnowflakeEnv(e.GuildID)
+		}
+		ids := make([]string, len(e.IDs))
+		for i, id := range e.IDs {
+			ids[i] = id.String()
+		}
+		env.MessageIDs = ids
+	case *gateway.MessageReactionAddEvent:
+		if e.Member != nil {
+			env.Member = NewMemberEnv(*e.Member)
+			env.User = env.Member
+		} else {
+			env.User = NewUserEnvFromID(e.UserID)
+			env.Member = env.User
+		}
+		env.Channel = NewChannelEnvFromID(e.ChannelID)
+		env.Message = NewMessageEnv(discord.Message{ID: e.MessageID})
+		env.Emoji = NewEmojiEnv(e.Emoji)
+		if e.GuildID != 0 {
+			env.Guild = NewSnowflakeEnv(e.GuildID)
+		}
+	case *gateway.MessageReactionRemoveEvent:
+		env.User = NewUserEnvFromID(e.UserID)
+		env.Member = env.User
+		env.Channel = NewChannelEnvFromID(e.ChannelID)
+		env.Message = NewMessageEnv(discord.Message{ID: e.MessageID})
+		env.Emoji = NewEmojiEnv(e.Emoji)
+		if e.GuildID != 0 {
+			env.Guild = NewSnowflakeEnv(e.GuildID)
+		}
+	case *gateway.MessageReactionRemoveAllEvent:
+		env.Channel = NewChannelEnvFromID(e.ChannelID)
+		env.Message = NewMessageEnv(discord.Message{ID: e.MessageID})
 		if e.GuildID != 0 {
 			env.Guild = NewSnowflakeEnv(e.GuildID)
 		}
@@ -282,6 +324,39 @@ func NewEventEnv(event ws.Event) *EventEnv {
 		env.User = NewUserEnv(e.User)
 		env.Member = env.User
 		env.Guild = NewSnowflakeEnv(e.GuildID)
+	case *gateway.GuildBanAddEvent:
+		env.User = NewUserEnv(e.User)
+		env.Member = env.User
+		env.Guild = NewSnowflakeEnv(e.GuildID)
+	case *gateway.GuildBanRemoveEvent:
+		env.User = NewUserEnv(e.User)
+		env.Member = env.User
+		env.Guild = NewSnowflakeEnv(e.GuildID)
+	case *gateway.ChannelCreateEvent:
+		env.Channel = NewChannelEnv(e.Channel)
+		if e.GuildID != 0 {
+			env.Guild = NewSnowflakeEnv(e.GuildID)
+		}
+	case *gateway.ChannelDeleteEvent:
+		env.Channel = NewChannelEnv(e.Channel)
+		if e.GuildID != 0 {
+			env.Guild = NewSnowflakeEnv(e.GuildID)
+		}
+	case *gateway.VoiceStateUpdateEvent:
+		if e.Member != nil {
+			env.Member = NewMemberEnv(*e.Member)
+			env.User = env.Member
+		} else {
+			env.User = NewUserEnvFromID(e.UserID)
+			env.Member = env.User
+		}
+		if e.ChannelID != 0 {
+			env.Channel = NewChannelEnvFromID(e.ChannelID)
+		}
+		if e.GuildID != 0 {
+			env.Guild = NewSnowflakeEnv(e.GuildID)
+		}
+		env.Voice = NewVoiceStateEnv(e.VoiceState)
 	}
 
 	return env
@@ -294,15 +369,17 @@ func NewContext(env Env) Context {
 }
 
 func NewContextFromEvent(event ws.Event, session *state.State) Context {
+	eventEnv := NewEventEnv(event)
+
 	return Context{
 		Env: Env{
-			"event":   NewEventEnv(event),
-			"user":    NewEventEnv(event).User,
-			"member":  NewEventEnv(event).Member,
-			"channel": NewEventEnv(event).Channel,
-			"guild":   NewEventEnv(event).Guild,
-			"server":  NewEventEnv(event).Guild,
-			"message": NewEventEnv(event).Message,
+			"event":   eventEnv,
+			"user":    eventEnv.User,
+			"member":  eventEnv.Member,
+			"channel": eventEnv.Channel,
+			"guild":   eventEnv.Guild,
+			"server":  eventEnv.Guild,
+			"message": eventEnv.Message,
 			"app":     NewAppEnv(session),
 		},
 	}
@@ -373,6 +450,18 @@ func NewUserEnv(user discord.User) *UserEnv {
 	}
 }
 
+// NewUserEnvFromID builds a minimal user env when only the user ID is known
+// (e.g. reaction-remove events don't include the full user object). Only `id`
+// and `mention` are populated; other fields are empty.
+func NewUserEnvFromID(id discord.UserID) *UserEnv {
+	return &UserEnv{
+		og: discord.User{ID: id},
+
+		ID:      id.String(),
+		Mention: fmt.Sprintf("<@%s>", id.String()),
+	}
+}
+
 type MemberEnv struct {
 	og discord.Member
 
@@ -422,6 +511,79 @@ func NewChannelEnv(channel discord.Channel) *ChannelEnv {
 		Name:    channel.Name,
 		Mention: fmt.Sprintf("<#%s>", channel.ID.String()),
 	}
+}
+
+// NewChannelEnvFromID builds a channel env when only the channel ID is known
+// (most events only carry the channel ID, not the full channel object). `name`
+// is empty; `id` and `mention` are populated.
+func NewChannelEnvFromID(id discord.ChannelID) *ChannelEnv {
+	return &ChannelEnv{
+		og: discord.Channel{ID: id},
+
+		ID:      id.String(),
+		Mention: fmt.Sprintf("<#%s>", id.String()),
+	}
+}
+
+type EmojiEnv struct {
+	ID       string `expr:"id" json:"id"`
+	Name     string `expr:"name" json:"name"`
+	Animated bool   `expr:"animated" json:"animated"`
+}
+
+// NewEmojiEnv exposes a reaction emoji. For Unicode emojis `id` is empty and
+// `name` is the emoji character; for custom emojis `id` is the emoji ID.
+func NewEmojiEnv(emoji discord.Emoji) *EmojiEnv {
+	id := ""
+	if emoji.ID != 0 {
+		id = emoji.ID.String()
+	}
+
+	return &EmojiEnv{
+		ID:       id,
+		Name:     emoji.Name,
+		Animated: emoji.Animated,
+	}
+}
+
+func (e EmojiEnv) String() string {
+	return e.Name
+}
+
+type VoiceStateEnv struct {
+	ChannelID  string `expr:"channel_id" json:"channel_id"`
+	Deaf       bool   `expr:"deaf" json:"deaf"`
+	Mute       bool   `expr:"mute" json:"mute"`
+	SelfDeaf   bool   `expr:"self_deaf" json:"self_deaf"`
+	SelfMute   bool   `expr:"self_mute" json:"self_mute"`
+	SelfStream bool   `expr:"self_stream" json:"self_stream"`
+	SelfVideo  bool   `expr:"self_video" json:"self_video"`
+	Suppress   bool   `expr:"suppress" json:"suppress"`
+}
+
+// NewVoiceStateEnv exposes the new voice state from a Voice State Update event.
+// `channel_id` is empty when the user left voice. Discord's gateway only sends
+// the new state, so there is no "before" state available here.
+func NewVoiceStateEnv(v discord.VoiceState) *VoiceStateEnv {
+	channelID := ""
+	if v.ChannelID != 0 {
+		channelID = v.ChannelID.String()
+	}
+
+	return &VoiceStateEnv{
+		ChannelID:  channelID,
+		Deaf:       v.Deaf,
+		Mute:       v.Mute,
+		SelfDeaf:   v.SelfDeaf,
+		SelfMute:   v.SelfMute,
+		SelfStream: v.SelfStream,
+		SelfVideo:  v.SelfVideo,
+		Suppress:   v.Suppress,
+	}
+}
+
+func (v VoiceStateEnv) String() string {
+	return v.ChannelID
 }
 
 func (c ChannelEnv) Thing() thing.Thing {

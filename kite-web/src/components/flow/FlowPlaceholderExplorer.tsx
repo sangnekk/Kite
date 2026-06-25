@@ -132,6 +132,35 @@ function useGlobalPlaceholders() {
         { label: "Message Content", value: `message.content` },
       ],
     });
+    // Reaction events (Message Reaction Add/Remove)
+    res.push({
+      label: "Reaction",
+      placeholders: [
+        { label: "Emoji Name", value: `event.emoji.name` },
+        { label: "Emoji ID", value: `event.emoji.id` },
+        { label: "Emoji Animated", value: `event.emoji.animated` },
+      ],
+    });
+    // Voice State Update event (new state Discord sends, no "before")
+    res.push({
+      label: "Voice",
+      placeholders: [
+        { label: "Voice Channel ID", value: `event.voice.channel_id` },
+        { label: "Self Mute", value: `event.voice.self_mute` },
+        { label: "Self Deaf", value: `event.voice.self_deaf` },
+        { label: "Self Video", value: `event.voice.self_video` },
+        { label: "Self Stream", value: `event.voice.self_stream` },
+        { label: "Server Mute", value: `event.voice.mute` },
+        { label: "Server Deaf", value: `event.voice.deaf` },
+      ],
+    });
+    // Message Delete Bulk event
+    res.push({
+      label: "Event",
+      placeholders: [
+        { label: "Deleted Message IDs", value: `event.message_ids` },
+      ],
+    });
   }
 
   return res;

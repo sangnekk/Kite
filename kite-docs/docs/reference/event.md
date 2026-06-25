@@ -35,36 +35,47 @@ Khối **Lắng nghe sự kiện** *không* tạo ra `result()` như các khối
 | --- | --- |
 | `user` / `member` | `id`, `username`, `display_name`, `mention`, `avatar_url`, `banner_url`. `member` có thêm `nick`, `role_ids` |
 | `message` | `id`, `content` |
-| `channel` | **chỉ** `id` |
-| `guild` (hoặc `server`) | **chỉ** `id` |
+| `channel` | `id`, `mention`, và `name` (với sự kiện kênh) |
+| `guild` (hoặc `server`) | `id` |
+| `event.emoji` | `id`, `name`, `animated` — *sự kiện reaction* |
+| `event.message_ids` | danh sách ID tin nhắn bị xóa — *sự kiện xóa hàng loạt* |
+| `event.voice` | `channel_id`, `mute`, `deaf`, `self_mute`, `self_deaf`, `self_stream`, `self_video`, `suppress` — *sự kiện voice* |
 | `app` | bot của bạn — `app.user.id`, `app.user.mention` |
 
-:::warning Không phải sự kiện nào cũng có đủ dữ liệu
-Mỗi loại sự kiện chỉ cung cấp một phần placeholder, và **nhiều loại hiện chưa cung cấp placeholder dữ liệu nào** ngoài `app` — đáng chú ý là toàn bộ sự kiện reaction, ban, kênh và voice. Hãy đối chiếu bảng dưới trước khi dùng `user`, `message`...
-:::
+Mỗi loại sự kiện chỉ cung cấp một phần trong số trên. Bảng dưới cho biết placeholder nào khả dụng theo từng loại:
 
-| Sự kiện | `user`/`member` | `message` | `channel` | `guild` |
-| --- | :---: | :---: | :---: | :---: |
-| Message Create | ✅ | ✅ | ✅ | ✅ |
-| Message Update | ✅ | ✅ | ✅ | ✅ |
-| Message Delete | — | ✅ (chỉ `id`) | ✅ | ✅ |
-| Message Delete Bulk | — | — | — | — |
-| Message Reaction Add / Remove / Remove All | — | — | — | — |
-| Member Join | ✅ (có `nick`, `role_ids`) | — | — | ✅ |
-| Member Leave | ✅ (chỉ `user`) | — | — | ✅ |
-| Guild Ban Add / Remove | — | — | — | — |
-| Channel Create / Delete | — | — | — | — |
-| Voice State Update | — | — | — | — |
+| Sự kiện | `user`/`member` | `message` | `channel` | `guild` | Khác |
+| --- | :---: | :---: | :---: | :---: | --- |
+| Message Create / Update | ✅ | ✅ | ✅ | ✅ | |
+| Message Delete | — | ✅ (chỉ `id`) | ✅ | ✅ | |
+| Message Delete Bulk | — | — | ✅ | ✅ | `event.message_ids` |
+| Message Reaction Add | ✅¹ | ✅ (chỉ `id`) | ✅ | ✅ | `event.emoji` |
+| Message Reaction Remove | ✅² | ✅ (chỉ `id`) | ✅ | ✅ | `event.emoji` |
+| Message Reaction Remove All | — | ✅ (chỉ `id`) | ✅ | ✅ | |
+| Member Join | ✅ (có `nick`, `role_ids`) | — | — | ✅ | |
+| Member Leave | ✅ | — | — | ✅ | |
+| Guild Ban Add / Remove | ✅ | — | — | ✅ | |
+| Channel Create / Delete | — | — | ✅ (có `name`) | ✅ | |
+| Voice State Update | ✅² | — | ✅ (kênh voice) | ✅ | `event.voice` |
+
+¹ Trong server, `user` là một `member` đầy đủ (có `nick`, `role_ids`).
+² Chỉ có `id` và `mention` — Discord không gửi kèm tên/avatar. Cần thêm? Truyền `user.id` vào khối [Lấy thành viên](/reference/blocks/actions/action_member_get).
 
 :::note
-`channel` và `guild` của sự kiện **chỉ chứa `id`**. Để lấy tên kênh/server, truyền `id` đó vào khối [Lấy kênh](/reference/blocks/actions/action_channel_get) hoặc [Lấy server](/reference/blocks/actions/action_guild_get).
+- `channel` chỉ có `name` với **Channel Create / Delete**. Ở các sự kiện khác, `channel` chỉ có `id` + `mention` — để lấy tên, truyền `channel.id` vào khối [Lấy kênh](/reference/blocks/actions/action_channel_get). `guild` luôn chỉ có `id`.
+- Discord **không gửi** trạng thái voice *trước đó* — `event.voice` là trạng thái *mới* sau thay đổi. Không có "before" như một số thư viện khác (chúng tự cache mới có).
 :::
 
-Ví dụ — trong sự kiện **Message Create**, bạn có thể dùng:
+### Ví dụ truy cập dữ liệu
 
-- `{{ user.mention }}` — người gửi tin nhắn
-- `{{ message.content }}` — nội dung tin nhắn
-- `{{ channel.id }}` — kênh chứa tin nhắn
+| Sự kiện | Biểu thức |
+| --- | --- |
+| Message Create | `{{ user.mention }}`, `{{ message.content }}`, `{{ channel.id }}` |
+| Reaction Add | `{{ user.mention }} đã thả {{ event.emoji.name }} vào tin nhắn {{ message.id }}` |
+| Member Join | `Chào mừng {{ user.mention }}!` |
+| Guild Ban Add | `{{ user.username }} đã bị cấm` |
+| Voice State Update | `{{ user.mention }} đang ở kênh voice {{ event.voice.channel_id }}` |
+| Message Delete Bulk | `Đã xóa {{ len(event.message_ids) }} tin nhắn` |
 
 ## Sự kiện được hỗ trợ
 
@@ -92,11 +103,11 @@ Kích hoạt khi một tin nhắn bị xóa (xóa đơn lẻ). Thường dùng �
 
 Kích hoạt một lần khi nhiều tin nhắn bị xóa cùng lúc, ví dụ khi dùng lệnh purge hoặc xóa hàng loạt.
 
-> ⚠️ Sự kiện này **hiện chưa cung cấp** placeholder dữ liệu (kể cả danh sách ID tin nhắn bị xóa). Xem [Dữ liệu của sự kiện](#dữ-liệu-của-sự-kiện).
+> 💡 Truy cập danh sách ID đã xóa qua `event.message_ids`, cùng `channel.id` và `guild.id`. Xem [Dữ liệu của sự kiện](#dữ-liệu-của-sự-kiện).
 
 ### Reaction
 
-> ⚠️ Các sự kiện reaction **hiện chưa cung cấp** placeholder dữ liệu — kể cả `user` (ai đã reaction) và `message` (reaction vào tin nhắn nào). Flow vẫn chạy, nhưng bạn chưa truy cập được các giá trị đó qua `{{ }}`. Xem [Dữ liệu của sự kiện](#dữ-liệu-của-sự-kiện).
+> 💡 Dùng `event.emoji` (emoji được thả), `user` (người reaction), `message.id` (tin nhắn) và `channel.id`. Với **Reaction Remove**, `user` chỉ có `id`/`mention`. Xem [Dữ liệu của sự kiện](#dữ-liệu-của-sự-kiện).
 
 #### Message Reaction Add
 
@@ -128,7 +139,7 @@ Bật theo hướng dẫn: mở ứng dụng Discord → chọn mục **Bot** �
 
 :::
 
-> ⚠️ Các sự kiện ban **hiện chưa cung cấp** placeholder dữ liệu (kể cả `user` bị ban). Xem [Dữ liệu của sự kiện](#dữ-liệu-của-sự-kiện).
+> 💡 Truy cập `user` (người bị ban / gỡ ban) và `guild.id`. Xem [Dữ liệu của sự kiện](#dữ-liệu-của-sự-kiện).
 
 #### Guild Ban Add
 
@@ -140,7 +151,7 @@ Kích hoạt khi lệnh ban của một thành viên được gỡ. Thường d�
 
 ### Kênh & Voice
 
-> ⚠️ Các sự kiện kênh và voice **hiện chưa cung cấp** placeholder dữ liệu. Flow được kích hoạt nhưng chưa truy cập được kênh/người dùng liên quan qua `{{ }}`. Xem [Dữ liệu của sự kiện](#dữ-liệu-của-sự-kiện).
+> 💡 **Channel Create/Delete**: `channel` có cả `name`. **Voice State Update**: `user`, `channel` (kênh voice) và `event.voice` (`mute`/`deaf`/`self_*`). Xem [Dữ liệu của sự kiện](#dữ-liệu-của-sự-kiện).
 
 #### Channel Create
 
@@ -169,7 +180,7 @@ Xem thêm tại [Bộ lọc sự kiện](./blocks/options/option_event_filter.md
 - Bạn chỉ có thể tạo tối đa **5 bộ lắng nghe sự kiện** cho mỗi ứng dụng.
 - Vibe Bot bỏ qua tin nhắn từ bot cho sự kiện **Message Create** và **Message Update**.
 - **Member Join** và **Member Leave** yêu cầu **Server Members Intent** (xem ở trên).
-- Dữ liệu khả dụng khác nhau theo loại sự kiện. Nhiều sự kiện (reaction, ban, kênh, voice, xóa hàng loạt) **hiện chưa cung cấp placeholder** nào — xem [Dữ liệu của sự kiện](#dữ-liệu-của-sự-kiện).
+- Dữ liệu khả dụng khác nhau theo loại sự kiện — xem [Dữ liệu của sự kiện](#dữ-liệu-của-sự-kiện).
 
 ## Liên quan
 
