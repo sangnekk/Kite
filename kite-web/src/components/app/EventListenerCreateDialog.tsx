@@ -159,14 +159,41 @@ export default function EventListenerCreateDialog({
                       <SelectItem value="message_delete">
                         Xóa tin nhắn
                       </SelectItem>
+                      <SelectItem value="message_delete_bulk">
+                        Xóa nhiều tin nhắn
+                      </SelectItem>
                       <SelectItem value="message_update">
                         Cập nhật tin nhắn
+                      </SelectItem>
+                      <SelectItem value="message_reaction_add">
+                        Thêm reaction
+                      </SelectItem>
+                      <SelectItem value="message_reaction_remove">
+                        Gỡ reaction
+                      </SelectItem>
+                      <SelectItem value="message_reaction_remove_all">
+                        Xóa tất cả reaction
                       </SelectItem>
                       <SelectItem value="guild_member_add">
                         Thành viên tham gia server
                       </SelectItem>
                       <SelectItem value="guild_member_remove">
                         Thành viên rời server
+                      </SelectItem>
+                      <SelectItem value="guild_ban_add">
+                        Thành viên bị ban
+                      </SelectItem>
+                      <SelectItem value="guild_ban_remove">
+                        Gỡ ban thành viên
+                      </SelectItem>
+                      <SelectItem value="channel_create">
+                        Kênh mới được tạo
+                      </SelectItem>
+                      <SelectItem value="channel_delete">
+                        Kênh bị xóa
+                      </SelectItem>
+                      <SelectItem value="voice_state_update">
+                        User join/leave kênh voice
                       </SelectItem>
                     </SelectContent>
                   </Select>

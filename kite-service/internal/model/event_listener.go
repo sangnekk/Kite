@@ -18,11 +18,20 @@ const (
 type EventListenerType string
 
 const (
-	EventListenerTypeDiscordMessageCreate     EventListenerType = "message_create"
-	EventListenerTypeDiscordMessageUpdate     EventListenerType = "message_update"
-	EventListenerTypeDiscordMessageDelete     EventListenerType = "message_delete"
-	EventListenerTypeDiscordGuildMemberAdd    EventListenerType = "guild_member_add"
-	EventListenerTypeDiscordGuildMemberRemove EventListenerType = "guild_member_remove"
+	EventListenerTypeDiscordMessageCreate            EventListenerType = "message_create"
+	EventListenerTypeDiscordMessageUpdate            EventListenerType = "message_update"
+	EventListenerTypeDiscordMessageDelete            EventListenerType = "message_delete"
+	EventListenerTypeDiscordMessageDeleteBulk        EventListenerType = "message_delete_bulk"
+	EventListenerTypeDiscordMessageReactionAdd       EventListenerType = "message_reaction_add"
+	EventListenerTypeDiscordMessageReactionRemove    EventListenerType = "message_reaction_remove"
+	EventListenerTypeDiscordMessageReactionRemoveAll EventListenerType = "message_reaction_remove_all"
+	EventListenerTypeDiscordGuildMemberAdd           EventListenerType = "guild_member_add"
+	EventListenerTypeDiscordGuildMemberRemove        EventListenerType = "guild_member_remove"
+	EventListenerTypeDiscordGuildBanAdd              EventListenerType = "guild_ban_add"
+	EventListenerTypeDiscordGuildBanRemove           EventListenerType = "guild_ban_remove"
+	EventListenerTypeDiscordChannelCreate            EventListenerType = "channel_create"
+	EventListenerTypeDiscordChannelDelete            EventListenerType = "channel_delete"
+	EventListenerTypeDiscordVoiceStateUpdate         EventListenerType = "voice_state_update"
 )
 
 func EventTypeFromDiscordEventType(eventType ws.EventType) EventListenerType {

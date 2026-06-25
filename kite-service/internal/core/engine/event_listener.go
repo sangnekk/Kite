@@ -71,9 +71,27 @@ func (l *EventListener) shouldHandleEvent(e ws.Event) bool {
 		return !d.Author.Bot
 	case *gateway.MessageDeleteEvent:
 		return true
+	case *gateway.MessageDeleteBulkEvent:
+		return true
+	case *gateway.MessageReactionAddEvent:
+		return true
+	case *gateway.MessageReactionRemoveEvent:
+		return true
+	case *gateway.MessageReactionRemoveAllEvent:
+		return true
 	case *gateway.GuildMemberAddEvent:
 		return true
 	case *gateway.GuildMemberRemoveEvent:
+		return true
+	case *gateway.GuildBanAddEvent:
+		return true
+	case *gateway.GuildBanRemoveEvent:
+		return true
+	case *gateway.ChannelCreateEvent:
+		return true
+	case *gateway.ChannelDeleteEvent:
+		return true
+	case *gateway.VoiceStateUpdateEvent:
 		return true
 	}
 
