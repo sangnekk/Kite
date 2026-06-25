@@ -783,8 +783,17 @@ function EventTypeInput({ data, updateData, errors }: InputProps) {
         { value: "message_create", label: "Tạo tin nhắn" },
         { value: "message_update", label: "Cập nhật tin nhắn" },
         { value: "message_delete", label: "Xóa tin nhắn" },
+        { value: "message_delete_bulk", label: "Xóa nhiều tin nhắn" },
+        { value: "message_reaction_add", label: "Thêm reaction" },
+        { value: "message_reaction_remove", label: "Gỡ reaction" },
+        { value: "message_reaction_remove_all", label: "Xóa tất cả reaction" },
         { value: "guild_member_add", label: "Thêm thành viên" },
         { value: "guild_member_remove", label: "Xóa thành viên" },
+        { value: "guild_ban_add", label: "Thành viên bị ban" },
+        { value: "guild_ban_remove", label: "Gỡ ban thành viên" },
+        { value: "channel_create", label: "Kênh mới được tạo" },
+        { value: "channel_delete", label: "Kênh bị xóa" },
+        { value: "voice_state_update", label: "Thay đổi trạng thái voice" },
       ]}
       value={data.event_type || ""}
       updateValue={(v) => updateData({ event_type: v || undefined })}
