@@ -44,6 +44,10 @@ app:
     mention: string
 ```
 
+:::note
+Trong **sự kiện**, các placeholder như `user`, `message`, `channel` chỉ khả dụng với một số loại sự kiện nhất định. Xem [Dữ liệu của sự kiện](/reference/event#dữ-liệu-của-sự-kiện).
+:::
+
 Ngoài ra còn có một số hàm đặc biệt để truy cập dữ liệu động:
 
 ```py

@@ -22,6 +22,12 @@ import NodeInfoExplorer from "../../../../src/components/NodeInfoExplorer";
 >
 > `Mô tả` — ghi chú nội bộ cho bộ lắng nghe.
 
+## Dữ liệu khả dụng
+
+Khối này **không tạo `result()`**. Khi sự kiện kích hoạt, dùng dữ liệu qua các placeholder như `{{ user.mention }}`, `{{ message.content }}`, `{{ channel.id }}` trong [biểu thức](/reference/expressions).
+
+Mỗi loại sự kiện cung cấp placeholder khác nhau, và nhiều loại hiện chưa cung cấp dữ liệu nào. Xem bảng đầy đủ tại [Dữ liệu của sự kiện](/reference/event#dữ-liệu-của-sự-kiện).
+
 ## Lưu ý & liên quan
 
 - Khối này **không tốn credit**.

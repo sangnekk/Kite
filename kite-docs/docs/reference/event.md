@@ -27,6 +27,45 @@ Bạn có thể dùng khối **Event Filter** để giới hạn khi nào flow �
 
 :::
 
+## Dữ liệu của sự kiện
+
+Khối **Lắng nghe sự kiện** *không* tạo ra `result()` như các khối hành động. Thay vào đó, mỗi khi sự kiện kích hoạt, flow nhận dữ liệu qua các **placeholder** dùng trong [biểu thức](/reference/expressions) `{{ }}`:
+
+| Placeholder | Trường khả dụng |
+| --- | --- |
+| `user` / `member` | `id`, `username`, `display_name`, `mention`, `avatar_url`, `banner_url`. `member` có thêm `nick`, `role_ids` |
+| `message` | `id`, `content` |
+| `channel` | **chỉ** `id` |
+| `guild` (hoặc `server`) | **chỉ** `id` |
+| `app` | bot của bạn — `app.user.id`, `app.user.mention` |
+
+:::warning Không phải sự kiện nào cũng có đủ dữ liệu
+Mỗi loại sự kiện chỉ cung cấp một phần placeholder, và **nhiều loại hiện chưa cung cấp placeholder dữ liệu nào** ngoài `app` — đáng chú ý là toàn bộ sự kiện reaction, ban, kênh và voice. Hãy đối chiếu bảng dưới trước khi dùng `user`, `message`...
+:::
+
+| Sự kiện | `user`/`member` | `message` | `channel` | `guild` |
+| --- | :---: | :---: | :---: | :---: |
+| Message Create | ✅ | ✅ | ✅ | ✅ |
+| Message Update | ✅ | ✅ | ✅ | ✅ |
+| Message Delete | — | ✅ (chỉ `id`) | ✅ | ✅ |
+| Message Delete Bulk | — | — | — | — |
+| Message Reaction Add / Remove / Remove All | — | — | — | — |
+| Member Join | ✅ (có `nick`, `role_ids`) | — | — | ✅ |
+| Member Leave | ✅ (chỉ `user`) | — | — | ✅ |
+| Guild Ban Add / Remove | — | — | — | — |
+| Channel Create / Delete | — | — | — | — |
+| Voice State Update | — | — | — | — |
+
+:::note
+`channel` và `guild` của sự kiện **chỉ chứa `id`**. Để lấy tên kênh/server, truyền `id` đó vào khối [Lấy kênh](/reference/blocks/actions/action_channel_get) hoặc [Lấy server](/reference/blocks/actions/action_guild_get).
+:::
+
+Ví dụ — trong sự kiện **Message Create**, bạn có thể dùng:
+
+- `{{ user.mention }}` — người gửi tin nhắn
+- `{{ message.content }}` — nội dung tin nhắn
+- `{{ channel.id }}` — kênh chứa tin nhắn
+
 ## Sự kiện được hỗ trợ
 
 ### Tin nhắn
@@ -51,9 +90,13 @@ Kích hoạt khi một tin nhắn bị xóa (xóa đơn lẻ). Thường dùng �
 
 #### Message Delete Bulk
 
-Kích hoạt khi nhiều tin nhắn bị xóa cùng lúc, ví dụ khi dùng lệnh purge hoặc xóa hàng loạt. Khác với Message Delete, sự kiện này cung cấp danh sách các ID tin nhắn bị xóa thay vì từng tin nhắn riêng lẻ.
+Kích hoạt một lần khi nhiều tin nhắn bị xóa cùng lúc, ví dụ khi dùng lệnh purge hoặc xóa hàng loạt.
+
+> ⚠️ Sự kiện này **hiện chưa cung cấp** placeholder dữ liệu (kể cả danh sách ID tin nhắn bị xóa). Xem [Dữ liệu của sự kiện](#dữ-liệu-của-sự-kiện).
 
 ### Reaction
+
+> ⚠️ Các sự kiện reaction **hiện chưa cung cấp** placeholder dữ liệu — kể cả `user` (ai đã reaction) và `message` (reaction vào tin nhắn nào). Flow vẫn chạy, nhưng bạn chưa truy cập được các giá trị đó qua `{{ }}`. Xem [Dữ liệu của sự kiện](#dữ-liệu-của-sự-kiện).
 
 #### Message Reaction Add
 
@@ -85,6 +128,8 @@ Bật theo hướng dẫn: mở ứng dụng Discord → chọn mục **Bot** �
 
 :::
 
+> ⚠️ Các sự kiện ban **hiện chưa cung cấp** placeholder dữ liệu (kể cả `user` bị ban). Xem [Dữ liệu của sự kiện](#dữ-liệu-của-sự-kiện).
+
 #### Guild Ban Add
 
 Kích hoạt khi một thành viên bị ban khỏi server. Hữu ích để ghi log hoặc thông báo cho đội kiểm duyệt.
@@ -94,6 +139,8 @@ Kích hoạt khi một thành viên bị ban khỏi server. Hữu ích để ghi
 Kích hoạt khi lệnh ban của một thành viên được gỡ. Thường dùng kết hợp với **Guild Ban Add** để theo dõi lịch sử ban/unban.
 
 ### Kênh & Voice
+
+> ⚠️ Các sự kiện kênh và voice **hiện chưa cung cấp** placeholder dữ liệu. Flow được kích hoạt nhưng chưa truy cập được kênh/người dùng liên quan qua `{{ }}`. Xem [Dữ liệu của sự kiện](#dữ-liệu-của-sự-kiện).
 
 #### Channel Create
 
@@ -122,6 +169,7 @@ Xem thêm tại [Bộ lọc sự kiện](./blocks/options/option_event_filter.md
 - Bạn chỉ có thể tạo tối đa **5 bộ lắng nghe sự kiện** cho mỗi ứng dụng.
 - Vibe Bot bỏ qua tin nhắn từ bot cho sự kiện **Message Create** và **Message Update**.
 - **Member Join** và **Member Leave** yêu cầu **Server Members Intent** (xem ở trên).
+- Dữ liệu khả dụng khác nhau theo loại sự kiện. Nhiều sự kiện (reaction, ban, kênh, voice, xóa hàng loạt) **hiện chưa cung cấp placeholder** nào — xem [Dữ liệu của sự kiện](#dữ-liệu-của-sự-kiện).
 
 ## Liên quan
 
