@@ -59,9 +59,9 @@ const INTEGRATIONS: IntegrationDef[] = [
     name: "ThueAPIBank",
     description:
       "Nhận thông báo giao dịch từ ThueAPIBank. Phù hợp để theo dõi thanh toán tự động.",
-    secretLabel: "API Key",
+    secretLabel: "Signature",
     secretHint:
-      "Nhập API Key từ trang quản lý ThueAPIBank. Kite sẽ xác thực qua header X-Secret-Key.",
+      "Sao chép giá trị Signature từ dashboard ThueAPIBank và dán vào đây. ThueAPIBank sẽ tự động gửi kèm signature này trong header khi gọi webhook.",
   },
   {
     type: "custom",

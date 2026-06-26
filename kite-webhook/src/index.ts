@@ -1,5 +1,5 @@
 import { Elysia } from "elysia";
-
+import { }
 const KITE_SERVICE_INTERNAL_URL = process.env.KITE_SERVICE_INTERNAL_URL ?? "http://localhost:8080";
 const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "";
 const PORT = parseInt(process.env.PORT ?? "3002");
@@ -36,34 +36,37 @@ const app = new Elysia()
   .get("/health", () => ({ ok: true }))
 
   // SePay webhooks
-  .post("/webhook/:botId/sepay/:id", async ({ params, request, body }) => {
+  .post("/webhook/:botId/sepay/:id", async ({ params, request, set, body }) => {
     const headers = extractHeaders(request, ["Authorization", "X-Secret-Key"]);
     const res = await forwardToKiteService(params.id, headers, body);
     if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`kite-service error: ${res.status} ${text}`);
+      const data = await res.json();
+      set.status = 403
+      return {success: false, message: data.error.message};
     }
     return { success: true };
   })
 
   // ThueAPIBank webhooks
-  .post("/webhook/:botId/thueapibank/:id", async ({ params, request, body }) => {
-    const headers = extractHeaders(request, ["Authorization", "X-Secret-Key"]);
+  .post("/webhook/:botId/thueapibank/:id", async ({ params, request, set, body }) => {
+    const headers = extractHeaders(request, ["signature"]);
     const res = await forwardToKiteService(params.id, headers, body);
     if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`kite-service error: ${res.status} ${text}`);
+      const data = await res.json();
+      set.status = 403
+      return {success: false, message: data.error.message};
     }
     return { success: true };
   })
 
   // Custom webhooks
-  .post("/webhook/:botId/custom/:id", async ({ params, request, body }) => {
+  .post("/webhook/:botId/custom/:id", async ({ params, request, set, body }) => {
     const headers = extractHeaders(request, ["X-Sec-Key"]);
     const res = await forwardToKiteService(params.id, headers, body);
     if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`kite-service error: ${res.status} ${text}`);
+      const data = await res.json();
+      set.status = 403
+      return {success: false, message: data.error.message};
     }
     return { success: true };
   })

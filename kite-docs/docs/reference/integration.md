@@ -13,20 +13,35 @@ Khi dịch vụ bên ngoài gửi webhook, Kite sẽ chuyển tiếp sự kiện
 | Tích hợp | Xác thực |
 | --- | --- |
 | **SePay** | Header `Authorization: Apikey {secret}` hoặc `X-Secret-Key: {secret}` |
-| **ThueAPIBank** | Header API key theo yêu cầu của dịch vụ |
+| **ThueAPIBank** | Header `signature: {signature}` — giá trị do bạn cài trong dashboard ThueAPIBank |
 | **Webhook tùy chỉnh** | Header `X-Sec-Key: {secret}` |
 
 ## Cài đặt tích hợp
 
-1. Bấm biểu tượng **Tích hợp** trên thanh bên trái của bảng điều khiển
-2. Chọn tích hợp bạn muốn bật và bấm **Bật tích hợp**
-3. Trong dialog cài đặt, sao chép **Webhook URL** và điền vào bảng điều khiển của dịch vụ bên ngoài
-4. Sao chép **Secret** và cấu hình xác thực theo yêu cầu của từng dịch vụ (xem bảng trên)
-5. Bật tích hợp bằng công tắc trong dialog
+### SePay
+
+1. Bật tích hợp SePay tại trang **Tích hợp** → sao chép **Webhook URL** và **Secret**
+2. Mở dashboard SePay → mục webhook → dán Webhook URL vào
+3. Điền **Secret** vào trường API key của SePay — SePay sẽ gửi kèm header `Authorization: Apikey {secret}` trong mọi request
+
+### ThueAPIBank
+
+ThueAPIBank **không cho phép ta tự đặt chữ ký** — signature được cài cố định trong dashboard của họ. Quy trình cài đặt ngược lại so với SePay:
+
+1. Mở dashboard ThueAPIBank → mục webhook → xem giá trị **Signature** được cấp sẵn
+2. **Sao chép giá trị Signature đó** vào ô **Secret** trong trang **Tích hợp** của Kite
+3. Sao chép **Webhook URL** từ Kite → dán vào dashboard ThueAPIBank
+
+Khi ThueAPIBank gửi webhook, họ đính kèm `signature: {giá_trị}` vào header. Kite so sánh giá trị đó với secret bạn đã lưu để xác thực.
+
+### Webhook tùy chỉnh
+
+1. Bật tích hợp tại trang **Tích hợp** → sao chép **Webhook URL** và **Secret**
+2. Cấu hình dịch vụ bên ngoài gửi POST request đến Webhook URL kèm header `X-Sec-Key: {secret}`
 
 :::tip
 
-Mỗi tích hợp có một **Secret** riêng, được dùng để xác minh rằng request đến từ đúng dịch vụ. Bạn có thể tạo lại secret mới bất cứ lúc nào nếu cần.
+Với SePay và Custom Webhook, Secret do Kite sinh ra và bạn điền vào dịch vụ bên ngoài. Với ThueAPIBank thì ngược lại — bạn lấy signature từ ThueAPIBank và điền vào Kite.
 
 :::
 

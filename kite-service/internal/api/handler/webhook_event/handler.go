@@ -89,11 +89,16 @@ func validateWebhookSecret(integration *model.WebhookIntegration, headers map[st
 	}
 
 	switch integration.Type {
-	case model.WebhookIntegrationTypeSePay, model.WebhookIntegrationTypeThueAPIBank:
+	case model.WebhookIntegrationTypeSePay:
 		authHeader := strings.TrimSpace(headers["Authorization"])
 		secretHeader := strings.TrimSpace(headers["X-Secret-Key"])
 		if authHeader != "Apikey "+secret && authHeader != "APIKEY "+secret && secretHeader != secret {
 			return fmt.Errorf("invalid API key")
+		}
+	case model.WebhookIntegrationTypeThueAPIBank:
+		sig := strings.TrimSpace(headers["signature"])
+		if sig != secret {
+			return fmt.Errorf("invalid signature")
 		}
 	case model.WebhookIntegrationTypeCustom:
 		key := strings.TrimSpace(headers["X-Sec-Key"])
