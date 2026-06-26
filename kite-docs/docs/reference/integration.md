@@ -50,7 +50,7 @@ Với SePay và Custom Webhook, Secret do Kite sinh ra và bạn điền vào d�
 Webhook URL có dạng:
 
 ```
-https://webhook.kite.cloud/webhook/{discordBotId}/{type}/{integrationId}
+https://webhook.vibehost.vn/webhook/{discordBotId}/{type}/{integrationId}
 ```
 
 Trong đó:
