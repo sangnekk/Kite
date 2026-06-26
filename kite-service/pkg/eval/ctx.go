@@ -388,6 +388,19 @@ func NewContextFromEvent(event ws.Event, session *state.State) Context {
 // NewContextFromTextCommand builds the eval context for a prefix/text command.
 // It exposes the same message/user/channel/guild envs as a regular event plus
 // an `arg` function backed by the pre-parsed text arguments.
+func NewContextFromWebhookEvent(payload json.RawMessage) Context {
+	var data any
+	_ = json.Unmarshal(payload, &data)
+
+	return Context{
+		Env: Env{
+			"event": map[string]any{
+				"data": data,
+			},
+		},
+	}
+}
+
 func NewContextFromTextCommand(event ws.Event, args map[string]any, session *state.State) Context {
 	eventEnv := NewEventEnv(event)
 

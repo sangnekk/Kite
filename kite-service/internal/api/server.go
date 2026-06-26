@@ -10,6 +10,7 @@ import (
 	"github.com/kitecloud/kite/kite-service/internal/core/plan"
 	"github.com/kitecloud/kite/kite-service/internal/store"
 	"github.com/kitecloud/kite/kite-service/internal/util"
+	webhookevent "github.com/kitecloud/kite/kite-service/internal/api/handler/webhook_event"
 	"github.com/kitecloud/kite/kite-service/pkg/plugin"
 	"github.com/kitecloud/kite/kite-service/pkg/provider"
 	"github.com/rs/cors"
@@ -26,6 +27,8 @@ type APIServerConfig struct {
 	APIPublicBaseURL    string
 	DiscordClientID     string
 	DiscordClientSecret string
+	WebhookBaseURL      string
+	InternalSecret      string
 	UserLimits          APIUserLimitsConfig
 	Billing             BillingConfig
 }
@@ -72,8 +75,9 @@ func NewAPIServer(
 	variableValueStore store.VariableValueStore,
 	messageStore store.MessageStore,
 	messageInstanceStore store.MessageInstanceStore,
-	eventListenerStore store.EventListenerStore,
-	pluginInstanceStore store.PluginInstanceStore,
+	eventListenerStore      store.EventListenerStore,
+	pluginInstanceStore     store.PluginInstanceStore,
+	webhookIntegrationStore store.WebhookIntegrationStore,
 	subscriptionStore store.SubscriptionStore,
 	paymentSessionStore store.PaymentSessionStore,
 	entitlementStore store.EntitlementStore,
@@ -85,6 +89,7 @@ func NewAPIServer(
 	commandManager *command.CommandManager,
 	aiModelRegistry *provider.AIModelRegistry,
 	aiConversationStore store.AIConversationStore,
+	webhookEngine webhookevent.WebhookEngine,
 ) *APIServer {
 	s := &APIServer{
 		config: config,
@@ -103,6 +108,7 @@ func NewAPIServer(
 		messageInstanceStore,
 		eventListenerStore,
 		pluginInstanceStore,
+		webhookIntegrationStore,
 		subscriptionStore,
 		paymentSessionStore,
 		entitlementStore,
@@ -114,6 +120,7 @@ func NewAPIServer(
 		commandManager,
 		aiModelRegistry,
 		aiConversationStore,
+		webhookEngine,
 	)
 	return s
 }

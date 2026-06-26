@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 
@@ -59,6 +60,20 @@ func (l *EventListener) HandleEvent(appID string, session *state.State, event ga
 		event,
 		links,
 		nil,
+	)
+}
+
+func (l *EventListener) HandleWebhookEvent(appID string, payload json.RawMessage) {
+	links := entityLinks{
+		EventListenerID: null.NewString(l.listener.ID, true),
+	}
+
+	l.env.executeWebhookEvent(
+		context.Background(),
+		appID,
+		l.flow,
+		payload,
+		links,
 	)
 }
 

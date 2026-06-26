@@ -38,7 +38,12 @@ type EventListenerCreateRequest struct {
 
 func (req EventListenerCreateRequest) Validate() error {
 	return validation.ValidateStruct(&req,
-		validation.Field(&req.Source, validation.Required, validation.In(string(model.EventSourceDiscord))),
+		validation.Field(&req.Source, validation.Required, validation.In(
+			string(model.EventSourceDiscord),
+			string(model.EventSourceSePay),
+			string(model.EventSourceThueAPIBank),
+			string(model.EventSourceCustom),
+		)),
 		validation.Field(&req.FlowSource, validation.Required),
 	)
 }

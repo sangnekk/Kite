@@ -64,11 +64,27 @@ services:
       - KITE_DATABASE__S3__SECRET_ACCESS_KEY=1234567890
       - KITE_DATABASE__S3__SECURE=false
       - KITE_API__PUBLIC_BASE_URL=http://localhost:8080
+      - KITE_API__WEBHOOK_BASE_URL=http://localhost:3002
+      - KITE_API__INTERNAL_SECRET=${INTERNAL_SECRET}
     volumes:
       - ./kite.toml:/root/kite.toml
     depends_on:
       postgres:
         condition: service_healthy
+
+  kite-webhook:
+    build:
+      context: ./kite-webhook
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - KITE_SERVICE_INTERNAL_URL=http://kite:8080
+      - INTERNAL_SECRET=${INTERNAL_SECRET}
+    depends_on:
+      - kite
 
   ai-service:
     build:

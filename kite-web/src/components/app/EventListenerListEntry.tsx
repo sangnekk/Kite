@@ -11,7 +11,15 @@ import {
   EllipsisIcon,
   SatelliteDishIcon,
   Trash2Icon,
+  WebhookIcon,
 } from "lucide-react";
+
+const SOURCE_LABELS: Record<string, string> = {
+  discord: "Discord",
+  sepay: "SePay",
+  thueapibank: "ThueAPIBank",
+  custom_webhook: "Webhook tùy chỉnh",
+};
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useCallback } from "react";
@@ -94,8 +102,16 @@ export default function EventListenerListEntry({
       </div>
       <CardHeader>
         <CardTitle className="text-base flex items-center space-x-2">
-          <SatelliteDishIcon className="h-5 w-5 text-muted-foreground" />
-          <div>{listener.type}</div>
+          {listener.source === "discord" ? (
+            <SatelliteDishIcon className="h-5 w-5 text-muted-foreground" />
+          ) : (
+            <WebhookIcon className="h-5 w-5 text-muted-foreground" />
+          )}
+          <div>
+            {listener.source !== "discord"
+              ? SOURCE_LABELS[listener.source] ?? listener.source
+              : listener.type}
+          </div>
         </CardTitle>
         <CardDescription className="text-sm">
           {listener.description}

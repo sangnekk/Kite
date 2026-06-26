@@ -7,6 +7,7 @@ import {
   SatelliteDishIcon,
   BlocksIcon,
   SparklesIcon,
+  WebhookIcon,
 } from "lucide-react";
 import { useAppFeature } from "@/lib/hooks/api";
 import { AI_FEATURES_ENABLED } from "@/lib/ai/featureFlags";
@@ -82,6 +83,12 @@ export default function AppSidebarStudioNav() {
         url: "/apps/[appId]/plugins",
         icon: BlocksIcon,
         active: isActive("/apps/[appId]/plugins"),
+      },
+      {
+        name: "Tích hợp",
+        url: "/apps/[appId]/integrations",
+        icon: WebhookIcon,
+        active: isActive("/apps/[appId]/integrations"),
       },
       {
         name: "Mẫu",

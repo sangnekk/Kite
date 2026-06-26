@@ -219,6 +219,16 @@ type User struct {
 	UpdatedAt       pgtype.Timestamp
 }
 
+type WebhookIntegration struct {
+	ID        string
+	AppID     string
+	Type      string
+	Secret    string
+	Enabled   bool
+	CreatedAt pgtype.Timestamp
+	UpdatedAt pgtype.Timestamp
+}
+
 type Variable struct {
 	ID        string
 	Name      string

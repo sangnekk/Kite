@@ -773,7 +773,25 @@ function CommandIntegrationsInput({ data, updateData, errors }: InputProps) {
   );
 }
 
+const WEBHOOK_EVENT_TYPE_LABELS: Record<string, string> = {
+  sepay: "SePay",
+  thueapibank: "ThueAPIBank",
+  custom_webhook: "Webhook tùy chỉnh",
+};
+
 function EventTypeInput({ data, updateData, errors }: InputProps) {
+  const webhookLabel = WEBHOOK_EVENT_TYPE_LABELS[data.event_type as string];
+  if (webhookLabel) {
+    return (
+      <div className="grid gap-2">
+        <label className="text-sm font-medium">Nguồn sự kiện</label>
+        <div className="flex h-9 w-full items-center rounded-md border bg-muted px-3 text-sm text-muted-foreground">
+          {webhookLabel}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <BaseInput
       type="select"

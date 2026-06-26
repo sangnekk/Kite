@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"sync"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/diamondburned/arikawa/v3/gateway"
 	"github.com/diamondburned/arikawa/v3/state"
+	"github.com/kitecloud/kite/kite-service/internal/model"
 	"github.com/kitecloud/kite/kite-service/internal/util"
 )
 
@@ -256,6 +258,20 @@ func (e *Engine) HandleEvent(appID string, session *state.State, event gateway.E
 
 	if app != nil {
 		app.HandleEvent(appID, session, event)
+	}
+}
+
+func (e *Engine) SetSessionLookup(sl SessionLookup) {
+	e.env.SessionLookup = sl
+}
+
+func (e *Engine) HandleWebhookEvent(appID string, source model.WebhookIntegrationType, payload json.RawMessage) {
+	e.RLock()
+	app := e.apps[appID]
+	e.RUnlock()
+
+	if app != nil {
+		app.HandleWebhookEvent(appID, source, payload)
 	}
 }
 

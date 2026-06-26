@@ -4,8 +4,16 @@ import FlowNodeBase from "./FlowNodeBase";
 import FlowNodeHandle from "./FlowNodeHandle";
 import { optionColor } from "@/lib/flow/nodes";
 
+const WEBHOOK_SOURCE_LABELS: Record<string, string> = {
+  sepay: "SePay",
+  thueapibank: "ThueAPIBank",
+  custom_webhook: "Webhook tùy chỉnh",
+};
+
 export default function FlowNodeEntryEvent(props: NodeProps) {
-  const eventName = props.data.event_type?.split("_").join(" ") || "";
+  const raw = props.data.event_type as string | undefined;
+  const eventName =
+    WEBHOOK_SOURCE_LABELS[raw ?? ""] ?? raw?.split("_").join(" ") ?? "";
 
   return (
     <FlowNodeBase

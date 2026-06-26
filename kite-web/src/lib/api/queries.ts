@@ -37,6 +37,7 @@ import {
   UserGetResponse,
   VariableGetResponse,
   VariableListResponse,
+  WebhookIntegrationListResponse,
 } from "../types/wire.gen";
 
 export function useUserQuery(userId = "@me") {
@@ -410,5 +411,16 @@ export function usePluginInstanceQuery(appId: string, pluginId: string) {
         `/v1/apps/${appId}/plugins/${pluginId}`
       ),
     enabled: !!appId && !!pluginId,
+  });
+}
+
+export function useWebhookIntegrationsQuery(appId: string) {
+  return useQuery({
+    queryKey: ["apps", appId, "webhook-integrations"],
+    queryFn: () =>
+      apiRequest<WebhookIntegrationListResponse>(
+        `/v1/apps/${appId}/webhook-integrations`
+      ),
+    enabled: !!appId,
   });
 }

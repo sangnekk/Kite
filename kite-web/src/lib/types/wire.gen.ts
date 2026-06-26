@@ -596,3 +596,34 @@ export interface VariableUpdateRequest {
 }
 export type VariableUpdateResponse = Variable;
 export type VariableDeleteResponse = Empty;
+
+
+//////////
+// source: webhook_integration.go
+
+export interface WebhookIntegration {
+  id: string;
+  app_id: string;
+  type: string;
+  secret: string;
+  enabled: boolean;
+  webhook_url: string;
+  created_at: string /* RFC3339 */;
+  updated_at: string /* RFC3339 */;
+}
+export type WebhookIntegrationGetResponse = WebhookIntegration;
+export type WebhookIntegrationListResponse = (WebhookIntegration | undefined)[];
+export interface WebhookIntegrationCreateRequest {
+  type: string;
+  secret?: string;
+}
+export type WebhookIntegrationCreateResponse = WebhookIntegration;
+export interface WebhookIntegrationUpdateRequest {
+  secret: string;
+}
+export type WebhookIntegrationUpdateResponse = WebhookIntegration;
+export interface WebhookIntegrationUpdateEnabledRequest {
+  enabled: boolean;
+}
+export type WebhookIntegrationUpdateEnabledResponse = WebhookIntegration;
+export type WebhookIntegrationDeleteResponse = Empty;

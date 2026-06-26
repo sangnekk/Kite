@@ -30,6 +30,7 @@ import {
   usePluginsQuery,
   usePluginInstanceQuery,
   usePluginInstancesQuery,
+  useWebhookIntegrationsQuery,
 } from "../api/queries";
 import { APIResponse } from "../api/response";
 import {
@@ -61,6 +62,7 @@ import {
   UserGetResponse,
   VariableGetResponse,
   VariableListResponse,
+  WebhookIntegrationListResponse,
 } from "../types/wire.gen";
 import { useAppId, usePluginId } from "./params";
 
@@ -387,5 +389,12 @@ export function usePluginInstance(
   callback?: (res: APIResponse<PluginInstanceGetResponse>) => void
 ) {
   const query = usePluginInstanceQuery(useAppId(), usePluginId());
+  return useResponseData(query, callback);
+}
+
+export function useWebhookIntegrations(
+  callback?: (res: APIResponse<WebhookIntegrationListResponse>) => void
+) {
+  const query = useWebhookIntegrationsQuery(useAppId());
   return useResponseData(query, callback);
 }

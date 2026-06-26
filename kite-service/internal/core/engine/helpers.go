@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -20,8 +21,13 @@ import (
 	"gopkg.in/guregu/null.v4"
 )
 
+type SessionLookup interface {
+	SessionForApp(appID string) *state.State
+}
+
 type Env struct {
 	Config               EngineConfig
+	SessionLookup        SessionLookup
 	AppStore             store.AppStore
 	AppSettingsStore     store.AppSettingsStore
 	AssetStore           store.AssetStore
@@ -219,6 +225,55 @@ func (s Env) executeFlowEvent(
 		fCtx.CreditsUsed(),
 		links,
 	)
+}
+
+func (s Env) executeWebhookEvent(
+	ctx context.Context,
+	appID string,
+	node *flow.CompiledFlowNode,
+	payload json.RawMessage,
+	links entityLinks,
+) {
+	defer s.recoverPanic(appID, links)
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	var session *state.State
+	if s.SessionLookup != nil {
+		session = s.SessionLookup.SessionForApp(appID)
+	}
+
+	providers := s.flowProviders(appID, session, links)
+	fCtx := flow.NewContext(
+		ctx,
+		30*time.Second,
+		&WebhookEventData{payload: payload},
+		providers,
+		flow.FlowContextLimits{
+			MaxStackDepth: s.Config.MaxStackDepth,
+			MaxOperations: s.Config.MaxOperations,
+			MaxCredits:    s.Config.MaxCredits,
+		},
+		eval.NewContextFromWebhookEvent(payload),
+		nil,
+	)
+	defer fCtx.Cancel()
+
+	shouldExecute, err := node.FilterEvent(fCtx)
+	if err != nil {
+		s.createLogEntry(appID, model.LogLevelError, fmt.Sprintf("Failed to filter webhook event: %v", err), links)
+		return
+	}
+	if !shouldExecute {
+		return
+	}
+
+	if err := node.Execute(fCtx); err != nil {
+		s.createLogEntry(appID, model.LogLevelError, fmt.Sprintf("Failed to execute webhook event: %v", err), links)
+	}
+
+	s.createUsageRecord(appID, fCtx.CreditsUsed(), links)
 }
 
 func (s Env) createLogEntry(appID string, level model.LogLevel, message string, links entityLinks) {

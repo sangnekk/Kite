@@ -34,6 +34,8 @@ import {
 } from "../ui/select";
 import { getNodeId } from "@/lib/flow/nodes";
 
+const WEBHOOK_SOURCES = ["sepay", "thueapibank", "custom_webhook"];
+
 interface FormFields {
   source: string;
   type: string;
@@ -59,13 +61,18 @@ export default function EventListenerCreateDialog({
     },
   });
 
+  const source = form.watch("source");
+  const isWebhookSource = WEBHOOK_SOURCES.includes(source);
+
   function onSubmit(data: FormFields) {
     if (createMutation.isPending) return;
+
+    const eventType = isWebhookSource ? data.source : data.type;
 
     createMutation.mutate(
       {
         source: data.source,
-        flow_source: getInitialFlowData(data.type, data.description),
+        flow_source: getInitialFlowData(eventType, data.description),
         enabled: true,
       },
       {
@@ -134,12 +141,16 @@ export default function EventListenerCreateDialog({
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="discord">Discord</SelectItem>
+                      <SelectItem value="sepay">SePay</SelectItem>
+                      <SelectItem value="thueapibank">ThueAPIBank</SelectItem>
+                      <SelectItem value="custom_webhook">Webhook tùy chỉnh</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            {!isWebhookSource && (
             <FormField
               control={form.control}
               name="type"
@@ -201,6 +212,7 @@ export default function EventListenerCreateDialog({
                 </FormItem>
               )}
             />
+            )}
             <DialogFooter>
               <LoadingButton type="submit" loading={createMutation.isPending}>
                 Tạo bộ lắng nghe

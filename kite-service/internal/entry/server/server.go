@@ -62,7 +62,7 @@ func StartServer(c context.Context, cfg *config.Config) error {
 		starboard.NewStarboardPlugin(),
 	)
 
-	engine := engine.NewEngine(
+	eng := engine.NewEngine(
 		engine.Env{
 			Config: engine.EngineConfig{
 				MaxStackDepth: cfg.Engine.MaxStackDepth,
@@ -90,11 +90,11 @@ func StartServer(c context.Context, cfg *config.Config) error {
 			TokenCrypt:           tokenCrypt,
 		},
 	)
-	engine.Run(ctx)
+	eng.Run(ctx)
 
 	commandManager := command.NewCommandManager(pg, pg, pg, pg, pluginRegistry, tokenCrypt)
 
-	handler := event.NewEventHandlerWrapper(engine, pg)
+	handler := event.NewEventHandlerWrapper(eng, pg)
 
 	billingPlans := make([]model.Plan, len(cfg.Billing.Plans))
 	for i, plan := range cfg.Billing.Plans {
@@ -106,17 +106,19 @@ func StartServer(c context.Context, cfg *config.Config) error {
 		DiscordGuildID:  cfg.Discord.GuildID,
 	})
 
-	gateway := gateway.NewGatewayManager(pg, pg, planManager, handler, tokenCrypt, gateway.GatewayManagerConfig{
+	gatewayMgr := gateway.NewGatewayManager(pg, pg, planManager, handler, tokenCrypt, gateway.GatewayManagerConfig{
 		ClusterCount: cfg.ClusterCount,
 		ClusterIndex: cfg.ClusterIndex,
 	})
-	gateway.Run(ctx)
+	gatewayMgr.Run(ctx)
 
-	usage := usage.NewUsageManager(pg, pg, pg, planManager)
+	eng.SetSessionLookup(gatewayMgr)
+
+	usageMgr := usage.NewUsageManager(pg, pg, pg, planManager)
 
 	if cfg.IsPrimaryCluster() {
 		planManager.Run(ctx)
-		usage.Run(ctx)
+		usageMgr.Run(ctx)
 	}
 
 	apiServer := api.NewAPIServer(api.APIServerConfig{
@@ -130,6 +132,8 @@ func StartServer(c context.Context, cfg *config.Config) error {
 		AppAllowedOrigins:   cfg.App.AllowedOrigins,
 		DiscordClientID:     cfg.Discord.ClientID,
 		DiscordClientSecret: cfg.Discord.ClientSecret,
+		WebhookBaseURL:      cfg.API.WebhookBaseURL,
+		InternalSecret:      cfg.API.InternalSecret,
 		UserLimits: api.APIUserLimitsConfig{
 			MaxAppsPerUser: cfg.UserLimits.MaxAppsPerUser,
 		},
@@ -152,9 +156,9 @@ func StartServer(c context.Context, cfg *config.Config) error {
 			Plans:                   cfg.Billing.Plans,
 		},
 	},
-		pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg,
-		assetStore, gateway, planManager, pluginRegistry, tokenCrypt, commandManager,
-		aiRegistry, pg,
+		pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg,
+		assetStore, gatewayMgr, planManager, pluginRegistry, tokenCrypt, commandManager,
+		aiRegistry, pg, eng,
 	)
 	address := fmt.Sprintf("%s:%d", cfg.API.Host, cfg.API.Port)
 	if err := apiServer.Serve(ctx, address); err != nil {

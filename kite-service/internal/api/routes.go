@@ -16,6 +16,8 @@ import (
 	commandhandler "github.com/kitecloud/kite/kite-service/internal/api/handler/command"
 	eventlistener "github.com/kitecloud/kite/kite-service/internal/api/handler/event_listener"
 	flowhandler "github.com/kitecloud/kite/kite-service/internal/api/handler/flow"
+	webhookevent "github.com/kitecloud/kite/kite-service/internal/api/handler/webhook_event"
+	webhookintegration "github.com/kitecloud/kite/kite-service/internal/api/handler/webhook_integration"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/logs"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/message"
 	pluginhandler "github.com/kitecloud/kite/kite-service/internal/api/handler/plugin"
@@ -43,8 +45,9 @@ func (s *APIServer) RegisterRoutes(
 	variableValueStore store.VariableValueStore,
 	messageStore store.MessageStore,
 	messageInstanceStore store.MessageInstanceStore,
-	eventListenerStore store.EventListenerStore,
-	pluginInstanceStore store.PluginInstanceStore,
+	eventListenerStore      store.EventListenerStore,
+	pluginInstanceStore     store.PluginInstanceStore,
+	webhookIntegrationStore store.WebhookIntegrationStore,
 	subscriptionStore store.SubscriptionStore,
 	paymentSessionStore store.PaymentSessionStore,
 	entitlementStore store.EntitlementStore,
@@ -56,6 +59,7 @@ func (s *APIServer) RegisterRoutes(
 	commandManager *command.CommandManager,
 	aiModelRegistry *provider.AIModelRegistry,
 	aiConversationStore store.AIConversationStore,
+	webhookEngine webhookevent.WebhookEngine,
 ) {
 	sessionManager := session.NewSessionManager(session.SessionManagerConfig{
 		StrictCookies: s.config.StrictCookies,
@@ -69,6 +73,7 @@ func (s *APIServer) RegisterRoutes(
 		messageStore,
 		eventListenerStore,
 		pluginInstanceStore,
+		webhookIntegrationStore,
 		planManager,
 	)
 
@@ -329,6 +334,27 @@ func (s *APIServer) RegisterRoutes(
 		assetHandler.HandleAssetDownload,
 		sessionManager.OptionalSession,
 	)
+
+	// Webhook integration routes
+	webhookIntegrationHandler := webhookintegration.NewWebhookIntegrationHandler(
+		webhookIntegrationStore,
+		s.config.WebhookBaseURL,
+	)
+
+	webhookIntegrationsGroup := appGroup.Group("/webhook-integrations")
+	webhookIntegrationsGroup.Get("/", handler.Typed(webhookIntegrationHandler.HandleWebhookIntegrationList))
+	webhookIntegrationsGroup.Post("/", handler.TypedWithBody(webhookIntegrationHandler.HandleWebhookIntegrationCreate))
+
+	webhookIntegrationGroup := webhookIntegrationsGroup.Group("/{integrationID}", accessManager.WebhookIntegrationAccess)
+	webhookIntegrationGroup.Get("/", handler.Typed(webhookIntegrationHandler.HandleWebhookIntegrationGet))
+	webhookIntegrationGroup.Patch("/", handler.TypedWithBody(webhookIntegrationHandler.HandleWebhookIntegrationUpdate))
+	webhookIntegrationGroup.Delete("/", handler.Typed(webhookIntegrationHandler.HandleWebhookIntegrationDelete))
+	webhookIntegrationGroup.Put("/enabled", handler.TypedWithBody(webhookIntegrationHandler.HandleWebhookIntegrationUpdateEnabled))
+
+	// Internal webhook event dispatch (called by kite-webhook microservice)
+	webhookEventHandler := webhookevent.NewWebhookEventHandler(webhookIntegrationStore, s.config.InternalSecret, webhookEngine)
+	internalGroup := handler.Group(s.mux, "/internal/v1")
+	internalGroup.Post("/webhook-event", handler.TypedWithBody(webhookEventHandler.HandleIncomingWebhook))
 
 	// State routes
 	stateHandler := appstate.NewAppStateHandler(appStateManager)

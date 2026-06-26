@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"sync"
@@ -437,6 +438,20 @@ func (a *App) HandleEvent(appID string, session *state.State, event gateway.Even
 
 			go listener.HandleEvent(appID, session, event)
 		}
+	}
+}
+
+func (a *App) HandleWebhookEvent(appID string, source model.WebhookIntegrationType, payload json.RawMessage) {
+	eventSource := source.EventSource()
+
+	a.RLock()
+	defer a.RUnlock()
+
+	for _, listener := range a.listeners {
+		if listener.listener.Source != eventSource {
+			continue
+		}
+		go listener.HandleWebhookEvent(appID, payload)
 	}
 }
 

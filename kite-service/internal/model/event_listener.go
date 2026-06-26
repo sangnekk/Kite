@@ -12,7 +12,10 @@ import (
 type EventSource string
 
 const (
-	EventSourceDiscord EventSource = "discord"
+	EventSourceDiscord    EventSource = "discord"
+	EventSourceSePay      EventSource = "sepay"
+	EventSourceThueAPIBank EventSource = "thueapibank"
+	EventSourceCustom     EventSource = "custom_webhook"
 )
 
 type EventListenerType string

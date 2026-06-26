@@ -134,6 +134,28 @@ func (m *AccessManager) EventListenerAccess(next handler.HandlerFunc) handler.Ha
 	}
 }
 
+func (m *AccessManager) WebhookIntegrationAccess(next handler.HandlerFunc) handler.HandlerFunc {
+	return func(c *handler.Context) error {
+		integrationID := c.Param("integrationID")
+		appID := c.Param("appID")
+
+		integration, err := m.webhookIntegrationStore.WebhookIntegration(c.Context(), integrationID)
+		if err != nil {
+			if errors.Is(err, store.ErrNotFound) {
+				return handler.ErrNotFound("unknown_webhook_integration", "Webhook integration not found")
+			}
+			return err
+		}
+
+		if integration.AppID != appID {
+			return handler.ErrForbidden("missing_access", "Access to webhook integration missing")
+		}
+
+		c.WebhookIntegration = integration
+		return next(c)
+	}
+}
+
 func (m *AccessManager) PluginInstanceAccess(next handler.HandlerFunc) handler.HandlerFunc {
 	return func(c *handler.Context) error {
 		pluginID := c.Param("pluginID")

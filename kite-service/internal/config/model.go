@@ -70,6 +70,12 @@ type APIConfig struct {
 	// ".vibehost.vn") so it is shared across subdomains — required when the AI
 	// microservice runs on a sibling subdomain. Empty keeps it host-only.
 	CookieDomain string `toml:"cookie_domain"`
+	// WebhookBaseURL is the public base URL of the kite-webhook microservice,
+	// used to construct webhook URLs shown to users.
+	WebhookBaseURL string `toml:"webhook_base_url"`
+	// InternalSecret is a shared secret between kite-webhook and kite-service
+	// to authenticate internal webhook event dispatch requests.
+	InternalSecret string `toml:"internal_secret"`
 }
 
 type AppConfig struct {

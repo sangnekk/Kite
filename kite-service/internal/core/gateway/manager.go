@@ -227,3 +227,15 @@ func (m *GatewayManager) AppClient(ctx context.Context, appID string) (*api.Clie
 
 	return g.session.Client, nil
 }
+
+func (m *GatewayManager) SessionForApp(appID string) *state.State {
+	m.Lock()
+	defer m.Unlock()
+
+	g, ok := m.gateways[appID]
+	if !ok {
+		return nil
+	}
+
+	return g.session
+}

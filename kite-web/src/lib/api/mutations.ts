@@ -58,6 +58,13 @@ import {
   VariableCreateRequest,
   VariableCreateResponse,
   VariableDeleteResponse,
+  WebhookIntegrationCreateRequest,
+  WebhookIntegrationCreateResponse,
+  WebhookIntegrationUpdateRequest,
+  WebhookIntegrationUpdateResponse,
+  WebhookIntegrationUpdateEnabledRequest,
+  WebhookIntegrationUpdateEnabledResponse,
+  WebhookIntegrationDeleteResponse,
   VariablesImportRequest,
   VariablesImportResponse,
   VariableUpdateRequest,
@@ -820,3 +827,84 @@ export function useCommandsDeployMutation(appId: string) {
   });
 }
 
+
+export function useWebhookIntegrationCreateMutation(appId: string) {
+  return useMutation({
+    mutationFn: (req: WebhookIntegrationCreateRequest) =>
+      apiRequest<WebhookIntegrationCreateResponse>(
+        `/v1/apps/${appId}/webhook-integrations`,
+        {
+          method: "POST",
+          body: JSON.stringify(req),
+          headers: { "Content-Type": "application/json" },
+        }
+      ),
+    onSuccess: () => {
+      client.invalidateQueries({
+        queryKey: ["apps", appId, "webhook-integrations"],
+      });
+    },
+  });
+}
+
+export function useWebhookIntegrationUpdateMutation(
+  appId: string,
+  integrationId: string
+) {
+  return useMutation({
+    mutationFn: (req: WebhookIntegrationUpdateRequest) =>
+      apiRequest<WebhookIntegrationUpdateResponse>(
+        `/v1/apps/${appId}/webhook-integrations/${integrationId}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(req),
+          headers: { "Content-Type": "application/json" },
+        }
+      ),
+    onSuccess: () => {
+      client.invalidateQueries({
+        queryKey: ["apps", appId, "webhook-integrations"],
+      });
+    },
+  });
+}
+
+export function useWebhookIntegrationUpdateEnabledMutation(
+  appId: string,
+  integrationId: string
+) {
+  return useMutation({
+    mutationFn: (req: WebhookIntegrationUpdateEnabledRequest) =>
+      apiRequest<WebhookIntegrationUpdateEnabledResponse>(
+        `/v1/apps/${appId}/webhook-integrations/${integrationId}/enabled`,
+        {
+          method: "PUT",
+          body: JSON.stringify(req),
+          headers: { "Content-Type": "application/json" },
+        }
+      ),
+    onSuccess: () => {
+      client.invalidateQueries({
+        queryKey: ["apps", appId, "webhook-integrations"],
+      });
+    },
+  });
+}
+
+export function useWebhookIntegrationDeleteMutation(
+  appId: string,
+  integrationId: string
+) {
+  return useMutation({
+    mutationFn: () =>
+      apiRequest<WebhookIntegrationDeleteResponse>(
+        `/v1/apps/${appId}/webhook-integrations/${integrationId}`,
+        { method: "DELETE" }
+      ),
+    onSuccess: () => {
+      client.invalidateQueries({
+        queryKey: ["apps", appId, "webhook-integrations"],
+      });
+    },
+  });
+}

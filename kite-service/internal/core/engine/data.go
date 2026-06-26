@@ -1,6 +1,8 @@
 package engine
 
 import (
+	"encoding/json"
+
 	"github.com/diamondburned/arikawa/v3/discord"
 	"github.com/diamondburned/arikawa/v3/gateway"
 	"github.com/diamondburned/arikawa/v3/utils/ws"
@@ -193,3 +195,19 @@ func (d *PrefixCommandData) IsTextCommand() bool {
 func (d *PrefixCommandData) TriggerMessageID() discord.MessageID {
 	return d.event.ID
 }
+
+// WebhookEventData is the flow context data for a webhook event (sepay, thueapibank, custom).
+// Discord-specific fields return zero values since webhook events are not Discord events.
+type WebhookEventData struct {
+	payload json.RawMessage
+}
+
+func (d *WebhookEventData) Interaction() *discord.InteractionEvent { return nil }
+func (d *WebhookEventData) UserID() discord.UserID                 { return 0 }
+func (d *WebhookEventData) GuildID() discord.GuildID               { return 0 }
+func (d *WebhookEventData) ChannelID() discord.ChannelID           { return 0 }
+func (d *WebhookEventData) CommandData() *discord.CommandInteraction {
+	return nil
+}
+func (d *WebhookEventData) MessageComponentData() discord.ComponentInteraction { return nil }
+func (d *WebhookEventData) Event() ws.Event                                    { return nil }

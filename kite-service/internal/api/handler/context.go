@@ -14,15 +14,16 @@ type Context struct {
 	r *http.Request
 	w http.ResponseWriter
 
-	Session        *model.Session
-	App            *model.App
-	UserAppRole    model.AppCollaboratorRole
-	Features       model.Features
-	Command        *model.Command
-	Variable       *model.Variable
-	Message        *model.Message
-	EventListener  *model.EventListener
-	PluginInstance *model.PluginInstance
+	Session             *model.Session
+	App                 *model.App
+	UserAppRole         model.AppCollaboratorRole
+	Features            model.Features
+	Command             *model.Command
+	Variable            *model.Variable
+	Message             *model.Message
+	EventListener       *model.EventListener
+	PluginInstance      *model.PluginInstance
+	WebhookIntegration  *model.WebhookIntegration
 }
 
 func (c *Context) Context() context.Context {
