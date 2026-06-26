@@ -13,25 +13,31 @@ import NodeInfoExplorer from "../../../../src/components/NodeInfoExplorer";
 
 ## Khi nào dùng
 
-- Tự động phản hồi khi có tin nhắn mới, thành viên vào/rời, reaction...
+- Tự động phản hồi khi có tin nhắn mới, thành viên vào/rời, reaction... (Discord)
+- Xử lý sự kiện thanh toán từ SePay, ThueAPIBank, hoặc webhook tùy chỉnh
 - Là khối gốc của mọi flow sự kiện.
 
 ## Cấu hình
 
-> `Loại sự kiện` — sự kiện cần lắng nghe (Message Create, Member Join...). Xem [Sự kiện](/reference/event).
+> `Nguồn` — nguồn sự kiện: `Discord`, `SePay`, `ThueAPIBank`, hoặc `Webhook tùy chỉnh`
+>
+> `Loại sự kiện` — loại sự kiện Discord cụ thể (Message Create, Member Join...). Chỉ xuất hiện khi nguồn là Discord. Xem [Sự kiện](/reference/event).
 >
 > `Mô tả` — ghi chú nội bộ cho bộ lắng nghe.
 
 ## Dữ liệu khả dụng
 
-Khối này **không tạo `result()`**. Khi sự kiện kích hoạt, dùng dữ liệu qua các placeholder như `{{ user.mention }}`, `{{ message.content }}`, `{{ channel.id }}` trong [biểu thức](/reference/expressions).
+Khối này **không tạo `result()`**. Khi sự kiện kích hoạt, dữ liệu truy cập qua [biểu thức](/reference/expressions):
 
-Mỗi loại sự kiện cung cấp placeholder khác nhau (ví dụ reaction có `event.emoji`, voice có `event.voice`, xóa hàng loạt có `event.message_ids`). Xem bảng đầy đủ tại [Dữ liệu của sự kiện](/reference/event#dữ-liệu-của-sự-kiện).
+- **Discord:** `{{ user.mention }}`, `{{ message.content }}`, `{{ channel.id }}`... Xem bảng đầy đủ tại [Dữ liệu của sự kiện](/reference/event#sự-kiện-discord).
+- **Webhook (SePay, ThueAPIBank, Custom):** `{{ event.data.{field} }}` — toàn bộ JSON payload từ dịch vụ bên ngoài. Xem [Tích hợp Webhook](/reference/integration#dữ-liệu-của-sự-kiện-webhook).
 
 ## Lưu ý & liên quan
 
 - Khối này **không tốn credit**.
+- Webhook sources yêu cầu bật tích hợp tương ứng tại trang **Tích hợp** trước.
 - [Sự kiện](/reference/event)
+- [Tích hợp Webhook](/reference/integration)
 - [Bộ lọc sự kiện](/reference/blocks/options/option_event_filter)
 - [Lệnh](/reference/blocks/entries/entry_command)
 
