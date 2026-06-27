@@ -1,5 +1,5 @@
 import { Elysia } from "elysia";
-import { }
+
 const KITE_SERVICE_INTERNAL_URL = process.env.KITE_SERVICE_INTERNAL_URL ?? "http://localhost:8080";
 const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "";
 const PORT = parseInt(process.env.PORT ?? "3002");
