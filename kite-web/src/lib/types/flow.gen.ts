@@ -73,6 +73,7 @@ export const FlowNodeTypeActionMessagePin: FlowNodeType = "action_message_pin";
 export const FlowNodeTypeActionMessageUnpin: FlowNodeType = "action_message_unpin";
 export const FlowNodeTypeActionMessagePurge: FlowNodeType = "action_message_purge";
 export const FlowNodeTypeActionChannelSlowmode: FlowNodeType = "action_channel_slowmode";
+export const FlowNodeTypeActionQRCreate: FlowNodeType = "action_qr_create";
 export const FlowNodeTypeActionJSONParse: FlowNodeType = "action_json_parse";
 export const FlowNodeTypeActionJSONBuild: FlowNodeType = "action_json_build";
 export const FlowNodeTypeActionCooldownCheck: FlowNodeType = "action_cooldown_check";
@@ -277,6 +278,16 @@ export interface FlowNodeData {
    * Sleep
    */
   sleep_duration_seconds?: string;
+  // QR Code Create (VietQR — https://vietqr.app/img). Builds an image URL.
+  qr_bank?: string; // bank code or short_name (required), e.g. "VCB"
+  qr_account?: string; // account number (required), template
+  qr_amount?: string; // transfer amount, template
+  qr_description?: string; // transfer content, template
+  qr_template?: string; // "" | compact | qronly | standee
+  qr_holder?: string; // account holder name, template
+  qr_store?: string; // store / company name, template
+  qr_hide_info?: boolean; // when true sends showinfo=false (default VietQR shows info)
+  qr_full_account?: boolean; // when true sends fullacc=true (show full account number)
 }
 export type ComparsionMode = string;
 export const ComparsionModeEqual: ComparsionMode = "equal";

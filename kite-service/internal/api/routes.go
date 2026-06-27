@@ -16,14 +16,15 @@ import (
 	commandhandler "github.com/kitecloud/kite/kite-service/internal/api/handler/command"
 	eventlistener "github.com/kitecloud/kite/kite-service/internal/api/handler/event_listener"
 	flowhandler "github.com/kitecloud/kite/kite-service/internal/api/handler/flow"
-	webhookevent "github.com/kitecloud/kite/kite-service/internal/api/handler/webhook_event"
-	webhookintegration "github.com/kitecloud/kite/kite-service/internal/api/handler/webhook_integration"
+	integrationhandler "github.com/kitecloud/kite/kite-service/internal/api/handler/integration"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/logs"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/message"
 	pluginhandler "github.com/kitecloud/kite/kite-service/internal/api/handler/plugin"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/usage"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/user"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/variable"
+	webhookevent "github.com/kitecloud/kite/kite-service/internal/api/handler/webhook_event"
+	webhookintegration "github.com/kitecloud/kite/kite-service/internal/api/handler/webhook_integration"
 	"github.com/kitecloud/kite/kite-service/internal/api/session"
 	"github.com/kitecloud/kite/kite-service/internal/core/command"
 	"github.com/kitecloud/kite/kite-service/internal/core/plan"
@@ -45,8 +46,8 @@ func (s *APIServer) RegisterRoutes(
 	variableValueStore store.VariableValueStore,
 	messageStore store.MessageStore,
 	messageInstanceStore store.MessageInstanceStore,
-	eventListenerStore      store.EventListenerStore,
-	pluginInstanceStore     store.PluginInstanceStore,
+	eventListenerStore store.EventListenerStore,
+	pluginInstanceStore store.PluginInstanceStore,
 	webhookIntegrationStore store.WebhookIntegrationStore,
 	subscriptionStore store.SubscriptionStore,
 	paymentSessionStore store.PaymentSessionStore,
@@ -197,6 +198,13 @@ func (s *APIServer) RegisterRoutes(
 
 	v1Group.Post("/billing/sepay/ipn", handler.TypedWithBody(billingHandler.HandleSePayIPN))
 	v1Group.Get("/billing/plans", handler.Typed(billingHandler.HandleBillingPlanList))
+
+	// Integration routes (public reference data, no auth)
+	integrationHandler, err := integrationhandler.NewIntegrationHandler()
+	if err != nil {
+		panic(err)
+	}
+	v1Group.Get("/integrations/banks", handler.Typed(integrationHandler.HandleBankList))
 
 	// AI routes
 	aiHandler := aihandler.NewAIHandler(aiModelRegistry, usageStore, aiConversationStore)

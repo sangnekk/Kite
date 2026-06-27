@@ -696,6 +696,23 @@ export const nodeActionNumberFormatDataSchema = nodeBaseDataSchema.extend({
   number_decimals: z.string().optional(),
 });
 
+export const nodeActionQRCreateDataSchema = nodeBaseDataSchema.extend({
+  qr_bank: z.string().min(1, "Vui lòng chọn ngân hàng"),
+  qr_account: z.string().min(1, "Vui lòng nhập số tài khoản"),
+  qr_amount: z.string().optional(),
+  qr_description: z.string().optional(),
+  qr_template: z
+    .literal("")
+    .or(z.literal("compact"))
+    .or(z.literal("qronly"))
+    .or(z.literal("standee"))
+    .optional(),
+  qr_holder: z.string().optional(),
+  qr_store: z.string().optional(),
+  qr_hide_info: z.boolean().optional(),
+  qr_full_account: z.boolean().optional(),
+});
+
 export const nodeActionListFormatDataSchema = nodeBaseDataSchema.extend({
   list_input: z.string(),
   list_item_template: z.string(),

@@ -11,6 +11,7 @@ import {
   useAppSubscriptionsQuery,
   useBillingCheckoutStatusQuery,
   useAIModelsQuery,
+  useBanksQuery,
   useBillingPlansQuery,
   useCommandQuery,
   useCommandsQuery,
@@ -40,6 +41,7 @@ import {
   AppGetResponse,
   AppListResponse,
   AIModelListResponse,
+  BankListResponse,
   BillingPlanListResponse,
   CommandGetResponse,
   CommandListResponse,
@@ -337,6 +339,13 @@ export function useBillingPlans(
   callback?: (res: APIResponse<BillingPlanListResponse>) => void
 ) {
   const query = useBillingPlansQuery();
+  return useResponseData(query, callback);
+}
+
+export function useBanks(
+  callback?: (res: APIResponse<BankListResponse>) => void
+) {
+  const query = useBanksQuery();
   return useResponseData(query, callback);
 }
 

@@ -4293,6 +4293,102 @@
       "creditsCost": 1
     },
     {
+      "type": "action_qr_create",
+      "category": "integration",
+      "section": "Mã QR (VietQR)",
+      "contextTypes": null,
+      "title": "Tạo ảnh QR (VietQR)",
+      "description": "Tạo link ảnh QR chuyển khoản VietQR từ tài khoản ngân hàng",
+      "icon": "qr-code",
+      "color": "#06b6d4",
+      "dataFields": [
+        "qr_bank",
+        "qr_account",
+        "qr_amount",
+        "qr_description",
+        "qr_template",
+        "qr_holder",
+        "qr_store",
+        "qr_hide_info",
+        "qr_full_account",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "qr_bank": {
+            "type": "string",
+            "minLength": 1
+          },
+          "qr_account": {
+            "type": "string",
+            "minLength": 1
+          },
+          "qr_amount": {
+            "type": "string"
+          },
+          "qr_description": {
+            "type": "string"
+          },
+          "qr_template": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "",
+                      "compact"
+                    ]
+                  },
+                  {
+                    "type": "string",
+                    "const": "qronly"
+                  }
+                ]
+              },
+              {
+                "type": "string",
+                "const": "standee"
+              }
+            ]
+          },
+          "qr_holder": {
+            "type": "string"
+          },
+          "qr_store": {
+            "type": "string"
+          },
+          "qr_hide_info": {
+            "type": "boolean"
+          },
+          "qr_full_account": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "qr_bank",
+          "qr_account"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 0
+    },
+    {
       "type": "action_list_format",
       "category": "data",
       "section": "Danh sách & JSON",

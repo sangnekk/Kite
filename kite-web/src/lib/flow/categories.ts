@@ -12,6 +12,7 @@ export const categoryLabels: Record<string, string> = {
   action: "Hành động",
   control_flow: "Điều khiển",
   option: "Tùy chọn",
+  integration: "Tích hợp",
 };
 
 export const nodeCategories = {
@@ -206,6 +207,13 @@ export const nodeCategories = {
     {
       title: "Tạm dừng",
       nodeTypes: ["control_sleep"],
+      contextTypes: null,
+    },
+  ],
+  integration: [
+    {
+      title: "Mã QR (VietQR)",
+      nodeTypes: ["action_qr_create"],
       contextTypes: null,
     },
   ],

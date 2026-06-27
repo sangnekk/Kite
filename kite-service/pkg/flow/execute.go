@@ -10,6 +10,7 @@ import (
 	"math"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"slices"
 	"strconv"
 	"strings"
@@ -1685,6 +1686,66 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 		}
 
 		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionQRCreate:
+		bank, err := ctx.EvalTemplate(n.Data.QRBank)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		account, err := ctx.EvalTemplate(n.Data.QRAccount)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		if bank.IsNil() || bank.String() == "" || account.IsNil() || account.String() == "" {
+			return &FlowError{
+				Code:    FlowNodeErrorUnknown,
+				Message: "qr code requires both a bank and an account",
+			}
+		}
+
+		query := url.Values{}
+		query.Set("acc", account.String())
+		query.Set("bank", bank.String())
+
+		// Optional template-resolved fields are only added when they evaluate to
+		// a non-empty value. Encode() sorts keys, so map iteration order is fine.
+		for raw, key := range map[string]string{
+			n.Data.QRAmount:      "amount",
+			n.Data.QRDescription: "des",
+			n.Data.QRHolder:      "holder",
+			n.Data.QRStore:       "store",
+		} {
+			if raw == "" {
+				continue
+			}
+
+			value, err := ctx.EvalTemplate(raw)
+			if err != nil {
+				return traceError(n, err)
+			}
+
+			if value.IsNil() {
+				continue
+			}
+			if v := value.String(); v != "" {
+				query.Set(key, v)
+			}
+		}
+
+		if n.Data.QRTemplate != "" {
+			query.Set("template", n.Data.QRTemplate)
+		}
+		// VietQR shows account info by default; only send the flag to hide it.
+		if n.Data.QRHideInfo {
+			query.Set("showinfo", "false")
+		}
+		if n.Data.QRFullAccount {
+			query.Set("fullacc", "true")
+		}
+
+		ctx.StoreNodeResult(n, thing.NewString("https://vietqr.app/img?"+query.Encode()))
+		return n.ExecuteChildren(ctx)
 	case FlowNodeTypeActionHTTPRequest:
 		if n.Data.HTTPRequestData == nil {
 			return &FlowError{
@@ -2169,6 +2230,9 @@ func (n *CompiledFlowNode) CreditsCost() int {
 		return aiModelCredits(data.Model, 5) * 5
 	case FlowNodeTypeActionHTTPRequest:
 		return 3
+	case FlowNodeTypeActionQRCreate:
+		// Pure URL string building, no external call — free.
+		return 0
 	}
 
 	if n.IsAction() {

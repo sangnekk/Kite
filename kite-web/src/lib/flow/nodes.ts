@@ -36,6 +36,7 @@ import {
   nodeActionListPickDataSchema,
   nodeActionTextTransformDataSchema,
   nodeActionNumberFormatDataSchema,
+  nodeActionQRCreateDataSchema,
   nodeActionListFormatDataSchema,
   nodeActionListJoinDataSchema,
   nodeActionListLengthDataSchema,
@@ -100,6 +101,7 @@ export const errorColor = "#ef4444";
 export const controlColor = "#22c55e";
 export const optionColor = "#8b5cf6";
 export const suspendColor = "#d946ef";
+export const integrationColor = "#06b6d4";
 
 export interface NodeValues {
   color: string;
@@ -718,6 +720,27 @@ export const nodeTypes: Record<string, NodeValues> = {
       "custom_label",
     ],
     creditsCost: 1,
+  },
+  action_qr_create: {
+    color: integrationColor,
+    icon: "qr-code",
+    defaultTitle: "Tạo ảnh QR (VietQR)",
+    defaultDescription: "Tạo link ảnh QR chuyển khoản VietQR từ tài khoản ngân hàng",
+    dataSchema: nodeActionQRCreateDataSchema,
+    dataFields: [
+      "qr_bank",
+      "qr_account",
+      "qr_amount",
+      "qr_description",
+      "qr_template",
+      "qr_holder",
+      "qr_store",
+      "qr_hide_info",
+      "qr_full_account",
+      "temporary_name",
+      "custom_label",
+    ],
+    creditsCost: 0,
   },
   action_list_format: {
     color: actionColor,

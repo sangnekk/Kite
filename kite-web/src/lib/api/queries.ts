@@ -12,6 +12,7 @@ import {
   AIConversationListResponse,
   AICreditsResponse,
   AIModelListResponse,
+  BankListResponse,
   BillingPlanListResponse,
   BillingCheckoutStatusResponse,
   CommandGetResponse,
@@ -331,6 +332,14 @@ export function useBillingPlansQuery() {
   return useQuery({
     queryKey: ["billing", "plans"],
     queryFn: () => apiRequest<BillingPlanListResponse>(`/v1/billing/plans`),
+  });
+}
+
+export function useBanksQuery() {
+  return useQuery({
+    queryKey: ["integrations", "banks"],
+    queryFn: () => apiRequest<BankListResponse>(`/v1/integrations/banks`),
+    staleTime: Infinity, // static reference data
   });
 }
 

@@ -4,7 +4,12 @@ import {
   permissionBits,
 } from "@/lib/discord/permissions";
 import { getNodeId, useNodeValues } from "@/lib/flow/nodes";
-import { useCommands, useMessages, useVariables } from "@/lib/hooks/api";
+import {
+  useBanks,
+  useCommands,
+  useMessages,
+  useVariables,
+} from "@/lib/hooks/api";
 import { useRouter } from "next/router";
 import { useAppId } from "@/lib/hooks/params";
 import {
@@ -172,6 +177,15 @@ const intputs: Record<string, any> = {
   condition_allow_multiple: ConditionAllowMultipleInput,
   loop_count: ControlLoopCountInput,
   sleep_duration_seconds: ControlSleepDurationInput,
+  qr_bank: QRBankInput,
+  qr_account: QRAccountInput,
+  qr_amount: QRAmountInput,
+  qr_description: QRDescriptionInput,
+  qr_template: QRTemplateInput,
+  qr_holder: QRHolderInput,
+  qr_store: QRStoreInput,
+  qr_hide_info: QRHideInfoInput,
+  qr_full_account: QRFullAccountInput,
 };
 
 function nodeTypeDocsPage(nodeType: string) {
@@ -304,10 +318,14 @@ export default function FlowNodeEditor({ nodeId }: Props) {
                 <div className="bg-muted rounded px-2 py-1 text-xs">
                   {nodeId}
                 </div>
-                {creditsCost && (
+                {creditsCost ? (
                   <div className="bg-muted rounded px-2 py-1 text-xs flex gap-1">
                     {creditsCost}
                     <div>credit{creditsCost === 1 ? "" : "s"}</div>
+                  </div>
+                ) : (
+                  <div className="bg-muted rounded px-2 py-1 text-xs flex gap-1">
+                    Không tốn credit
                   </div>
                 )}
               </div>
@@ -1247,6 +1265,174 @@ function MessagePurgeCountInput({ data, updateData, errors }: InputProps) {
       updateValue={(v) => updateData({ message_purge_count: v || undefined })}
       errors={errors}
       placeholders
+    />
+  );
+}
+
+// --- QR Code (VietQR) ---
+
+function QRBankInput({ data, updateData, errors }: InputProps) {
+  const banks = useBanks();
+  // Only banks VietQR can actually generate a QR for; these also map 1:1 to a
+  // logo file at /public/banklogo/<code>.png. Sorted by name so they're easy to
+  // find in the dropdown.
+  const supported = (banks ?? [])
+    .flatMap((b) => (b && b.supported ? [b] : []))
+    .sort((a, b) => a.short_name.localeCompare(b.short_name));
+  const error = errors["qr_bank"];
+
+  return (
+    <div className="flex-auto">
+      <div className="font-medium text-foreground">Ngân hàng</div>
+      <div className="text-muted-foreground text-sm mt-1">
+        Ngân hàng nhận tiền (chỉ hiện các ngân hàng VietQR hỗ trợ).
+      </div>
+      <div className="relative mt-2">
+        <Select
+          value={data.qr_bank || ""}
+          onValueChange={(v) => updateData({ qr_bank: v || undefined })}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Chọn ngân hàng" />
+          </SelectTrigger>
+          <SelectContent>
+            {supported.map((b) => (
+              <SelectItem key={b.code} value={b.code}>
+                <div className="flex items-center gap-2">
+                  <img
+                    src={`/banklogo/${b.code}.png`}
+                    alt=""
+                    className="h-5 w-5 flex-none rounded object-contain"
+                    onError={(e) => {
+                      e.currentTarget.style.visibility = "hidden";
+                    }}
+                  />
+                  <span>{b.short_name}</span>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      {error && (
+        <div className="text-red-600 dark:text-red-400 text-sm flex items-center space-x-1 pt-2">
+          <CircleAlertIcon className="h-5 w-5 flex-none" />
+          <div>{error}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function QRAccountInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="qr_account"
+      title="Số tài khoản"
+      description="Số tài khoản ngân hàng nhận tiền."
+      value={data.qr_account || ""}
+      updateValue={(v) => updateData({ qr_account: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function QRAmountInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="qr_amount"
+      title="Số tiền"
+      description="Số tiền cần chuyển (để trống để người dùng tự nhập)."
+      value={data.qr_amount || ""}
+      updateValue={(v) => updateData({ qr_amount: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function QRDescriptionInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="qr_description"
+      title="Nội dung chuyển khoản"
+      value={data.qr_description || ""}
+      updateValue={(v) => updateData({ qr_description: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function QRTemplateInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="qr_template"
+      title="Mẫu ảnh QR"
+      description="Để trống dùng mẫu mặc định."
+      type="select"
+      options={[
+        { value: "compact", label: "Compact" },
+        { value: "qronly", label: "Chỉ mã QR" },
+        { value: "standee", label: "Standee (dán quầy / in card)" },
+      ]}
+      value={data.qr_template || ""}
+      updateValue={(v) => updateData({ qr_template: v || undefined })}
+      errors={errors}
+      clearable
+    />
+  );
+}
+
+function QRHolderInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="qr_holder"
+      title="Tên chủ tài khoản"
+      value={data.qr_holder || ""}
+      updateValue={(v) => updateData({ qr_holder: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function QRStoreInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="qr_store"
+      title="Tên cửa hàng"
+      value={data.qr_store || ""}
+      updateValue={(v) => updateData({ qr_store: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function QRHideInfoInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseCheckbox
+      field="qr_hide_info"
+      title="Ẩn thông tin tài khoản"
+      description="Không hiển thị thông tin tài khoản trên ảnh QR (chỉ áp dụng QR online)."
+      value={!!data.qr_hide_info}
+      updateValue={(v) => updateData({ qr_hide_info: v || undefined })}
+      errors={errors}
+    />
+  );
+}
+
+function QRFullAccountInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseCheckbox
+      field="qr_full_account"
+      title="Hiện đầy đủ số tài khoản"
+      description="Hiển thị toàn bộ số tài khoản thay vì che bớt."
+      value={!!data.qr_full_account}
+      updateValue={(v) => updateData({ qr_full_account: v || undefined })}
+      errors={errors}
     />
   );
 }

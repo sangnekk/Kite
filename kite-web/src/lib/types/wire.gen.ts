@@ -627,3 +627,18 @@ export interface WebhookIntegrationUpdateEnabledRequest {
 }
 export type WebhookIntegrationUpdateEnabledResponse = WebhookIntegration;
 export type WebhookIntegrationDeleteResponse = Empty;
+
+//////////
+// source: integration.go
+
+/**
+ * Bank mirrors an entry in static_contents/banks.json (VietQR bank list).
+ */
+export interface Bank {
+  name: string;
+  code: string;
+  bin: string;
+  short_name: string;
+  supported: boolean;
+}
+export type BankListResponse = (Bank | undefined)[];

@@ -133,6 +133,9 @@ func (s *APIServer) Serve(ctx context.Context, address string) error {
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 	}).Handler(s.mux)
 
+	// Log every request. Wraps CORS so preflight and rejected requests are logged too.
+	handler = accessLog(handler)
+
 	s.server = &http.Server{
 		Addr:    address,
 		Handler: handler,

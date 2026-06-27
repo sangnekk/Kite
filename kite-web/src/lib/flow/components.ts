@@ -76,6 +76,7 @@ export const nodeTypes = {
   action_list_pick: FlowNodeActionBase,
   action_text_transform: FlowNodeActionBase,
   action_number_format: FlowNodeActionBase,
+  action_qr_create: FlowNodeActionBase,
   action_list_format: FlowNodeActionBase,
   action_list_join: FlowNodeActionBase,
   action_list_length: FlowNodeActionBase,

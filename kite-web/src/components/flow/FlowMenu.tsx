@@ -6,6 +6,7 @@ import {
   GitCompareIcon,
   LucideIcon,
   MessageSquareWarningIcon,
+  PlugIcon,
   TextCursorInputIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -16,7 +17,13 @@ import FlowNodeEditor from "./FlowNodeEditor";
 import FlowNodeExplorer from "./FlowNodeExplorer";
 import { useStoreApi } from "@xyflow/react";
 
-type Tab = "action" | "data" | "control_flow" | "option" | "logs";
+type Tab =
+  | "action"
+  | "data"
+  | "control_flow"
+  | "option"
+  | "integration"
+  | "logs";
 
 export default function FlowMenu({
   selectedNodeId,
@@ -84,6 +91,13 @@ export default function FlowMenu({
             tab={tab}
             setTab={wrappedSetTab}
           />
+          <Tab
+            id="integration"
+            icon={PlugIcon}
+            title="Khối tích hợp"
+            tab={tab}
+            setTab={wrappedSetTab}
+          />
         </div>
         <div className="flex-none flex flex-col items-center gap-1">
           <Tab
@@ -100,7 +114,8 @@ export default function FlowMenu({
           {(tab === "action" ||
             tab === "data" ||
             tab === "control_flow" ||
-            tab === "option") && <FlowNodeExplorer category={tab} />}
+            tab === "option" ||
+            tab === "integration") && <FlowNodeExplorer category={tab} />}
 
           {tab === "logs" && <FlowLogList logs={logs} />}
 

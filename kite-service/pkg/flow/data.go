@@ -108,6 +108,7 @@ const (
 	FlowNodeTypeActionMessageUnpin          FlowNodeType = "action_message_unpin"
 	FlowNodeTypeActionMessagePurge          FlowNodeType = "action_message_purge"
 	FlowNodeTypeActionChannelSlowmode       FlowNodeType = "action_channel_slowmode"
+	FlowNodeTypeActionQRCreate              FlowNodeType = "action_qr_create"
 
 	FlowNodeTypeControlConditionCompare     FlowNodeType = "control_condition_compare"
 	FlowNodeTypeControlConditionItemCompare FlowNodeType = "control_condition_item_compare"
@@ -291,6 +292,17 @@ type FlowNodeData struct {
 	LoopCount string `json:"loop_count,omitempty"`
 	// Sleep
 	SleepDurationSeconds string `json:"sleep_duration_seconds,omitempty"`
+
+	// QR Code Create (VietQR — https://vietqr.app/img). Builds an image URL.
+	QRBank        string `json:"qr_bank,omitempty"`         // bank code or short_name (required), e.g. "VCB"
+	QRAccount     string `json:"qr_account,omitempty"`      // account number (required), template
+	QRAmount      string `json:"qr_amount,omitempty"`       // transfer amount, template
+	QRDescription string `json:"qr_description,omitempty"`  // transfer content, template
+	QRTemplate    string `json:"qr_template,omitempty"`     // "" | compact | qronly | standee
+	QRHolder      string `json:"qr_holder,omitempty"`       // account holder name, template
+	QRStore       string `json:"qr_store,omitempty"`        // store / company name, template
+	QRHideInfo    bool   `json:"qr_hide_info,omitempty"`    // when true sends showinfo=false (default VietQR shows info)
+	QRFullAccount bool   `json:"qr_full_account,omitempty"` // when true sends fullacc=true (show full account number)
 }
 
 func (d FlowNodeData) Validate(nodeType FlowNodeType) error {
