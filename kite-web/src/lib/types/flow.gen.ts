@@ -15,6 +15,7 @@ export const FlowNodeTypeEntryEvent: FlowNodeType = "entry_event";
 export const FlowNodeTypeEntryComponentButton: FlowNodeType = "entry_component_button";
 export const FlowNodeTypeOptionCommandArgument: FlowNodeType = "option_command_argument";
 export const FlowNodeTypeOptionCommandPermissions: FlowNodeType = "option_command_permissions";
+export const FlowNodeTypeOptionCommandBotPermissions: FlowNodeType = "option_command_bot_permissions";
 export const FlowNodeTypeOptionCommandContexts: FlowNodeType = "option_command_contexts";
 export const FlowNodeTypeOptionEventFilter: FlowNodeType = "option_event_filter";
 export const FlowNodeTypeActionResponseCreate: FlowNodeType = "action_response_create";
@@ -65,6 +66,9 @@ export const FlowNodeTypeActionBalanceLeaderboard: FlowNodeType = "action_balanc
 export const FlowNodeTypeActionTimeNow: FlowNodeType = "action_time_now";
 export const FlowNodeTypeActionListPick: FlowNodeType = "action_list_pick";
 export const FlowNodeTypeActionTextTransform: FlowNodeType = "action_text_transform";
+export const FlowNodeTypeActionJSONParse: FlowNodeType = "action_json_parse";
+export const FlowNodeTypeActionJSONBuild: FlowNodeType = "action_json_build";
+export const FlowNodeTypeActionCooldownCheck: FlowNodeType = "action_cooldown_check";
 export const FlowNodeTypeActionNumberFormat: FlowNodeType = "action_number_format";
 export const FlowNodeTypeActionListFormat: FlowNodeType = "action_list_format";
 export const FlowNodeTypeActionListJoin: FlowNodeType = "action_list_join";
@@ -74,9 +78,6 @@ export const FlowNodeTypeActionMessageUnpin: FlowNodeType = "action_message_unpi
 export const FlowNodeTypeActionMessagePurge: FlowNodeType = "action_message_purge";
 export const FlowNodeTypeActionChannelSlowmode: FlowNodeType = "action_channel_slowmode";
 export const FlowNodeTypeActionQRCreate: FlowNodeType = "action_qr_create";
-export const FlowNodeTypeActionJSONParse: FlowNodeType = "action_json_parse";
-export const FlowNodeTypeActionJSONBuild: FlowNodeType = "action_json_build";
-export const FlowNodeTypeActionCooldownCheck: FlowNodeType = "action_cooldown_check";
 export const FlowNodeTypeControlConditionCompare: FlowNodeType = "control_condition_compare";
 export const FlowNodeTypeControlConditionItemCompare: FlowNodeType = "control_condition_item_compare";
 export const FlowNodeTypeControlConditionUser: FlowNodeType = "control_condition_user";
@@ -121,14 +122,24 @@ export interface FlowNodeData {
   command_argument_max_value?: number /* float64 */;
   command_argument_max_length?: number /* int */;
   /**
-   * Command trigger types (entry_command node)
+   * Command trigger types (on the entry_command node). For backwards
+   * compatibility the absence of these means: slash enabled, prefix disabled.
    */
   command_disable_slash?: boolean;
   command_enable_prefix?: boolean;
   /**
-   * Command Permissions
+   * Command Permissions — the permissions the invoking USER must have. This is
+   * enforced by Discord itself via DefaultMemberPermissions on the command.
    */
   command_permissions?: string;
+  /**
+   * Command Bot Permissions — the permissions the BOT must hold in the
+   * invocation channel for the command to run. Unlike CommandPermissions,
+   * Discord does not enforce this, so it is checked at runtime before the flow
+   * executes; when the bot is missing a permission the invoker is told and the
+   * flow is skipped. Stored as a decimal permission bitmask string.
+   */
+  command_bot_permissions?: string;
   /**
    * Command Contexts
    */
@@ -182,12 +193,56 @@ export interface FlowNodeData {
   variable_operation?: any /* provider.VariableOperation */;
   /**
    * Economy Balance Get, Add, Remove, Set, Transfer, Leaderboard
+   * (the currency is the variable_id field above)
    */
-  economy_user_target?: string;
-  economy_recipient?: string;
-  economy_amount?: string;
-  economy_limit?: string;
-  economy_allow_negative?: boolean;
+  economy_user_target?: string; // template resolving to the scope (usually a user id)
+  economy_recipient?: string; // template resolving to the recipient scope (transfer)
+  economy_amount?: string; // template resolving to the amount
+  economy_limit?: string; // template resolving to the leaderboard size
+  economy_allow_negative?: boolean; // allow balances to drop below zero
+  /**
+   * Time Now
+   */
+  time_format?: string; // unix | unix_ms | iso | date | time | datetime | custom Go layout
+  time_timezone?: string; // IANA timezone name, empty = UTC
+  /**
+   * List Pick
+   */
+  list_pick_input?: string; // template resolving to a list
+  /**
+   * Number Format
+   */
+  number_input?: string; // template resolving to a number
+  number_style?: string; // thousands | compact | decimal
+  number_decimals?: string; // template resolving to the decimal places
+  /**
+   * List Format / Join / Length
+   */
+  list_input?: string; // template resolving to a list
+  list_item_template?: string; // per-item template, with {{item}} and {{index}} bound
+  list_joiner?: string; // separator template, default newline
+  /**
+   * Message Purge / Channel Slowmode (pin/unpin reuse channel_target + message_target)
+   */
+  message_purge_count?: string; // template resolving to how many messages to delete
+  channel_slowmode_seconds?: string; // template resolving to the slowmode in seconds
+  /**
+   * Text Transform
+   */
+  text_input?: string; // template resolving to the source text
+  text_operation?: string; // upper | lower | trim | length | replace | split
+  text_arg1?: string; // replace: search, split: separator
+  text_arg2?: string; // replace: replacement
+  /**
+   * JSON Parse / Build
+   */
+  json_input?: string; // parse: JSON string to decode; build: value to encode
+  /**
+   * Cooldown Check (stores the last-use unix timestamp in the variable_id above)
+   */
+  cooldown_scope?: string; // template resolving to the scope, default {{user.id}}
+  cooldown_duration?: string; // template resolving to the cooldown length in seconds
+  cooldown_peek?: boolean; // only check, don't reset the cooldown
   /**
    * HTTP Request
    */
@@ -201,49 +256,6 @@ export interface FlowNodeData {
    */
   random_min?: string;
   random_max?: string;
-  /**
-   * Time Now
-   */
-  time_format?: string;
-  time_timezone?: string;
-  /**
-   * List Pick
-   */
-  list_pick_input?: string;
-  /**
-   * Text Transform
-   */
-  text_input?: string;
-  text_operation?: string;
-  text_arg1?: string;
-  text_arg2?: string;
-  /**
-   * Number Format
-   */
-  number_input?: string;
-  number_style?: string;
-  number_decimals?: string;
-  /**
-   * List Format / Join / Length
-   */
-  list_input?: string;
-  list_item_template?: string;
-  list_joiner?: string;
-  /**
-   * Message Purge / Channel Slowmode
-   */
-  message_purge_count?: string;
-  channel_slowmode_seconds?: string;
-  /**
-   * JSON Parse / Build
-   */
-  json_input?: string;
-  /**
-   * Cooldown Check
-   */
-  cooldown_scope?: string;
-  cooldown_duration?: string;
-  cooldown_peek?: boolean;
   /**
    * Event Entry
    */
@@ -278,7 +290,9 @@ export interface FlowNodeData {
    * Sleep
    */
   sleep_duration_seconds?: string;
-  // QR Code Create (VietQR — https://vietqr.app/img). Builds an image URL.
+  /**
+   * QR Code Create (VietQR — https://vietqr.app/img). Builds an image URL.
+   */
   qr_bank?: string; // bank code or short_name (required), e.g. "VCB"
   qr_account?: string; // account number (required), template
   qr_amount?: string; // transfer amount, template

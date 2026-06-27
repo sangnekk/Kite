@@ -18,6 +18,10 @@ type DiscordProvider interface {
 	Member(ctx context.Context, guildID discord.GuildID, userID discord.UserID) (*discord.Member, error)
 	Message(ctx context.Context, channelID discord.ChannelID, messageID discord.MessageID) (*discord.Message, error)
 
+	// BotPermissions returns the bot's own effective permissions in the given
+	// channel, accounting for role and channel-level overwrites.
+	BotPermissions(ctx context.Context, guildID discord.GuildID, channelID discord.ChannelID) (discord.Permissions, error)
+
 	CreateInteractionResponse(ctx context.Context, interactionID discord.InteractionID, interactionToken string, response api.InteractionResponse) (*InteractionResponseResource, error)
 	EditInteractionResponse(ctx context.Context, applicationID discord.AppID, token string, response api.EditInteractionResponseData) (*discord.Message, error)
 	DeleteInteractionResponse(ctx context.Context, applicationID discord.AppID, token string) error
@@ -103,6 +107,11 @@ func (p *MockDiscordProvider) Member(ctx context.Context, guildID discord.GuildI
 
 func (p *MockDiscordProvider) Message(ctx context.Context, channelID discord.ChannelID, messageID discord.MessageID) (*discord.Message, error) {
 	return nil, nil
+}
+
+func (p *MockDiscordProvider) BotPermissions(ctx context.Context, guildID discord.GuildID, channelID discord.ChannelID) (discord.Permissions, error) {
+	// The mock grants every permission so it never blocks flow execution in tests.
+	return discord.PermissionAll, nil
 }
 
 func (p *MockDiscordProvider) CreateInteractionResponse(ctx context.Context, interactionID discord.InteractionID, interactionToken string, response api.InteractionResponse) (*InteractionResponseResource, error) {

@@ -111,6 +111,19 @@ type TestDiscordProvider struct {
 	purgeCount     int
 	purgeReturn    int
 	slowmodeEdited api.ModifyChannelData
+
+	// botPermissionsSet switches BotPermissions from the default (all permissions)
+	// to the configured botPermissions value, so tests can simulate a bot that is
+	// missing permissions.
+	botPermissionsSet bool
+	botPermissions    discord.Permissions
+}
+
+func (p *TestDiscordProvider) BotPermissions(ctx context.Context, guildID discord.GuildID, channelID discord.ChannelID) (discord.Permissions, error) {
+	if p.botPermissionsSet {
+		return p.botPermissions, nil
+	}
+	return discord.PermissionAll, nil
 }
 
 func (p *TestDiscordProvider) CreateInteractionResponse(ctx context.Context, interactionID discord.InteractionID, interactionToken string, response api.InteractionResponse) (*provider.InteractionResponseResource, error) {

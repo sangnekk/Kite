@@ -158,6 +158,22 @@ func (p *DiscordProvider) GuildRoles(ctx context.Context, guildID discord.GuildI
 	return roles, nil
 }
 
+// BotPermissions returns the bot's effective permissions in the given channel,
+// resolved from its own member, the guild roles, and the channel overwrites.
+func (p *DiscordProvider) BotPermissions(ctx context.Context, guildID discord.GuildID, channelID discord.ChannelID) (discord.Permissions, error) {
+	me, err := p.session.Me()
+	if err != nil {
+		return 0, fmt.Errorf("failed to get bot user: %w", err)
+	}
+
+	perms, err := p.session.Permissions(channelID, me.ID)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get bot permissions: %w", err)
+	}
+
+	return perms, nil
+}
+
 func (p *DiscordProvider) CreateInteractionResponse(ctx context.Context, interactionID discord.InteractionID, interactionToken string, response api.InteractionResponse) (*provider.InteractionResponseResource, error) {
 	p.interactionResponseMutex.Lock()
 	defer p.interactionResponseMutex.Unlock()

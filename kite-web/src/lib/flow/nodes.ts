@@ -73,6 +73,7 @@ import {
   nodeOptionCommandArgumentDataSchema,
   nodeOptionCommandContextsSchema,
   nodeOptionCommandPermissionsSchema,
+  nodeOptionCommandBotPermissionsSchema,
   nodeOptionEventFilterSchema,
   nodeSuspendResponseModalDataSchema,
 } from "./dataSchema";
@@ -1067,6 +1068,15 @@ export const nodeTypes: Record<string, NodeValues> = {
       "Chỉ cho phép người dùng có quyền nhất định sử dụng lệnh.",
     dataSchema: nodeOptionCommandPermissionsSchema,
     dataFields: ["command_permissions"],
+  },
+  option_command_bot_permissions: {
+    color: optionColor,
+    icon: "bot",
+    defaultTitle: "Quyền lệnh (Bot)",
+    defaultDescription:
+      "Yêu cầu bot có các quyền nhất định để chạy lệnh. Nếu thiếu, bot sẽ báo cho người dùng và dừng lại.",
+    dataSchema: nodeOptionCommandBotPermissionsSchema,
+    dataFields: ["command_bot_permissions"],
   },
   option_command_contexts: {
     color: optionColor,

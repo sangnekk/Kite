@@ -128,6 +128,10 @@ func (n *CompiledFlowNode) IsCommandPermissions() bool {
 	return n.Type == FlowNodeTypeOptionCommandPermissions
 }
 
+func (n *CompiledFlowNode) IsCommandBotPermissions() bool {
+	return n.Type == FlowNodeTypeOptionCommandBotPermissions
+}
+
 func (n *CompiledFlowNode) IsCommandContexts() bool {
 	return n.Type == FlowNodeTypeOptionCommandContexts
 }
@@ -376,6 +380,21 @@ func (n *CompiledFlowNode) CommandPermissions() *discord.Permissions {
 	}
 
 	return nil
+}
+
+// CommandBotPermissions returns the permissions the bot must hold in the
+// invocation channel for this command to run, declared via an
+// option_command_bot_permissions node connected to the command entry. It returns
+// 0 when no such option is present (i.e. no runtime permission check).
+func (n *CompiledFlowNode) CommandBotPermissions() discord.Permissions {
+	for _, node := range n.Parents.Default {
+		if node.IsCommandBotPermissions() {
+			raw, _ := strconv.ParseUint(node.Data.CommandBotPermissions, 10, 64)
+			return discord.Permissions(raw)
+		}
+	}
+
+	return 0
 }
 
 func (n *CompiledFlowNode) CommandContexts() []discord.InteractionContext {

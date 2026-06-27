@@ -32,6 +32,6 @@ Hãy kiểm tra nhật ký ứng dụng ở trang tổng quan để xem có lỗ
 
 - [Khối Lệnh](/reference/blocks/entries/entry_command) — điểm bắt đầu của flow lệnh
 - [Tạo tin nhắn phản hồi](/reference/blocks/actions/action_response_create) — trả lời người dùng
-- [Đối số lệnh](/reference/blocks/options/option_command_argument), [Quyền lệnh](/reference/blocks/options/option_command_permissions), [Bối cảnh lệnh](/reference/blocks/options/option_command_contexts) — tinh chỉnh lệnh
+- [Đối số lệnh](/reference/blocks/options/option_command_argument), [Quyền lệnh](/reference/blocks/options/option_command_permissions), [Quyền lệnh (Bot)](/reference/blocks/options/option_command_bot_permissions), [Bối cảnh lệnh](/reference/blocks/options/option_command_contexts) — tinh chỉnh lệnh
 - [Biểu thức](/reference/expressions) — lấy giá trị đối số bằng `arg('tên')`
 - [Sự kiện](/reference/event) — điểm vào còn lại để tự động hóa

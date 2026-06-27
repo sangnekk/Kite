@@ -97,6 +97,10 @@ export const nodeOptionCommandPermissionsSchema = nodeBaseDataSchema.extend({
   command_permissions: z.string().regex(numericRegex),
 });
 
+export const nodeOptionCommandBotPermissionsSchema = nodeBaseDataSchema.extend({
+  command_bot_permissions: z.string().regex(numericRegex),
+});
+
 export const nodeOptionCommandContextsSchema = nodeBaseDataSchema.extend({
   command_disabled_contexts: z
     .array(

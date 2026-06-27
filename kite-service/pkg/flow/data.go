@@ -44,10 +44,11 @@ const (
 	FlowNodeTypeEntryEvent           FlowNodeType = "entry_event"
 	FlowNodeTypeEntryComponentButton FlowNodeType = "entry_component_button"
 
-	FlowNodeTypeOptionCommandArgument    FlowNodeType = "option_command_argument"
-	FlowNodeTypeOptionCommandPermissions FlowNodeType = "option_command_permissions"
-	FlowNodeTypeOptionCommandContexts    FlowNodeType = "option_command_contexts"
-	FlowNodeTypeOptionEventFilter        FlowNodeType = "option_event_filter"
+	FlowNodeTypeOptionCommandArgument       FlowNodeType = "option_command_argument"
+	FlowNodeTypeOptionCommandPermissions    FlowNodeType = "option_command_permissions"
+	FlowNodeTypeOptionCommandBotPermissions FlowNodeType = "option_command_bot_permissions"
+	FlowNodeTypeOptionCommandContexts       FlowNodeType = "option_command_contexts"
+	FlowNodeTypeOptionEventFilter           FlowNodeType = "option_event_filter"
 
 	FlowNodeTypeActionResponseCreate        FlowNodeType = "action_response_create"
 	FlowNodeTypeActionResponseEdit          FlowNodeType = "action_response_edit"
@@ -172,8 +173,16 @@ type FlowNodeData struct {
 	CommandDisableSlash bool `json:"command_disable_slash,omitempty"`
 	CommandEnablePrefix bool `json:"command_enable_prefix,omitempty"`
 
-	// Command Permissions
+	// Command Permissions — the permissions the invoking USER must have. This is
+	// enforced by Discord itself via DefaultMemberPermissions on the command.
 	CommandPermissions string `json:"command_permissions,omitempty"`
+
+	// Command Bot Permissions — the permissions the BOT must hold in the
+	// invocation channel for the command to run. Unlike CommandPermissions,
+	// Discord does not enforce this, so it is checked at runtime before the flow
+	// executes; when the bot is missing a permission the invoker is told and the
+	// flow is skipped. Stored as a decimal permission bitmask string.
+	CommandBotPermissions string `json:"command_bot_permissions,omitempty"`
 
 	// Command Contexts
 	CommandDisabledContexts []CommandContextType `json:"command_disabled_contexts,omitempty"`

@@ -44,7 +44,19 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 			return fmt.Errorf("command entry isn't the entry node")
 		}
 
-		err := n.autoDeferInteraction(ctx)
+		// Gate on the bot's own permissions before doing anything: if an
+		// option_command_bot_permissions node declares permissions the bot lacks
+		// in this channel, tell the invoker and stop instead of letting later
+		// Discord API calls fail and forcing the author to wire an error handler.
+		proceed, err := n.checkRequiredBotPermissions(ctx)
+		if err != nil {
+			return traceError(n, err)
+		}
+		if !proceed {
+			return nil
+		}
+
+		err = n.autoDeferInteraction(ctx)
 		if err != nil {
 			return traceError(n, err)
 		}
@@ -2492,6 +2504,135 @@ func createDefaultErrorResponse(fCtx *FlowContext, err error) {
 			Data: &respData,
 		})
 	}
+}
+
+// checkRequiredBotPermissions enforces an optional option_command_bot_permissions
+// node attached to the command entry. It returns true when the flow may proceed
+// and false when the bot is missing a required permission — in which case the
+// invoker has already been told which permissions are missing. Errors are only
+// returned for genuine internal failures; an inability to resolve the bot's
+// permissions fails open so a valid command is never blocked by accident.
+func (n *CompiledFlowNode) checkRequiredBotPermissions(ctx *FlowContext) (bool, error) {
+	required := n.CommandBotPermissions()
+	if required == 0 {
+		return true, nil
+	}
+
+	guildID := ctx.Data.GuildID()
+	if !guildID.IsValid() {
+		// Outside a guild (e.g. user-install commands in DMs) there are no
+		// channel permissions to enforce.
+		return true, nil
+	}
+
+	have, err := ctx.Discord.BotPermissions(ctx, guildID, ctx.Data.ChannelID())
+	if err != nil {
+		// Fail open: don't block an otherwise valid command just because the
+		// permission lookup failed.
+		return true, nil
+	}
+
+	if have.Has(required) {
+		return true, nil
+	}
+
+	n.respondMissingBotPermissions(ctx, required&^have)
+	return false, nil
+}
+
+// respondMissingBotPermissions notifies the invoker that the bot lacks the
+// permissions needed to run the command. Slash commands get an ephemeral reply;
+// prefix/text commands get a regular channel message.
+func (n *CompiledFlowNode) respondMissingBotPermissions(ctx *FlowContext, missing discord.Permissions) {
+	content := "⚠️ Bot không có đủ quyền để chạy lệnh này.\nThiếu quyền: " + formatPermissionNames(missing)
+
+	interaction := ctx.Data.Interaction()
+	if interaction == nil {
+		if isTextCommand(ctx) {
+			_, _ = ctx.Discord.CreateMessage(ctx, ctx.Data.ChannelID(), api.SendMessageData{
+				Content: content,
+			})
+		}
+		return
+	}
+
+	respData := api.InteractionResponseData{
+		Content: option.NewNullableString(content),
+		Flags:   discord.EphemeralMessage,
+	}
+
+	hasCreatedResponse, _ := ctx.Discord.HasCreatedInteractionResponse(ctx, interaction.ID)
+	if hasCreatedResponse {
+		_, _ = ctx.Discord.CreateInteractionFollowup(ctx, interaction.AppID, interaction.Token, respData)
+	} else {
+		_, _ = ctx.Discord.CreateInteractionResponse(ctx, interaction.ID, interaction.Token, api.InteractionResponse{
+			Type: api.MessageInteractionWithSource,
+			Data: &respData,
+		})
+	}
+}
+
+// botPermissionLabels maps individual permission bits to Vietnamese labels for
+// the "missing permissions" notice. Only single-bit permissions are listed; the
+// order is roughly by how commonly a bot action needs them.
+var botPermissionLabels = []struct {
+	perm  discord.Permissions
+	label string
+}{
+	{discord.PermissionAdministrator, "Quản trị viên"},
+	{discord.PermissionManageGuild, "Quản lý máy chủ"},
+	{discord.PermissionManageRoles, "Quản lý vai trò"},
+	{discord.PermissionManageChannels, "Quản lý kênh"},
+	{discord.PermissionManageWebhooks, "Quản lý webhook"},
+	{discord.PermissionManageEvents, "Quản lý sự kiện"},
+	{discord.PermissionManageThreads, "Quản lý luồng"},
+	{discord.PermissionManageMessages, "Quản lý tin nhắn"},
+	{discord.PermissionManageNicknames, "Quản lý biệt danh"},
+	{discord.PermissionManageEmojisAndStickers, "Quản lý emoji & sticker"},
+	{discord.PermissionKickMembers, "Đuổi thành viên"},
+	{discord.PermissionBanMembers, "Cấm thành viên"},
+	{discord.PermissionModerateMembers, "Phạt thành viên (timeout)"},
+	{discord.PermissionViewAuditLog, "Xem nhật ký kiểm duyệt"},
+	{discord.PermissionViewChannel, "Xem kênh"},
+	{discord.PermissionReadMessageHistory, "Đọc lịch sử tin nhắn"},
+	{discord.PermissionSendMessages, "Gửi tin nhắn"},
+	{discord.PermissionSendMessagesInThreads, "Gửi tin trong luồng"},
+	{discord.PermissionCreatePublicThreads, "Tạo luồng công khai"},
+	{discord.PermissionCreatePrivateThreads, "Tạo luồng riêng"},
+	{discord.PermissionEmbedLinks, "Nhúng liên kết"},
+	{discord.PermissionAttachFiles, "Đính kèm tệp"},
+	{discord.PermissionAddReactions, "Thêm cảm xúc"},
+	{discord.PermissionUseExternalEmojis, "Dùng emoji ngoài"},
+	{discord.PermissionMentionEveryone, "Nhắc @everyone"},
+	{discord.PermissionCreateInstantInvite, "Tạo lời mời"},
+	{discord.PermissionConnect, "Kết nối kênh thoại"},
+	{discord.PermissionSpeak, "Nói trong kênh thoại"},
+	{discord.PermissionMuteMembers, "Tắt tiếng thành viên"},
+	{discord.PermissionDeafenMembers, "Chặn nghe thành viên"},
+	{discord.PermissionMoveMembers, "Di chuyển thành viên"},
+}
+
+// formatPermissionNames turns a permission bitmask into a comma-separated list of
+// human labels. Any bits without a known label are reported as a raw bitmask so
+// the message is still actionable.
+func formatPermissionNames(perms discord.Permissions) string {
+	var (
+		names     []string
+		remaining = perms
+	)
+	for _, p := range botPermissionLabels {
+		if remaining.Has(p.perm) {
+			names = append(names, p.label)
+			remaining &^= p.perm
+		}
+	}
+	if remaining != 0 {
+		names = append(names, fmt.Sprintf("(mã quyền %d)", uint64(remaining)))
+	}
+	if len(names) == 0 {
+		return fmt.Sprintf("(mã quyền %d)", uint64(perms))
+	}
+	return strings.Join(names, ", ")
 }
 
 // formatNumber renders a number according to a display style:

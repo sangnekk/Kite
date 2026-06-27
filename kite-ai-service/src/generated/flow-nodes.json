@@ -6130,6 +6130,48 @@
       "creditsCost": null
     },
     {
+      "type": "option_command_bot_permissions",
+      "category": "option",
+      "section": "Lệnh",
+      "contextTypes": [
+        "command"
+      ],
+      "title": "Quyền lệnh (Bot)",
+      "description": "Yêu cầu bot có các quyền nhất định để chạy lệnh. Nếu thiếu, bot sẽ báo cho người dùng và dừng lại.",
+      "icon": "bot",
+      "color": "#8b5cf6",
+      "dataFields": [
+        "command_bot_permissions"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "command_bot_permissions": {
+            "type": "string",
+            "pattern": "^[0-9]+$"
+          }
+        },
+        "required": [
+          "command_bot_permissions"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": null
+    },
+    {
       "type": "option_command_contexts",
       "category": "option",
       "section": "Lệnh",

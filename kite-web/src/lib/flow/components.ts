@@ -28,6 +28,7 @@ export const nodeTypes = {
 
   option_command_argument: FlowNodeOptionCommandArgument,
   option_command_permissions: FlowNodeOptionBase,
+  option_command_bot_permissions: FlowNodeOptionBase,
   option_command_contexts: FlowNodeOptionBase,
   option_event_filter: FlowNodeOptionBase,
 

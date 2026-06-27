@@ -105,6 +105,7 @@ const intputs: Record<string, any> = {
   command_contexts: CommandContextsInput,
   command_integrations: CommandIntegrationsInput,
   command_permissions: CommandPermissionsInput,
+  command_bot_permissions: CommandBotPermissionsInput,
   event_type: EventTypeInput,
   event_filter_target: EventFilterTargetInput,
   event_filter_mode: EventFilterModeInput,
@@ -706,6 +707,23 @@ function CommandPermissionsInput({ data, updateData, errors }: InputProps) {
       updateValue={(v) =>
         updateData({
           command_permissions: v === "0" ? undefined : v,
+        })
+      }
+      errors={errors}
+    />
+  );
+}
+
+function CommandBotPermissionsInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BasePermissionInput
+      field="command_bot_permissions"
+      title="Quyền bot cần có"
+      description="Bot phải có các quyền này trong kênh để chạy lệnh. Nếu thiếu, người dùng sẽ được thông báo và lệnh không chạy."
+      value={data.command_bot_permissions || "0"}
+      updateValue={(v) =>
+        updateData({
+          command_bot_permissions: v === "0" ? undefined : v,
         })
       }
       errors={errors}

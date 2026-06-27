@@ -22,6 +22,7 @@ export const nodeCategories = {
       nodeTypes: [
         "option_command_argument",
         "option_command_permissions",
+        "option_command_bot_permissions",
         "option_command_contexts",
       ],
       contextTypes: ["command"],
