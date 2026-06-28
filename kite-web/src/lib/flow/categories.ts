@@ -156,7 +156,7 @@ export const nodeCategories = {
     },
     {
       title: "Văn bản",
-      nodeTypes: ["action_text_transform"],
+      nodeTypes: ["action_text_transform", "action_regex_match"],
       contextTypes: null,
     },
     {
@@ -171,6 +171,8 @@ export const nodeCategories = {
         "action_list_format",
         "action_list_join",
         "action_list_length",
+        "action_list_sort",
+        "action_list_reverse",
         "action_json_parse",
         "action_json_build",
       ],
@@ -178,7 +180,7 @@ export const nodeCategories = {
     },
     {
       title: "Thời gian",
-      nodeTypes: ["action_time_now"],
+      nodeTypes: ["action_time_now", "action_time_math", "action_time_diff"],
       contextTypes: null,
     },
     {

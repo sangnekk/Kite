@@ -80,6 +80,11 @@ export const FlowNodeTypeActionNumberFormat: FlowNodeType = "action_number_forma
 export const FlowNodeTypeActionListFormat: FlowNodeType = "action_list_format";
 export const FlowNodeTypeActionListJoin: FlowNodeType = "action_list_join";
 export const FlowNodeTypeActionListLength: FlowNodeType = "action_list_length";
+export const FlowNodeTypeActionListSort: FlowNodeType = "action_list_sort";
+export const FlowNodeTypeActionListReverse: FlowNodeType = "action_list_reverse";
+export const FlowNodeTypeActionRegexMatch: FlowNodeType = "action_regex_match";
+export const FlowNodeTypeActionTimeMath: FlowNodeType = "action_time_math";
+export const FlowNodeTypeActionTimeDiff: FlowNodeType = "action_time_diff";
 export const FlowNodeTypeActionMessagePin: FlowNodeType = "action_message_pin";
 export const FlowNodeTypeActionMessageUnpin: FlowNodeType = "action_message_unpin";
 export const FlowNodeTypeActionMessagePurge: FlowNodeType = "action_message_purge";
@@ -213,10 +218,19 @@ export interface FlowNodeData {
   economy_limit?: string; // template resolving to the leaderboard size
   economy_allow_negative?: boolean; // allow balances to drop below zero
   /**
-   * Time Now
+   * Time Now (TimeFormat/TimeTimezone are also reused by Time Math output)
    */
   time_format?: string; // unix | unix_ms | iso | date | time | datetime | custom Go layout
   time_timezone?: string; // IANA timezone name, empty = UTC
+  /**
+   * Time Math / Diff
+   */
+  time_input?: string; // template resolving to a unix timestamp or RFC3339 string
+  time_amount?: string; // template resolving to the amount to add/subtract
+  time_unit?: string; // s | m | h | d (shared by math and diff)
+  time_op?: string; // add | sub
+  time_a?: string; // diff: first timestamp
+  time_b?: string; // diff: second timestamp (result is b - a in TimeUnit)
   /**
    * List Pick
    */
@@ -228,23 +242,29 @@ export interface FlowNodeData {
   number_style?: string; // thousands | compact | decimal
   number_decimals?: string; // template resolving to the decimal places
   /**
-   * List Format / Join / Length
+   * List Format / Join / Length / Sort / Reverse
    */
   list_input?: string; // template resolving to a list
   list_item_template?: string; // per-item template, with {{item}} and {{index}} bound
   list_joiner?: string; // separator template, default newline
+  list_sort_order?: string; // asc | desc
   /**
    * Message Purge / Channel Slowmode (pin/unpin reuse channel_target + message_target)
    */
   message_purge_count?: string; // template resolving to how many messages to delete
   channel_slowmode_seconds?: string; // template resolving to the slowmode in seconds
   /**
-   * Text Transform
+   * Text Transform (TextInput is also reused as the Regex Match source text)
    */
   text_input?: string; // template resolving to the source text
   text_operation?: string; // upper | lower | trim | length | replace | split
   text_arg1?: string; // replace: search, split: separator
   text_arg2?: string; // replace: replacement
+  /**
+   * Regex Match (uses TextInput as the source text)
+   */
+  regex_pattern?: string; // template resolving to the regex pattern
+  regex_flags?: string; // any of i (case-insensitive), m (multiline), s (dotall)
   /**
    * JSON Parse / Build
    */

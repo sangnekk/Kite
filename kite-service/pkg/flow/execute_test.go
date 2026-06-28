@@ -893,3 +893,164 @@ func TestFlowExecuteMemberVoiceDeafen(t *testing.T) {
 	require.NotNil(t, d.editedMember.Deaf)
 	assert.False(t, *d.editedMember.Deaf)
 }
+
+func TestFlowExecuteListSortNumericAsc(t *testing.T) {
+	c := newEconomyTestContext(t, &TestEconomyProvider{})
+	defer c.Cancel()
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionListSort,
+		Data: FlowNodeData{ListInput: `{{[3, 1, 2]}}`, ListSortOrder: "asc"},
+	}
+
+	require.NoError(t, node.Execute(c))
+	items := c.GetNodeResult("0").Array()
+	require.Len(t, items, 3)
+	assert.Equal(t, int64(1), items[0].Int())
+	assert.Equal(t, int64(2), items[1].Int())
+	assert.Equal(t, int64(3), items[2].Int())
+}
+
+func TestFlowExecuteListSortDesc(t *testing.T) {
+	c := newEconomyTestContext(t, &TestEconomyProvider{})
+	defer c.Cancel()
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionListSort,
+		Data: FlowNodeData{ListInput: `{{[3, 1, 2]}}`, ListSortOrder: "desc"},
+	}
+
+	require.NoError(t, node.Execute(c))
+	items := c.GetNodeResult("0").Array()
+	require.Len(t, items, 3)
+	assert.Equal(t, int64(3), items[0].Int())
+	assert.Equal(t, int64(2), items[1].Int())
+	assert.Equal(t, int64(1), items[2].Int())
+}
+
+func TestFlowExecuteListReverse(t *testing.T) {
+	c := newEconomyTestContext(t, &TestEconomyProvider{})
+	defer c.Cancel()
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionListReverse,
+		Data: FlowNodeData{ListInput: `{{["a", "b", "c"]}}`},
+	}
+
+	require.NoError(t, node.Execute(c))
+	items := c.GetNodeResult("0").Array()
+	require.Len(t, items, 3)
+	assert.Equal(t, "c", items[0].String())
+	assert.Equal(t, "b", items[1].String())
+	assert.Equal(t, "a", items[2].String())
+}
+
+func TestFlowExecuteRegexMatch(t *testing.T) {
+	c := newEconomyTestContext(t, &TestEconomyProvider{})
+	defer c.Cancel()
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionRegexMatch,
+		Data: FlowNodeData{
+			TextInput:    "hello123world",
+			RegexPattern: `([a-z]+)(\d+)`,
+		},
+	}
+
+	require.NoError(t, node.Execute(c))
+	res := c.GetNodeResult("0").Object()
+	assert.True(t, res["matched"].Bool())
+	groups := res["groups"].Array()
+	require.Len(t, groups, 3)
+	assert.Equal(t, "hello123", groups[0].String())
+	assert.Equal(t, "hello", groups[1].String())
+	assert.Equal(t, "123", groups[2].String())
+}
+
+func TestFlowExecuteRegexMatchNoMatch(t *testing.T) {
+	c := newEconomyTestContext(t, &TestEconomyProvider{})
+	defer c.Cancel()
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionRegexMatch,
+		Data: FlowNodeData{TextInput: "abc", RegexPattern: `\d+`},
+	}
+
+	require.NoError(t, node.Execute(c))
+	res := c.GetNodeResult("0").Object()
+	assert.False(t, res["matched"].Bool())
+	assert.Len(t, res["groups"].Array(), 0)
+}
+
+func TestFlowExecuteRegexMatchCaseInsensitive(t *testing.T) {
+	c := newEconomyTestContext(t, &TestEconomyProvider{})
+	defer c.Cancel()
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionRegexMatch,
+		Data: FlowNodeData{TextInput: "HELLO", RegexPattern: `hello`, RegexFlags: "i"},
+	}
+
+	require.NoError(t, node.Execute(c))
+	assert.True(t, c.GetNodeResult("0").Object()["matched"].Bool())
+}
+
+func TestFlowExecuteTimeMathAdd(t *testing.T) {
+	c := newEconomyTestContext(t, &TestEconomyProvider{})
+	defer c.Cancel()
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionTimeMath,
+		Data: FlowNodeData{
+			TimeInput:  "1000",
+			TimeAmount: "1",
+			TimeUnit:   "h",
+			TimeOp:     "add",
+			TimeFormat: "unix",
+		},
+	}
+
+	require.NoError(t, node.Execute(c))
+	assert.Equal(t, int64(4600), c.GetNodeResult("0").Int())
+}
+
+func TestFlowExecuteTimeMathSub(t *testing.T) {
+	c := newEconomyTestContext(t, &TestEconomyProvider{})
+	defer c.Cancel()
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionTimeMath,
+		Data: FlowNodeData{
+			TimeInput:  "1000",
+			TimeAmount: "1",
+			TimeUnit:   "h",
+			TimeOp:     "sub",
+			TimeFormat: "unix",
+		},
+	}
+
+	require.NoError(t, node.Execute(c))
+	assert.Equal(t, int64(-2600), c.GetNodeResult("0").Int())
+}
+
+func TestFlowExecuteTimeDiff(t *testing.T) {
+	c := newEconomyTestContext(t, &TestEconomyProvider{})
+	defer c.Cancel()
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionTimeDiff,
+		Data: FlowNodeData{TimeA: "1000", TimeB: "4600", TimeUnit: "h"},
+	}
+
+	require.NoError(t, node.Execute(c))
+	assert.Equal(t, 1.0, c.GetNodeResult("0").Float())
+}

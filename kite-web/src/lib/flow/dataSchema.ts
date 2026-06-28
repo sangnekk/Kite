@@ -821,6 +821,36 @@ export const nodeActionListLengthDataSchema = nodeBaseDataSchema.extend({
   list_input: z.string(),
 });
 
+export const nodeActionListSortDataSchema = nodeBaseDataSchema.extend({
+  list_input: z.string(),
+  list_sort_order: z.string().optional(),
+});
+
+export const nodeActionListReverseDataSchema = nodeBaseDataSchema.extend({
+  list_input: z.string(),
+});
+
+export const nodeActionRegexMatchDataSchema = nodeBaseDataSchema.extend({
+  text_input: z.string(),
+  regex_pattern: z.string(),
+  regex_flags: z.string().optional(),
+});
+
+export const nodeActionTimeMathDataSchema = nodeBaseDataSchema.extend({
+  time_input: z.string(),
+  time_amount: z.string(),
+  time_unit: z.string().optional(),
+  time_op: z.string().optional(),
+  time_format: z.string().optional(),
+  time_timezone: z.string().optional(),
+});
+
+export const nodeActionTimeDiffDataSchema = nodeBaseDataSchema.extend({
+  time_a: z.string(),
+  time_b: z.string(),
+  time_unit: z.string().optional(),
+});
+
 export const nodeActionMessagePinDataSchema = nodeBaseDataSchema.extend({
   channel_target: z
     .string()

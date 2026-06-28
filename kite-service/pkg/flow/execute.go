@@ -11,6 +11,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -1558,37 +1559,12 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 		ctx.StoreNodeResult(n, thing.NewArray(items))
 		return n.ExecuteChildren(ctx)
 	case FlowNodeTypeActionTimeNow:
-		loc := time.UTC
-		if n.Data.TimeTimezone != "" {
-			l, err := time.LoadLocation(n.Data.TimeTimezone)
-			if err != nil {
-				return traceError(n, err)
-			}
-			loc = l
+		loc, err := loadTimezone(n.Data.TimeTimezone)
+		if err != nil {
+			return traceError(n, err)
 		}
 
-		now := time.Now().In(loc)
-
-		var res thing.Thing
-		switch n.Data.TimeFormat {
-		case "", "unix":
-			res = thing.NewInt(now.Unix())
-		case "unix_ms":
-			res = thing.NewInt(now.UnixMilli())
-		case "iso":
-			res = thing.NewString(now.Format(time.RFC3339))
-		case "date":
-			res = thing.NewString(now.Format("2006-01-02"))
-		case "time":
-			res = thing.NewString(now.Format("15:04:05"))
-		case "datetime":
-			res = thing.NewString(now.Format("2006-01-02 15:04:05"))
-		default:
-			// Any other value is treated as a custom Go time layout.
-			res = thing.NewString(now.Format(n.Data.TimeFormat))
-		}
-
-		ctx.StoreNodeResult(n, res)
+		ctx.StoreNodeResult(n, formatTimeResult(time.Now().In(loc), n.Data.TimeFormat))
 		return n.ExecuteChildren(ctx)
 	case FlowNodeTypeActionListPick:
 		list, err := ctx.EvalTemplate(n.Data.ListPickInput)
@@ -1798,6 +1774,131 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 		}
 
 		ctx.StoreNodeResult(n, thing.NewInt(len(list.AsList())))
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionListSort:
+		list, err := ctx.EvalTemplate(n.Data.ListInput)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		items := list.AsList()
+		sorted := make([]thing.Thing, len(items))
+		copy(sorted, items)
+
+		desc := n.Data.ListSortOrder == "desc"
+		slices.SortStableFunc(sorted, func(a, b thing.Thing) int {
+			c := compareThings(a, b)
+			if desc {
+				return -c
+			}
+			return c
+		})
+
+		ctx.StoreNodeResult(n, thing.NewArray(sorted))
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionListReverse:
+		list, err := ctx.EvalTemplate(n.Data.ListInput)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		items := list.AsList()
+		reversed := make([]thing.Thing, len(items))
+		copy(reversed, items)
+		slices.Reverse(reversed)
+
+		ctx.StoreNodeResult(n, thing.NewArray(reversed))
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionRegexMatch:
+		text, err := ctx.EvalTemplate(n.Data.TextInput)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		pattern, err := ctx.EvalTemplate(n.Data.RegexPattern)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		expr := pattern.String()
+		if flags := sanitizeRegexFlags(n.Data.RegexFlags); flags != "" {
+			expr = "(?" + flags + ")" + expr
+		}
+
+		re, err := regexp.Compile(expr)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		match := re.FindStringSubmatch(text.String())
+		groups := make([]thing.Thing, len(match))
+		for i, g := range match {
+			groups[i] = thing.NewString(g)
+		}
+
+		ctx.StoreNodeResult(n, thing.NewObject(map[string]thing.Thing{
+			"matched": thing.NewBool(match != nil),
+			"groups":  thing.NewArray(groups),
+		}))
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionTimeMath:
+		input, err := ctx.EvalTemplate(n.Data.TimeInput)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		base, err := parseTimeInput(input)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		amount, err := ctx.EvalTemplate(n.Data.TimeAmount)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		unit, err := timeUnitDuration(n.Data.TimeUnit)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		delta := time.Duration(amount.Int()) * unit
+		if n.Data.TimeOp == "sub" {
+			delta = -delta
+		}
+
+		loc, err := loadTimezone(n.Data.TimeTimezone)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		ctx.StoreNodeResult(n, formatTimeResult(base.Add(delta).In(loc), n.Data.TimeFormat))
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionTimeDiff:
+		a, err := ctx.EvalTemplate(n.Data.TimeA)
+		if err != nil {
+			return traceError(n, err)
+		}
+		ta, err := parseTimeInput(a)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		b, err := ctx.EvalTemplate(n.Data.TimeB)
+		if err != nil {
+			return traceError(n, err)
+		}
+		tb, err := parseTimeInput(b)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		unit, err := timeUnitDuration(n.Data.TimeUnit)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		ctx.StoreNodeResult(n, thing.NewFloat(tb.Sub(ta).Seconds()/unit.Seconds()))
 		return n.ExecuteChildren(ctx)
 	case FlowNodeTypeActionMessagePin, FlowNodeTypeActionMessageUnpin:
 		channelTarget, err := ctx.EvalTemplate(n.Data.ChannelTarget)
@@ -2831,6 +2932,103 @@ func optBool(b bool) option.Bool {
 		return option.True
 	}
 	return option.False
+}
+
+// loadTimezone resolves an IANA timezone name, defaulting to UTC when empty.
+func loadTimezone(name string) (*time.Location, error) {
+	if name == "" {
+		return time.UTC, nil
+	}
+	return time.LoadLocation(name)
+}
+
+// formatTimeResult renders a time according to one of the named formats; any
+// unrecognized value is treated as a custom Go time layout.
+func formatTimeResult(t time.Time, format string) thing.Thing {
+	switch format {
+	case "", "unix":
+		return thing.NewInt(t.Unix())
+	case "unix_ms":
+		return thing.NewInt(t.UnixMilli())
+	case "iso":
+		return thing.NewString(t.Format(time.RFC3339))
+	case "date":
+		return thing.NewString(t.Format("2006-01-02"))
+	case "time":
+		return thing.NewString(t.Format("15:04:05"))
+	case "datetime":
+		return thing.NewString(t.Format("2006-01-02 15:04:05"))
+	default:
+		return thing.NewString(t.Format(format))
+	}
+}
+
+// parseTimeInput accepts a unix timestamp (seconds) or a common date/time string
+// and returns the corresponding UTC time.
+func parseTimeInput(t thing.Thing) (time.Time, error) {
+	s := strings.TrimSpace(t.String())
+	if s == "" {
+		return time.Time{}, fmt.Errorf("empty time value")
+	}
+	if n, err := strconv.ParseInt(s, 10, 64); err == nil {
+		return time.Unix(n, 0).UTC(), nil
+	}
+	for _, layout := range []string{time.RFC3339, "2006-01-02 15:04:05", "2006-01-02"} {
+		if tm, err := time.Parse(layout, s); err == nil {
+			return tm.UTC(), nil
+		}
+	}
+	return time.Time{}, fmt.Errorf("invalid time value %q", s)
+}
+
+// timeUnitDuration maps a unit code (s/m/h/d, default seconds) to a duration.
+func timeUnitDuration(unit string) (time.Duration, error) {
+	switch unit {
+	case "", "s":
+		return time.Second, nil
+	case "m":
+		return time.Minute, nil
+	case "h":
+		return time.Hour, nil
+	case "d":
+		return 24 * time.Hour, nil
+	default:
+		return 0, fmt.Errorf("invalid time unit %q", unit)
+	}
+}
+
+// sanitizeRegexFlags keeps only the supported inline regex flags (i/m/s) so the
+// user-supplied value can't inject arbitrary regex syntax.
+func sanitizeRegexFlags(flags string) string {
+	var b strings.Builder
+	for _, r := range flags {
+		switch r {
+		case 'i', 'm', 's':
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
+// compareThings orders two things: numerically when both are numbers, otherwise
+// by their string representation. Returns -1, 0, or 1.
+func compareThings(a, b thing.Thing) int {
+	if isNumericThing(a) && isNumericThing(b) {
+		af, bf := a.Float(), b.Float()
+		switch {
+		case af < bf:
+			return -1
+		case af > bf:
+			return 1
+		default:
+			return 0
+		}
+	}
+	return strings.Compare(a.String(), b.String())
+}
+
+func isNumericThing(t thing.Thing) bool {
+	return t.Type == thing.TypeInt || t.Type == thing.TypeFloat
 }
 
 // formatNumber renders a number according to a display style:

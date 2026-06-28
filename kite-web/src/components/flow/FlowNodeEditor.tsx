@@ -132,6 +132,15 @@ const intputs: Record<string, any> = {
   random_max: RandomMaxInput,
   time_format: TimeFormatInput,
   time_timezone: TimeTimezoneInput,
+  time_input: TimeInputField,
+  time_amount: TimeAmountInput,
+  time_unit: TimeUnitInput,
+  time_op: TimeOpInput,
+  time_a: TimeAInput,
+  time_b: TimeBInput,
+  regex_pattern: RegexPatternInput,
+  regex_flags: RegexFlagsInput,
+  list_sort_order: ListSortOrderInput,
   list_pick_input: ListPickInput,
   text_input: TextInput,
   text_operation: TextOperationInput,
@@ -1198,6 +1207,140 @@ function TimeTimezoneInput({ data, updateData, errors }: InputProps) {
       updateValue={(v) => updateData({ time_timezone: v || undefined })}
       errors={errors}
       placeholders
+    />
+  );
+}
+
+function TimeInputField({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="time_input"
+      title="Thời gian"
+      description="Unix timestamp (giây) hoặc chuỗi ISO 8601."
+      value={data.time_input || ""}
+      updateValue={(v) => updateData({ time_input: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function TimeAmountInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="time_amount"
+      title="Số lượng"
+      value={data.time_amount || ""}
+      updateValue={(v) => updateData({ time_amount: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function TimeUnitInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="time_unit"
+      title="Đơn vị"
+      type="select"
+      options={[
+        { value: "s", label: "Giây" },
+        { value: "m", label: "Phút" },
+        { value: "h", label: "Giờ" },
+        { value: "d", label: "Ngày" },
+      ]}
+      value={data.time_unit || "s"}
+      updateValue={(v) => updateData({ time_unit: v || undefined })}
+      errors={errors}
+    />
+  );
+}
+
+function TimeOpInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="time_op"
+      title="Phép tính"
+      type="select"
+      options={[
+        { value: "add", label: "Cộng" },
+        { value: "sub", label: "Trừ" },
+      ]}
+      value={data.time_op || "add"}
+      updateValue={(v) => updateData({ time_op: v || undefined })}
+      errors={errors}
+    />
+  );
+}
+
+function TimeAInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="time_a"
+      title="Thời gian A"
+      description="Unix timestamp (giây) hoặc chuỗi ISO 8601."
+      value={data.time_a || ""}
+      updateValue={(v) => updateData({ time_a: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function TimeBInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="time_b"
+      title="Thời gian B"
+      description="Kết quả là B − A theo đơn vị đã chọn."
+      value={data.time_b || ""}
+      updateValue={(v) => updateData({ time_b: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function RegexPatternInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="regex_pattern"
+      title="Biểu thức (Regex)"
+      value={data.regex_pattern || ""}
+      updateValue={(v) => updateData({ regex_pattern: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function RegexFlagsInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="regex_flags"
+      title="Cờ (tùy chọn)"
+      description="i = không phân biệt hoa/thường, m = nhiều dòng, s = . khớp xuống dòng."
+      value={data.regex_flags || ""}
+      updateValue={(v) => updateData({ regex_flags: v || undefined })}
+      errors={errors}
+    />
+  );
+}
+
+function ListSortOrderInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="list_sort_order"
+      title="Thứ tự"
+      type="select"
+      options={[
+        { value: "asc", label: "Tăng dần" },
+        { value: "desc", label: "Giảm dần" },
+      ]}
+      value={data.list_sort_order || "asc"}
+      updateValue={(v) => updateData({ list_sort_order: v || undefined })}
+      errors={errors}
     />
   );
 }

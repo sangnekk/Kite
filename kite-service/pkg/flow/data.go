@@ -114,6 +114,11 @@ const (
 	FlowNodeTypeActionListFormat            FlowNodeType = "action_list_format"
 	FlowNodeTypeActionListJoin              FlowNodeType = "action_list_join"
 	FlowNodeTypeActionListLength            FlowNodeType = "action_list_length"
+	FlowNodeTypeActionListSort              FlowNodeType = "action_list_sort"
+	FlowNodeTypeActionListReverse           FlowNodeType = "action_list_reverse"
+	FlowNodeTypeActionRegexMatch            FlowNodeType = "action_regex_match"
+	FlowNodeTypeActionTimeMath              FlowNodeType = "action_time_math"
+	FlowNodeTypeActionTimeDiff              FlowNodeType = "action_time_diff"
 	FlowNodeTypeActionMessagePin            FlowNodeType = "action_message_pin"
 	FlowNodeTypeActionMessageUnpin          FlowNodeType = "action_message_unpin"
 	FlowNodeTypeActionMessagePurge          FlowNodeType = "action_message_purge"
@@ -245,9 +250,17 @@ type FlowNodeData struct {
 	EconomyLimit         string `json:"economy_limit,omitempty"`          // template resolving to the leaderboard size
 	EconomyAllowNegative bool   `json:"economy_allow_negative,omitempty"` // allow balances to drop below zero
 
-	// Time Now
+	// Time Now (TimeFormat/TimeTimezone are also reused by Time Math output)
 	TimeFormat   string `json:"time_format,omitempty"`   // unix | unix_ms | iso | date | time | datetime | custom Go layout
 	TimeTimezone string `json:"time_timezone,omitempty"` // IANA timezone name, empty = UTC
+
+	// Time Math / Diff
+	TimeInput  string `json:"time_input,omitempty"`  // template resolving to a unix timestamp or RFC3339 string
+	TimeAmount string `json:"time_amount,omitempty"` // template resolving to the amount to add/subtract
+	TimeUnit   string `json:"time_unit,omitempty"`   // s | m | h | d (shared by math and diff)
+	TimeOp     string `json:"time_op,omitempty"`     // add | sub
+	TimeA      string `json:"time_a,omitempty"`      // diff: first timestamp
+	TimeB      string `json:"time_b,omitempty"`      // diff: second timestamp (result is b - a in TimeUnit)
 
 	// List Pick
 	ListPickInput string `json:"list_pick_input,omitempty"` // template resolving to a list
@@ -257,20 +270,25 @@ type FlowNodeData struct {
 	NumberStyle    string `json:"number_style,omitempty"`    // thousands | compact | decimal
 	NumberDecimals string `json:"number_decimals,omitempty"` // template resolving to the decimal places
 
-	// List Format / Join / Length
+	// List Format / Join / Length / Sort / Reverse
 	ListInput        string `json:"list_input,omitempty"`         // template resolving to a list
 	ListItemTemplate string `json:"list_item_template,omitempty"` // per-item template, with {{item}} and {{index}} bound
 	ListJoiner       string `json:"list_joiner,omitempty"`        // separator template, default newline
+	ListSortOrder    string `json:"list_sort_order,omitempty"`    // asc | desc
 
 	// Message Purge / Channel Slowmode (pin/unpin reuse channel_target + message_target)
 	MessagePurgeCount      string `json:"message_purge_count,omitempty"`      // template resolving to how many messages to delete
 	ChannelSlowmodeSeconds string `json:"channel_slowmode_seconds,omitempty"` // template resolving to the slowmode in seconds
 
-	// Text Transform
+	// Text Transform (TextInput is also reused as the Regex Match source text)
 	TextInput     string `json:"text_input,omitempty"`     // template resolving to the source text
 	TextOperation string `json:"text_operation,omitempty"` // upper | lower | trim | length | replace | split
 	TextArg1      string `json:"text_arg1,omitempty"`      // replace: search, split: separator
 	TextArg2      string `json:"text_arg2,omitempty"`      // replace: replacement
+
+	// Regex Match (uses TextInput as the source text)
+	RegexPattern string `json:"regex_pattern,omitempty"` // template resolving to the regex pattern
+	RegexFlags   string `json:"regex_flags,omitempty"`   // any of i (case-insensitive), m (multiline), s (dotall)
 
 	// JSON Parse / Build
 	JSONInput string `json:"json_input,omitempty"` // parse: JSON string to decode; build: value to encode

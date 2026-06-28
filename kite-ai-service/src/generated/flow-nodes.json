@@ -4701,6 +4701,118 @@
       "creditsCost": 1
     },
     {
+      "type": "action_time_math",
+      "category": "data",
+      "section": "Thời gian",
+      "contextTypes": null,
+      "title": "Cộng/trừ thời gian",
+      "description": "Cộng hoặc trừ một khoảng thời gian vào mốc thời gian",
+      "icon": "calculator",
+      "color": "#3b82f6",
+      "dataFields": [
+        "time_input",
+        "time_amount",
+        "time_unit",
+        "time_op",
+        "time_format",
+        "time_timezone",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "time_input": {
+            "type": "string"
+          },
+          "time_amount": {
+            "type": "string"
+          },
+          "time_unit": {
+            "type": "string"
+          },
+          "time_op": {
+            "type": "string"
+          },
+          "time_format": {
+            "type": "string"
+          },
+          "time_timezone": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "time_input",
+          "time_amount"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_time_diff",
+      "category": "data",
+      "section": "Thời gian",
+      "contextTypes": null,
+      "title": "Khoảng cách thời gian",
+      "description": "Tính khoảng cách giữa hai mốc thời gian theo đơn vị",
+      "icon": "diff",
+      "color": "#3b82f6",
+      "dataFields": [
+        "time_a",
+        "time_b",
+        "time_unit",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "time_a": {
+            "type": "string"
+          },
+          "time_b": {
+            "type": "string"
+          },
+          "time_unit": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "time_a",
+          "time_b"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
       "type": "action_list_pick",
       "category": "data",
       "section": "Danh sách & JSON",
@@ -4792,6 +4904,77 @@
       "resultSchema": null,
       "producesResult": true,
       "resultKind": "string",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_regex_match",
+      "category": "data",
+      "section": "Văn bản",
+      "contextTypes": null,
+      "title": "So khớp Regex",
+      "description": "Khớp văn bản với biểu thức chính quy, lấy nhóm bắt được",
+      "icon": "regex",
+      "color": "#3b82f6",
+      "dataFields": [
+        "text_input",
+        "regex_pattern",
+        "regex_flags",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "text_input": {
+            "type": "string"
+          },
+          "regex_pattern": {
+            "type": "string"
+          },
+          "regex_flags": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text_input",
+          "regex_pattern"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "matched": {
+            "type": "boolean",
+            "description": "Whether the regex pattern matched the text"
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Captured groups (index 0 is the full match)"
+          }
+        },
+        "required": [
+          "matched",
+          "groups"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "producesResult": true,
+      "resultKind": "object",
       "ownsChildren": false,
       "creditsCost": 1
     },
@@ -5073,6 +5256,92 @@
       "resultSchema": null,
       "producesResult": true,
       "resultKind": "number",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_list_sort",
+      "category": "data",
+      "section": "Danh sách & JSON",
+      "contextTypes": null,
+      "title": "Sắp xếp danh sách",
+      "description": "Sắp xếp danh sách tăng hoặc giảm dần",
+      "icon": "arrow-down-up",
+      "color": "#3b82f6",
+      "dataFields": [
+        "list_input",
+        "list_sort_order",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "list_input": {
+            "type": "string"
+          },
+          "list_sort_order": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "list_input"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_list_reverse",
+      "category": "data",
+      "section": "Danh sách & JSON",
+      "contextTypes": null,
+      "title": "Đảo danh sách",
+      "description": "Đảo ngược thứ tự các phần tử trong danh sách",
+      "icon": "rotate-ccw",
+      "color": "#3b82f6",
+      "dataFields": [
+        "list_input",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "list_input": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "list_input"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
       "ownsChildren": false,
       "creditsCost": 1
     },

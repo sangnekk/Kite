@@ -80,3 +80,10 @@ export const nodeActionChannelEditResultSchema = channelResultSchema;
 export const nodeActionThreadCreateResultSchema = channelResultSchema;
 
 export const nodeActionForumPostCreateResultSchema = channelResultSchema;
+
+export const nodeActionRegexMatchResultSchema = z.object({
+  matched: z.boolean().describe("Whether the regex pattern matched the text"),
+  groups: z
+    .array(z.string())
+    .describe("Captured groups (index 0 is the full match)"),
+});
