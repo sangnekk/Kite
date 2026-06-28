@@ -16,7 +16,9 @@ interface Props {
   description: string;
   onConfirm: () => void;
   onCancel?: () => void;
-  children: ReactNode;
+  children?: ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export default function ConfirmDialog({
@@ -25,10 +27,12 @@ export default function ConfirmDialog({
   onConfirm,
   onCancel,
   children,
+  open,
+  onOpenChange,
 }: Props) {
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      {children && <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>}
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>

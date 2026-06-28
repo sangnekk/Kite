@@ -9,6 +9,8 @@ import (
 
 // DiscordProvider provides access to the Discord API.
 type DiscordProvider interface {
+	// Me returns the bot's own user.
+	Me(ctx context.Context) (*discord.User, error)
 	Guild(ctx context.Context, guildID discord.GuildID) (*discord.Guild, error)
 	GuildChannels(ctx context.Context, guildID discord.GuildID) ([]discord.Channel, error)
 	GuildRoles(ctx context.Context, guildID discord.GuildID) ([]discord.Role, error)
@@ -76,6 +78,10 @@ type AssetData struct {
 }
 
 type MockDiscordProvider struct{}
+
+func (p *MockDiscordProvider) Me(ctx context.Context) (*discord.User, error) {
+	return &discord.User{}, nil
+}
 
 func (p *MockDiscordProvider) Guild(ctx context.Context, guildID discord.GuildID) (*discord.Guild, error) {
 	return nil, nil

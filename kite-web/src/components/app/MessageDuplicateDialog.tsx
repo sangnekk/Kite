@@ -34,12 +34,18 @@ export default function MessageCreateDialog({
   children,
   message,
   onMessageCreated,
+  open: openProp,
+  onOpenChange,
 }: {
-  children: ReactNode;
+  children?: ReactNode;
   message: Message;
   onMessageCreated?: (id: string) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [openState, setOpenState] = useState(false);
+  const open = openProp !== undefined ? openProp : openState;
+  const setOpen = onOpenChange ?? setOpenState;
 
   const appId = useAppId();
 
@@ -86,7 +92,7 @@ export default function MessageCreateDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Nhân đôi tin nhắn</DialogTitle>

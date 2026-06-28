@@ -77,6 +77,15 @@ func (p *DiscordProvider) ResolveAsset(ctx context.Context, assetID string) (*pr
 	}, nil
 }
 
+func (p *DiscordProvider) Me(ctx context.Context) (*discord.User, error) {
+	me, err := p.session.Me()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get bot user: %w", err)
+	}
+
+	return me, nil
+}
+
 func (p *DiscordProvider) Member(ctx context.Context, guildID discord.GuildID, userID discord.UserID) (*discord.Member, error) {
 	member, err := p.session.Member(guildID, userID)
 	if err != nil {

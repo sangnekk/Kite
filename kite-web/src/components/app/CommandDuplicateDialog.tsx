@@ -34,11 +34,17 @@ interface FormFields {
 export default function CommandDuplicateDialog({
   children,
   command,
+  open: openProp,
+  onOpenChange,
 }: {
-  children: ReactNode;
+  children?: ReactNode;
   command: Command;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [openState, setOpenState] = useState(false);
+  const open = openProp !== undefined ? openProp : openState;
+  const setOpen = onOpenChange ?? setOpenState;
 
   const router = useRouter();
   const appId = useAppId();
@@ -89,7 +95,7 @@ export default function CommandDuplicateDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Nhân đôi lệnh</DialogTitle>

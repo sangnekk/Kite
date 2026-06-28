@@ -22,7 +22,7 @@ const SOURCE_LABELS: Record<string, string> = {
 };
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import ConfirmDialog from "../common/ConfirmDialog";
 import { Button } from "../ui/button";
@@ -59,6 +59,9 @@ export default function EventListenerListEntry({
     appId,
     listener.id
   );
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
 
   const remove = useCallback(() => {
     deleteMutation.mutate(undefined, {
@@ -139,26 +142,31 @@ export default function EventListenerListEntry({
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuGroup>
-              <ConfirmDialog
-                title="Bạn có chắc chắn muốn xóa bộ lắng nghe này?"
-                description="Điều này sẽ xóa bộ lắng nghe khỏi ứng dụng và không thể hoàn tác."
-                onConfirm={remove}
-              >
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  <Trash2Icon className="h-4 w-4 mr-2 text-muted-foreground" />
-                  Xóa bộ lắng nghe
-                </DropdownMenuItem>
-              </ConfirmDialog>
-              <EventListenerDuplicateDialog listener={listener}>
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  <CopyPlusIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                  Nhân đôi bộ lắng nghe
-                </DropdownMenuItem>
-              </EventListenerDuplicateDialog>
+              <DropdownMenuItem onSelect={() => setDeleteDialogOpen(true)}>
+                <Trash2Icon className="h-4 w-4 mr-2 text-muted-foreground" />
+                Xóa bộ lắng nghe
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setDuplicateDialogOpen(true)}>
+                <CopyPlusIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                Nhân đôi bộ lắng nghe
+              </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
       </CardFooter>
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Bạn có chắc chắn muốn xóa bộ lắng nghe này?"
+        description="Điều này sẽ xóa bộ lắng nghe khỏi ứng dụng và không thể hoàn tác."
+        onConfirm={remove}
+      />
+      <EventListenerDuplicateDialog
+        listener={listener}
+        open={duplicateDialogOpen}
+        onOpenChange={setDuplicateDialogOpen}
+      />
     </Card>
   );
 }

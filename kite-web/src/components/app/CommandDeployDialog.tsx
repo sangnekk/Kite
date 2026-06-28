@@ -20,10 +20,12 @@ export function CommandDeployDialog({
   children,
   open,
   onOpenChange,
+  onDeployed,
 }: {
   children?: ReactNode;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onDeployed?: () => void;
 }) {
   const appId = useAppId();
   const deployMutation = useCommandsDeployMutation(appId);
@@ -40,6 +42,7 @@ export function CommandDeployDialog({
             );
             onOpenChange(false);
             setError(null);
+            onDeployed?.();
           } else {
             setError(JSON.stringify(res.data.error, null, 2));
           }

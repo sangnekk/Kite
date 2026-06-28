@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import ConfirmDialog from "../common/ConfirmDialog";
 import { Button } from "../ui/button";
@@ -37,7 +37,13 @@ import { Switch } from "../ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import CommandDuplicateDialog from "./CommandDuplicateDialog";
 
-export default function CommandListEntry({ command }: { command: Command }) {
+export default function CommandListEntry({
+  command,
+  onDeleted,
+}: {
+  command: Command;
+  onDeleted?: () => void;
+}) {
   const router = useRouter();
 
   const appId = useAppId();
@@ -48,11 +54,15 @@ export default function CommandListEntry({ command }: { command: Command }) {
     command.id
   );
 
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
+
   const remove = useCallback(() => {
     deleteMutation.mutate(undefined, {
       onSuccess(res) {
         if (res.success) {
           toast.success("Đã xóa lệnh!");
+          onDeleted?.();
         } else {
           toast.error(
             `Xóa lệnh thất bại: ${res.error.message} (${res.error.code})`
@@ -60,7 +70,7 @@ export default function CommandListEntry({ command }: { command: Command }) {
         }
       },
     });
-  }, [deleteMutation]);
+  }, [deleteMutation, onDeleted]);
 
   const toggleEnabled = useCallback(() => {
     updateEnabledMutation.mutate({
@@ -140,26 +150,31 @@ export default function CommandListEntry({ command }: { command: Command }) {
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuGroup>
-              <ConfirmDialog
-                title="Bạn có chắc chắn muốn xóa lệnh này?"
-                description="Điều này sẽ xóa lệnh khỏi ứng dụng và không thể hoàn tác."
-                onConfirm={remove}
-              >
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  <Trash2Icon className="h-4 w-4 mr-2 text-muted-foreground" />
-                  Xóa lệnh
-                </DropdownMenuItem>
-              </ConfirmDialog>
-              <CommandDuplicateDialog command={command}>
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  <CopyPlusIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                  Nhân đôi lệnh
-                </DropdownMenuItem>
-              </CommandDuplicateDialog>
+              <DropdownMenuItem onSelect={() => setDeleteDialogOpen(true)}>
+                <Trash2Icon className="h-4 w-4 mr-2 text-muted-foreground" />
+                Xóa lệnh
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setDuplicateDialogOpen(true)}>
+                <CopyPlusIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                Nhân đôi lệnh
+              </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
       </CardFooter>
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Bạn có chắc chắn muốn xóa lệnh này?"
+        description="Điều này sẽ xóa lệnh khỏi ứng dụng và không thể hoàn tác."
+        onConfirm={remove}
+      />
+      <CommandDuplicateDialog
+        command={command}
+        open={duplicateDialogOpen}
+        onOpenChange={setDuplicateDialogOpen}
+      />
     </Card>
   );
 }

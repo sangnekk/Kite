@@ -29,11 +29,15 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import MessageDuplicateDialog from "./MessageDuplicateDialog";
+import { useState } from "react";
 
 export default function MessageListEntry({ message }: { message: Message }) {
   const router = useRouter();
 
   const deleteMutation = useMessageDeleteMutation(useAppId(), message.id);
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
 
   function remove() {
     deleteMutation.mutate(undefined, {
@@ -90,26 +94,31 @@ export default function MessageListEntry({ message }: { message: Message }) {
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuGroup>
-              <ConfirmDialog
-                title="Bạn có chắc chắn muốn xóa tin nhắn này?"
-                description="Điều này sẽ xóa tin nhắn khỏi ứng dụng và không thể hoàn tác."
-                onConfirm={remove}
-              >
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  <Trash2Icon className="h-4 w-4 mr-2 text-muted-foreground" />
-                  Xóa tin nhắn
-                </DropdownMenuItem>
-              </ConfirmDialog>
-              <MessageDuplicateDialog message={message}>
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  <CopyPlusIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                  Nhân đôi tin nhắn
-                </DropdownMenuItem>
-              </MessageDuplicateDialog>
+              <DropdownMenuItem onSelect={() => setDeleteDialogOpen(true)}>
+                <Trash2Icon className="h-4 w-4 mr-2 text-muted-foreground" />
+                Xóa tin nhắn
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setDuplicateDialogOpen(true)}>
+                <CopyPlusIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                Nhân đôi tin nhắn
+              </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
       </CardFooter>
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Bạn có chắc chắn muốn xóa tin nhắn này?"
+        description="Điều này sẽ xóa tin nhắn khỏi ứng dụng và không thể hoàn tác."
+        onConfirm={remove}
+      />
+      <MessageDuplicateDialog
+        message={message}
+        open={duplicateDialogOpen}
+        onOpenChange={setDuplicateDialogOpen}
+      />
     </Card>
   );
 }

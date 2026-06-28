@@ -44,11 +44,17 @@ interface FormFields {
 export default function EventListenerDuplicateDialog({
   children,
   listener,
+  open: openProp,
+  onOpenChange,
 }: {
-  children: ReactNode;
+  children?: ReactNode;
   listener: EventListener;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [openState, setOpenState] = useState(false);
+  const open = openProp !== undefined ? openProp : openState;
+  const setOpen = onOpenChange ?? setOpenState;
 
   const router = useRouter();
   const appId = useAppId();
@@ -95,7 +101,7 @@ export default function EventListenerDuplicateDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Nhân đôi bộ lắng nghe sự kiện</DialogTitle>

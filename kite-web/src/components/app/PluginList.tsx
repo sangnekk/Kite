@@ -40,7 +40,7 @@ export function PluginList() {
         onOpenChange={setDeployDialogOpen}
       >
         <Button disabled={!hasUndeployedPlugins} variant="destructive">
-          Deploy all commands
+          Triển khai tất cả lệnh của plugin
         </Button>
       </CommandDeployDialog>
     </div>
