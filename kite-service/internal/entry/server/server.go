@@ -19,6 +19,7 @@ import (
 	"github.com/kitecloud/kite/kite-service/internal/util"
 	"github.com/kitecloud/kite/kite-service/pkg/plugin"
 	"github.com/kitecloud/kite/kite-service/pkg/plugin/counting"
+	"github.com/kitecloud/kite/kite-service/pkg/plugin/spamcatcher"
 	"github.com/kitecloud/kite/kite-service/pkg/plugin/starboard"
 	"github.com/kitecloud/kite/kite-service/pkg/provider"
 )
@@ -60,6 +61,7 @@ func StartServer(c context.Context, cfg *config.Config) error {
 	pluginRegistry.Register(
 		counting.NewCountingPlugin(),
 		starboard.NewStarboardPlugin(),
+		spamcatcher.NewSpamCatcherPlugin(),
 	)
 
 	eng := engine.NewEngine(
