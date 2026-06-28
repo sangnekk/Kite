@@ -436,6 +436,32 @@ func (p *DiscordProvider) DeleteChannel(ctx context.Context, channelID discord.C
 	return nil
 }
 
+func (p *DiscordProvider) CreateRole(ctx context.Context, guildID discord.GuildID, data api.CreateRoleData) (*discord.Role, error) {
+	role, err := p.session.CreateRole(guildID, data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create role: %w", err)
+	}
+
+	return role, nil
+}
+
+func (p *DiscordProvider) EditRole(ctx context.Context, guildID discord.GuildID, roleID discord.RoleID, data api.ModifyRoleData) (*discord.Role, error) {
+	role, err := p.session.ModifyRole(guildID, roleID, data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to edit role: %w", err)
+	}
+
+	return role, nil
+}
+
+func (p *DiscordProvider) DeleteRole(ctx context.Context, guildID discord.GuildID, roleID discord.RoleID) error {
+	if err := p.session.DeleteRole(guildID, roleID, ""); err != nil {
+		return fmt.Errorf("failed to delete role: %w", err)
+	}
+
+	return nil
+}
+
 func (p *DiscordProvider) StartThreadWithMessage(ctx context.Context, channelID discord.ChannelID, messageID discord.MessageID, data api.StartThreadData) (*discord.Channel, error) {
 	thread, err := p.session.StartThreadWithMessage(channelID, messageID, data)
 	if err != nil {

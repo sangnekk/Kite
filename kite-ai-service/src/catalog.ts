@@ -1,4 +1,5 @@
 import catalogJson from "./generated/flow-nodes.json";
+import docsJson from "./generated/flow-node-docs.json";
 
 export type CatalogNode = {
   type: string;
@@ -20,6 +21,11 @@ export type CatalogNode = {
 
 const nodes: CatalogNode[] = (catalogJson as { nodes: CatalogNode[] }).nodes;
 const byType = new Map(nodes.map((n) => [n.type, n]));
+
+// Per-block usage prose (when-to-use, field explanations, examples, gotchas,
+// related blocks) extracted from the docs site. Retrieved on demand via
+// nodeDetails — never dumped into the system prompt. See gen-flow-docs.ts.
+const docsByType: Record<string, string> = (docsJson as { docs: Record<string, string> }).docs;
 
 const NOISE_FIELDS = new Set(["custom_label", "result_key", "temporary_name"]);
 
@@ -65,8 +71,9 @@ export function buildCatalogText(): string {
   return lines.join("\n");
 }
 
-// nodeDetails returns the full input/result schema for a single block, used by
-// the get_node_details tool so the agent can drill in without bloating the prompt.
+// nodeDetails returns the full input/result schema PLUS the human-written usage
+// guidance for a single block, used by the get_node_details tool so the agent
+// can drill into one block at a time without bloating the prompt.
 export function nodeDetails(type: string): object | null {
   const n = byType.get(type);
   if (!n) return null;
@@ -80,6 +87,9 @@ export function nodeDetails(type: string): object | null {
     resultSchema: n.resultSchema,
     producesResult: n.producesResult,
     resultKind: n.resultKind,
+    // Markdown prose: when to use, per-field help, examples, related blocks.
+    // Omitted when the block has no doc (structural children, etc.).
+    usage: docsByType[type] ?? null,
   };
 }
 

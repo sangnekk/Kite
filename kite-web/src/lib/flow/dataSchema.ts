@@ -453,6 +453,18 @@ export const channelDataSchema = z.object({
   invitable: z.boolean().optional(),
 });
 
+// Role color and permissions are stored as numbers (matching the Go RoleData
+// struct), so unlike channel bitrate/position they are not template strings.
+export const roleDataSchema = z.object({
+  name: z.string().min(1).max(100),
+  color: z.number().optional(),
+  hoist: z.boolean().optional(),
+  // Decimal permission bitmask as a string (like command_permissions) so the
+  // permission picker can be reused and large 64-bit bitmasks stay precise.
+  permissions: z.string().regex(numericRegex).optional(),
+  mentionable: z.boolean().optional(),
+});
+
 export const nodeActionChannelCreateDataSchema = nodeBaseDataSchema.extend({
   guild_target: z
     .string()
@@ -532,6 +544,44 @@ export const nodeActionRoleGetDataSchema = nodeBaseDataSchema.extend({
     .regex(numericRegex)
     .or(z.string().regex(placeholderRegex)),
   temporary_name: z.string().optional(),
+});
+
+export const nodeActionRoleCreateDataSchema = nodeBaseDataSchema.extend({
+  guild_target: z
+    .string()
+    .regex(numericRegex)
+    .or(z.string().regex(placeholderRegex))
+    .optional(),
+  role_data: roleDataSchema,
+  audit_log_reason: auditLogReasonSchema,
+  temporary_name: z.string().optional(),
+});
+
+export const nodeActionRoleEditDataSchema = nodeBaseDataSchema.extend({
+  guild_target: z
+    .string()
+    .regex(numericRegex)
+    .or(z.string().regex(placeholderRegex))
+    .optional(),
+  role_target: z
+    .string()
+    .regex(numericRegex)
+    .or(z.string().regex(placeholderRegex)),
+  role_data: roleDataSchema,
+  audit_log_reason: auditLogReasonSchema,
+  temporary_name: z.string().optional(),
+});
+
+export const nodeActionRoleDeleteDataSchema = nodeBaseDataSchema.extend({
+  guild_target: z
+    .string()
+    .regex(numericRegex)
+    .or(z.string().regex(placeholderRegex))
+    .optional(),
+  role_target: z
+    .string()
+    .regex(numericRegex)
+    .or(z.string().regex(placeholderRegex)),
 });
 
 export const nodeActionGuildGetDataSchema = nodeBaseDataSchema.extend({

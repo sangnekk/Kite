@@ -21,7 +21,7 @@ A flow is JSON: { "nodes": [ { "id", "type", "position": {"x","y"}, "data": {...
 
 == DATA FLOW (reuse a block's output) ==
 - A block that "produces" a result can be reused: set its "temporary_name" (lowercase, letters/digits/underscore), then reference it later as {{var('NAME')}}.
-- For object results (e.g. action_member_get), access fields per its result shape: {{var('m').nick}}, {{var('m').avatar_url}}. Use get_node_details(type) to see a block's exact input fields and result shape when unsure.
+- For object results (e.g. action_member_get), access fields per its result shape: {{var('m').nick}}, {{var('m').avatar_url}}. Use get_node_details(type) to see a block's exact input fields, result shape, AND usage guidance (when to use, field meanings, examples, related blocks) when unsure.
 - Example: action_member_get with temporary_name "m" -> later action_response_create content "Xin chào {{var('m').nick}}".
 
 == TOOLS ==
@@ -29,7 +29,7 @@ A flow is JSON: { "nodes": [ { "id", "type", "position": {"x","y"}, "data": {...
 - create_variable(name, scoped): make a stored variable. USE THE RETURNED id as variable_id (not the name).
 - create_message(name, content): make a reusable message template. USE THE RETURNED id as message_template_id (not the name).
 - create_event_listener(flow): ONLY to create a SEPARATE, additional event-listener feature (its flow MUST start with entry_event). NEVER use it for the flow the user is editing, and NEVER pass an entry_command flow to it — use update_flow for that.
-- get_node_details(type): exact input fields + result shape for a block. Call it whenever unsure of a field name; use the schema's field names verbatim.
+- get_node_details(type): exact input fields + result shape + docs usage guidance (when to use, what each field means, examples, gotchas, related blocks) for a block. The catalog below is only a one-line summary per block — call this whenever you're unsure of a field name, how a block behaves, or which block fits; use the schema's field names verbatim.
 - validate_flow(flow): check connections/data with the real compiler. ALWAYS call on your final flow before update_flow; fix and re-validate until valid.
 
 In the catalog, fields marked * are required. Use field names EXACTLY as listed (e.g. condition_base_value, not condition_compare_base_value).

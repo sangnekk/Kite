@@ -112,6 +112,14 @@ type TestDiscordProvider struct {
 	purgeReturn    int
 	slowmodeEdited api.ModifyChannelData
 
+	createdRoleGuild discord.GuildID
+	createdRole      api.CreateRoleData
+	editedRoleGuild  discord.GuildID
+	editedRoleID     discord.RoleID
+	editedRole       api.ModifyRoleData
+	deletedRoleGuild discord.GuildID
+	deletedRoleID    discord.RoleID
+
 	// botPermissionsSet switches BotPermissions from the default (all permissions)
 	// to the configured botPermissions value, so tests can simulate a bot that is
 	// missing permissions.
@@ -145,6 +153,25 @@ func (p *TestDiscordProvider) BulkDeleteMessages(ctx context.Context, channelID 
 
 func (p *TestDiscordProvider) EditChannel(ctx context.Context, channelID discord.ChannelID, data api.ModifyChannelData) error {
 	p.slowmodeEdited = data
+	return nil
+}
+
+func (p *TestDiscordProvider) CreateRole(ctx context.Context, guildID discord.GuildID, data api.CreateRoleData) (*discord.Role, error) {
+	p.createdRoleGuild = guildID
+	p.createdRole = data
+	return &discord.Role{ID: 999, Name: data.Name, Color: data.Color, Hoist: data.Hoist, Mentionable: data.Mentionable, Permissions: data.Permissions}, nil
+}
+
+func (p *TestDiscordProvider) EditRole(ctx context.Context, guildID discord.GuildID, roleID discord.RoleID, data api.ModifyRoleData) (*discord.Role, error) {
+	p.editedRoleGuild = guildID
+	p.editedRoleID = roleID
+	p.editedRole = data
+	return &discord.Role{ID: roleID}, nil
+}
+
+func (p *TestDiscordProvider) DeleteRole(ctx context.Context, guildID discord.GuildID, roleID discord.RoleID) error {
+	p.deletedRoleGuild = guildID
+	p.deletedRoleID = roleID
 	return nil
 }
 
@@ -702,4 +729,79 @@ func (d *TestContextData) MessageComponentData() discord.ComponentInteraction {
 
 func (d *TestContextData) Event() ws.Event {
 	return &gateway.InteractionCreateEvent{}
+}
+
+func TestFlowExecuteRoleCreate(t *testing.T) {
+	discordProvider := &TestDiscordProvider{}
+	c := newDiscordTestContext(t, discordProvider)
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionRoleCreate,
+		Data: FlowNodeData{
+			GuildTarget: "123456789",
+			RoleData: &RoleData{
+				Name:        "Moderator",
+				Color:       0xFF0000,
+				Hoist:       true,
+				Mentionable: true,
+				Permissions: "8",
+			},
+		},
+	}
+
+	err := node.Execute(c)
+	require.NoError(t, err)
+	assert.Equal(t, discord.GuildID(123456789), discordProvider.createdRoleGuild)
+	assert.Equal(t, "Moderator", discordProvider.createdRole.Name)
+	assert.Equal(t, discord.Color(0xFF0000), discordProvider.createdRole.Color)
+	assert.True(t, discordProvider.createdRole.Hoist)
+	assert.True(t, discordProvider.createdRole.Mentionable)
+	assert.Equal(t, discord.Permissions(8), discordProvider.createdRole.Permissions)
+}
+
+func TestFlowExecuteRoleEdit(t *testing.T) {
+	discordProvider := &TestDiscordProvider{}
+	c := newDiscordTestContext(t, discordProvider)
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionRoleEdit,
+		Data: FlowNodeData{
+			GuildTarget: "123456789",
+			RoleTarget:  "555",
+			RoleData: &RoleData{
+				Name:        "Renamed",
+				Permissions: "16",
+			},
+		},
+	}
+
+	err := node.Execute(c)
+	require.NoError(t, err)
+	assert.Equal(t, discord.GuildID(123456789), discordProvider.editedRoleGuild)
+	assert.Equal(t, discord.RoleID(555), discordProvider.editedRoleID)
+	require.NotNil(t, discordProvider.editedRole.Name)
+	assert.Equal(t, "Renamed", discordProvider.editedRole.Name.Val)
+	require.NotNil(t, discordProvider.editedRole.Permissions)
+	assert.Equal(t, discord.Permissions(16), *discordProvider.editedRole.Permissions)
+}
+
+func TestFlowExecuteRoleDelete(t *testing.T) {
+	discordProvider := &TestDiscordProvider{}
+	c := newDiscordTestContext(t, discordProvider)
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionRoleDelete,
+		Data: FlowNodeData{
+			GuildTarget: "123456789",
+			RoleTarget:  "555",
+		},
+	}
+
+	err := node.Execute(c)
+	require.NoError(t, err)
+	assert.Equal(t, discord.GuildID(123456789), discordProvider.deletedRoleGuild)
+	assert.Equal(t, discord.RoleID(555), discordProvider.deletedRoleID)
 }

@@ -3508,6 +3508,320 @@
       "creditsCost": 1
     },
     {
+      "type": "action_role_create",
+      "category": "action",
+      "section": "Vai trò",
+      "contextTypes": null,
+      "title": "Tạo vai trò",
+      "description": "Tạo một vai trò mới",
+      "icon": "bookmark-plus",
+      "color": "#3b82f6",
+      "dataFields": [
+        "guild_target",
+        "role_data",
+        "audit_log_reason",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "guild_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "role_data": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "color": {
+                "type": "number"
+              },
+              "hoist": {
+                "type": "boolean"
+              },
+              "permissions": {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              "mentionable": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "additionalProperties": false
+          },
+          "audit_log_reason": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "temporary_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "role_data"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the role"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the role"
+          },
+          "color": {
+            "type": "string",
+            "description": "The color of the role"
+          },
+          "hoist": {
+            "type": "boolean",
+            "description": "Whether the role is hoisted"
+          },
+          "mentionable": {
+            "type": "boolean",
+            "description": "Whether the role is mentionable"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "color",
+          "hoist",
+          "mentionable"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "producesResult": true,
+      "resultKind": "object",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_role_edit",
+      "category": "action",
+      "section": "Vai trò",
+      "contextTypes": null,
+      "title": "Sửa vai trò",
+      "description": "Sửa vai trò",
+      "icon": "square-pen",
+      "color": "#3b82f6",
+      "dataFields": [
+        "guild_target",
+        "role_target",
+        "role_data",
+        "audit_log_reason",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "guild_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "role_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "role_data": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "color": {
+                "type": "number"
+              },
+              "hoist": {
+                "type": "boolean"
+              },
+              "permissions": {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              "mentionable": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "additionalProperties": false
+          },
+          "audit_log_reason": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "temporary_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "role_target",
+          "role_data"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ID of the role"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the role"
+          },
+          "color": {
+            "type": "string",
+            "description": "The color of the role"
+          },
+          "hoist": {
+            "type": "boolean",
+            "description": "Whether the role is hoisted"
+          },
+          "mentionable": {
+            "type": "boolean",
+            "description": "Whether the role is mentionable"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "color",
+          "hoist",
+          "mentionable"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "producesResult": true,
+      "resultKind": "object",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_role_delete",
+      "category": "action",
+      "section": "Vai trò",
+      "contextTypes": null,
+      "title": "Xóa vai trò",
+      "description": "Xóa vai trò",
+      "icon": "bookmark-x",
+      "color": "#3b82f6",
+      "dataFields": [
+        "guild_target",
+        "role_target",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "guild_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "role_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          }
+        },
+        "required": [
+          "role_target"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
       "type": "action_guild_get",
       "category": "action",
       "section": "Máy chủ",

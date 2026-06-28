@@ -94,7 +94,8 @@ export function buildTools(
   });
 
   const get_node_details = tool({
-    description: "Get the exact input fields and result shape for one block type.",
+    description:
+      "Get everything about one block type: its exact input fields, result shape, AND usage guidance from the docs (when to use it, what each field means, examples, gotchas, related blocks). Call this before using any block you're unsure about.",
     inputSchema: z.object({ type: z.string() }),
     execute: async ({ type }) =>
       nodeDetails(type) ?? { error: `unknown block type ${type}` },

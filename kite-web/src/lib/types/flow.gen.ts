@@ -46,6 +46,9 @@ export const FlowNodeTypeActionThreadMemberAdd: FlowNodeType = "action_thread_me
 export const FlowNodeTypeActionThreadMemberRemove: FlowNodeType = "action_thread_member_remove";
 export const FlowNodeTypeActionForumPostCreate: FlowNodeType = "action_forum_post_create";
 export const FlowNodeTypeActionRoleGet: FlowNodeType = "action_role_get";
+export const FlowNodeTypeActionRoleCreate: FlowNodeType = "action_role_create";
+export const FlowNodeTypeActionRoleEdit: FlowNodeType = "action_role_edit";
+export const FlowNodeTypeActionRoleDelete: FlowNodeType = "action_role_delete";
 export const FlowNodeTypeActionGuildGet: FlowNodeType = "action_guild_get";
 export const FlowNodeTypeActionMessageGet: FlowNodeType = "action_message_get";
 export const FlowNodeTypeActionHTTPRequest: FlowNodeType = "action_http_request";
@@ -371,7 +374,17 @@ export interface RoleData {
   name?: string;
   color?: number /* int */;
   hoist?: boolean;
-  permissions?: number /* int */;
+  /**
+   * Permissions is a decimal permission bitmask stored as a string (like
+   * CommandPermissions) so large 64-bit bitmasks survive the JSON/JS number
+   * round-trip without losing precision.
+   */
+  permissions?: string;
+  mentionable?: boolean;
+  /**
+   * Position is kept for completeness but is not applied on create/edit:
+   * reordering roles is a separate Discord endpoint (MoveRoles).
+   */
   position?: number /* int */;
 }
 export interface MemberData {

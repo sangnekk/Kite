@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"regexp"
+	"strconv"
 
 	"github.com/diamondburned/arikawa/v3/api"
 	"github.com/diamondburned/arikawa/v3/discord"
@@ -78,6 +80,9 @@ const (
 	FlowNodeTypeActionThreadMemberRemove    FlowNodeType = "action_thread_member_remove"
 	FlowNodeTypeActionForumPostCreate       FlowNodeType = "action_forum_post_create"
 	FlowNodeTypeActionRoleGet               FlowNodeType = "action_role_get"
+	FlowNodeTypeActionRoleCreate            FlowNodeType = "action_role_create"
+	FlowNodeTypeActionRoleEdit              FlowNodeType = "action_role_edit"
+	FlowNodeTypeActionRoleDelete            FlowNodeType = "action_role_delete"
 	FlowNodeTypeActionGuildGet              FlowNodeType = "action_guild_get"
 	FlowNodeTypeActionMessageGet            FlowNodeType = "action_message_get"
 	FlowNodeTypeActionHTTPRequest           FlowNodeType = "action_http_request"
@@ -520,11 +525,43 @@ type PermissionOverwriteData struct {
 }
 
 type RoleData struct {
-	Name        string `json:"name,omitempty"`
-	Color       int    `json:"color,omitempty"`
-	Hoist       bool   `json:"hoist,omitempty"`
-	Permissions int    `json:"permissions,omitempty"`
-	Position    int    `json:"position,omitempty"`
+	Name  string `json:"name,omitempty"`
+	Color int    `json:"color,omitempty"`
+	Hoist bool   `json:"hoist,omitempty"`
+	// Permissions is a decimal permission bitmask stored as a string (like
+	// CommandPermissions) so large 64-bit bitmasks survive the JSON/JS number
+	// round-trip without losing precision.
+	Permissions string `json:"permissions,omitempty"`
+	Mentionable bool   `json:"mentionable,omitempty"`
+	// Position is kept for completeness but is not applied on create/edit:
+	// reordering roles is a separate Discord endpoint (MoveRoles).
+	Position int `json:"position,omitempty"`
+}
+
+// ToCreateRoleData turns the stored role data into arikawa's CreateRoleData.
+// Only Name is treated as a template; the other fields are taken as-is.
+func (d *RoleData) ToCreateRoleData(ctx context.Context, evalCtx eval.Context) (api.CreateRoleData, error) {
+	res := api.CreateRoleData{
+		Color:       discord.Color(d.Color),
+		Hoist:       d.Hoist,
+		Mentionable: d.Mentionable,
+	}
+
+	if d.Permissions != "" {
+		perms, err := strconv.ParseUint(d.Permissions, 10, 64)
+		if err != nil {
+			return res, fmt.Errorf("invalid permissions bitmask %q: %w", d.Permissions, err)
+		}
+		res.Permissions = discord.Permissions(perms)
+	}
+
+	name, err := eval.EvalTemplate(ctx, d.Name, evalCtx)
+	if err != nil {
+		return res, err
+	}
+	res.Name = name.String()
+
+	return res, nil
 }
 
 type MemberData struct {

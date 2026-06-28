@@ -2544,18 +2544,70 @@ function ChannelTargetInput({ data, updateData, errors }: InputProps) {
 }
 
 function RoleDataInput({ data, updateData, errors }: InputProps) {
+  const roleData = data.role_data ?? {};
+
+  const update = (patch: Partial<NonNullable<NodeData["role_data"]>>) =>
+    updateData({ role_data: { ...roleData, ...patch } });
+
+  const updateColor = (v: string) => {
+    const trimmed = v.trim();
+    if (trimmed === "") {
+      update({ color: undefined });
+      return;
+    }
+    const n = Number(trimmed);
+    update({ color: Number.isFinite(n) ? n : undefined });
+  };
+
   return (
-    <BaseInput
-      type="text"
-      field="role_data"
-      title="Tên vai trò"
-      value={data.role_data?.name || ""}
-      updateValue={(v) =>
-        updateData({ role_data: v ? { name: v } : undefined })
-      }
-      errors={errors}
-      placeholders
-    />
+    <div className="space-y-4">
+      <BaseInput
+        type="text"
+        field="role_data.name"
+        title="Tên vai trò"
+        value={roleData.name || ""}
+        updateValue={(v) => update({ name: v || undefined })}
+        errors={errors}
+        placeholders
+      />
+      <BaseInput
+        type="text"
+        field="role_data.color"
+        title="Màu sắc"
+        description="Giá trị màu RGB dạng số thập phân (ví dụ 16711680 = đỏ). Để trống để dùng mặc định."
+        value={
+          roleData.color !== undefined && roleData.color !== null
+            ? String(roleData.color)
+            : ""
+        }
+        updateValue={updateColor}
+        errors={errors}
+      />
+      <BasePermissionInput
+        field="role_data.permissions"
+        title="Quyền"
+        description="Các quyền vai trò sẽ có. Để trống để dùng quyền mặc định của @everyone."
+        value={roleData.permissions || "0"}
+        updateValue={(v) => update({ permissions: v === "0" ? undefined : v })}
+        errors={errors}
+      />
+      <BaseCheckbox
+        field="role_data.hoist"
+        title="Hiển thị riêng (hoist)"
+        description="Hiển thị thành viên có vai trò này tách riêng trong danh sách thành viên."
+        value={roleData.hoist || false}
+        updateValue={(v) => update({ hoist: v })}
+        errors={errors}
+      />
+      <BaseCheckbox
+        field="role_data.mentionable"
+        title="Cho phép nhắc (@mention)"
+        description="Cho phép mọi người nhắc đến vai trò này."
+        value={roleData.mentionable || false}
+        updateValue={(v) => update({ mentionable: v })}
+        errors={errors}
+      />
+    </div>
   );
 }
 
