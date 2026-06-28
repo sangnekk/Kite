@@ -20,7 +20,9 @@ export default function FlowNodeExplorer({
   const contextType = useFlowContext((c) => c.type);
 
   const [search, setSearch] = useState("");
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  // Sections start collapsed; the user opens the ones they need. Searching
+  // forces every matching section open regardless of this state.
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const normalizedSearch = search.toLowerCase().trim();
   const isSearching = normalizedSearch.length > 0;
@@ -99,7 +101,7 @@ export default function FlowNodeExplorer({
             </div>
           )}
           {filteredSections.map((section) => {
-            const isOpen = isSearching || !collapsed[section.key];
+            const isOpen = isSearching || !!expanded[section.key];
             return (
               <div key={section.key}>
                 <button
@@ -107,9 +109,9 @@ export default function FlowNodeExplorer({
                   className="w-full flex items-center gap-1.5 text-foreground font-medium mb-1 px-2 py-1.5 rounded-md hover:bg-muted/60 select-none"
                   onClick={() =>
                     !isSearching &&
-                    setCollapsed((c) => ({
-                      ...c,
-                      [section.key]: !c[section.key],
+                    setExpanded((e) => ({
+                      ...e,
+                      [section.key]: !e[section.key],
                     }))
                   }
                 >
