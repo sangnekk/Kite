@@ -81,6 +81,10 @@ func countKey(guildID string) string {
 	return fmt.Sprintf("spamcatcher:count:%s", guildID)
 }
 
-func setupMessageContent() string {
-	return "-# ** Kênh này có mục đích là cho các thí sinh của Mr.Least tham gia cuộc thi scamer hàng năm , những người gửi ảnh,link scam vào đây được đưa ra đảo và chính thức tham gia cuộc thi 36.000.000$ **\n\nhttps://tenor.com/view/mrbeast-mr-beast-rap-battle-mr-beast-introduction-gif-25612407\n\n> # CẤM CHAT VÀ GỬI LINK TRONG KÊNH NÀY ĐỂ TRÁNH BỊ KICK NHẦM"
+func messageKey(guildID string) string {
+	return fmt.Sprintf("spamcatcher:message:%s", guildID)
+}
+
+func setupMessageContent(count int64) string {
+	return fmt.Sprintf("-# ** Kênh này có mục đích là cho các thí sinh của Mr.Least tham gia cuộc thi scamer hàng năm , những người gửi ảnh,link scam vào đây được đưa ra đảo và chính thức tham gia cuộc thi 36.000.000$ **\n\nhttps://tenor.com/view/mrbeast-mr-beast-rap-battle-mr-beast-introduction-gif-25612407\n\n> # CẤM CHAT VÀ GỬI LINK TRONG KÊNH NÀY ĐỂ TRÁNH BỊ KICK NHẦM\n\n> 🏝️ Đã tiễn **%d** kẻ ra đảo", count)
 }

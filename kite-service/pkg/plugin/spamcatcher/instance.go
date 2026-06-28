@@ -46,6 +46,16 @@ func (p *SpamCatcherPluginInstance) HandleEvent(c plugin.Context, event gateway.
 		return nil
 	}
 
+	// Bỏ qua thành viên mà bot không thể kick (chủ server hoặc người có vai trò
+	// cao hơn/bằng bot) để không xoá nhầm tin nhắn của admin/mod.
+	canModerate, err := p.canModerate(c, e)
+	if err != nil {
+		return err
+	}
+	if !canModerate {
+		return nil
+	}
+
 	err = c.Discord().DeleteMessage(c, e.ChannelID, e.ID, api.AuditLogReason("Spam Catcher: tin nhắn trong kênh chống spam"))
 	if err != nil {
 		return err
@@ -56,7 +66,110 @@ func (p *SpamCatcherPluginInstance) HandleEvent(c plugin.Context, event gateway.
 		return err
 	}
 
-	_, err = c.UpdateValue(c, countKey(guildID), provider.VariableOperationIncrement, thing.NewInt(1))
+	newCount, err := c.UpdateValue(c, countKey(guildID), provider.VariableOperationIncrement, thing.NewInt(1))
+	if err != nil {
+		return err
+	}
+
+	// Cập nhật tin nhắn thông báo để hiển thị số người đã bị kick.
+	if err := p.updateCountMessage(c, e.ChannelID, guildID, newCount.Int()); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// canModerate reports whether the bot may act on the message author. The guild
+// owner and members whose highest role is positioned at or above the bot's
+// highest role can't be kicked by the bot, so they are skipped entirely (no
+// delete, no kick attempt).
+func (p *SpamCatcherPluginInstance) canModerate(c plugin.Context, e *gateway.MessageCreateEvent) (bool, error) {
+	guild, err := c.Discord().Guild(c, e.GuildID)
+	if err != nil {
+		return false, err
+	}
+	if guild.OwnerID == e.Author.ID {
+		return false, nil
+	}
+
+	me, err := c.Discord().Me(c)
+	if err != nil {
+		return false, err
+	}
+
+	botMember, err := c.Discord().Member(c, e.GuildID, me.ID)
+	if err != nil {
+		return false, err
+	}
+
+	authorRoleIDs, err := p.authorRoleIDs(c, e)
+	if err != nil {
+		return false, err
+	}
+
+	roles, err := c.Discord().GuildRoles(c, e.GuildID)
+	if err != nil {
+		return false, err
+	}
+
+	positions := make(map[discord.RoleID]int, len(roles))
+	for _, role := range roles {
+		positions[role.ID] = role.Position
+	}
+
+	botTop := highestRolePosition(botMember.RoleIDs, positions)
+	authorTop := highestRolePosition(authorRoleIDs, positions)
+
+	return botTop > authorTop, nil
+}
+
+// authorRoleIDs returns the role IDs of the message author, preferring the
+// partial member attached to the event and falling back to a member lookup.
+func (p *SpamCatcherPluginInstance) authorRoleIDs(c plugin.Context, e *gateway.MessageCreateEvent) ([]discord.RoleID, error) {
+	if e.Member != nil {
+		return e.Member.RoleIDs, nil
+	}
+
+	member, err := c.Discord().Member(c, e.GuildID, e.Author.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return member.RoleIDs, nil
+}
+
+// highestRolePosition returns the position of the highest role in roleIDs.
+// The implicit @everyone role has position 0, so that is the floor.
+func highestRolePosition(roleIDs []discord.RoleID, positions map[discord.RoleID]int) int {
+	highest := 0
+	for _, id := range roleIDs {
+		if pos, ok := positions[id]; ok && pos > highest {
+			highest = pos
+		}
+	}
+
+	return highest
+}
+
+// updateCountMessage edits the setup message to reflect the latest kick count.
+// It is a no-op if the setup message ID was never stored.
+func (p *SpamCatcherPluginInstance) updateCountMessage(c plugin.Context, channelID discord.ChannelID, guildID string, count int64) error {
+	storedMessage, err := c.GetValue(c, messageKey(guildID))
+	if err != nil {
+		return err
+	}
+	if storedMessage == thing.Null {
+		return nil
+	}
+
+	messageID := discord.MessageID(storedMessage.Snowflake())
+	if messageID <= 0 {
+		return nil
+	}
+
+	_, err = c.Discord().EditMessage(c, channelID, messageID, api.EditMessageData{
+		Content: option.NewNullableString(setupMessageContent(count)),
+	})
 	if err != nil {
 		return err
 	}
@@ -89,14 +202,20 @@ func (p *SpamCatcherPluginInstance) handleSetup(c plugin.Context, event *gateway
 		return err
 	}
 
-	_, err = c.UpdateValue(c, countKey(guildID), provider.VariableOperationOverwrite, thing.NewString("0"))
+	_, err = c.UpdateValue(c, countKey(guildID), provider.VariableOperationOverwrite, thing.NewInt(0))
 	if err != nil {
 		return err
 	}
 
-	_, err = c.Discord().CreateMessage(c, event.ChannelID, api.SendMessageData{
-		Content: setupMessageContent(),
+	msg, err := c.Discord().CreateMessage(c, event.ChannelID, api.SendMessageData{
+		Content: setupMessageContent(0),
 	})
+	if err != nil {
+		return err
+	}
+
+	// Lưu ID tin nhắn để có thể cập nhật bộ đếm sau mỗi lần kick.
+	_, err = c.UpdateValue(c, messageKey(guildID), provider.VariableOperationOverwrite, thing.NewString(msg.ID.String()))
 	if err != nil {
 		return err
 	}
@@ -124,6 +243,11 @@ func (p *SpamCatcherPluginInstance) handleDestroy(c plugin.Context, event *gatew
 	}
 
 	err = c.DeleteValue(c, countKey(guildID))
+	if err != nil {
+		return err
+	}
+
+	err = c.DeleteValue(c, messageKey(guildID))
 	if err != nil {
 		return err
 	}
