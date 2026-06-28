@@ -74,6 +74,16 @@ export const nodeCategories = {
       contextTypes: null,
     },
     {
+      title: "Thoại",
+      nodeTypes: [
+        "action_member_voice_move",
+        "action_member_voice_disconnect",
+        "action_member_voice_mute",
+        "action_member_voice_deafen",
+      ],
+      contextTypes: null,
+    },
+    {
       title: "Người dùng",
       nodeTypes: ["action_user_get"],
       contextTypes: null,

@@ -120,6 +120,10 @@ type TestDiscordProvider struct {
 	deletedRoleGuild discord.GuildID
 	deletedRoleID    discord.RoleID
 
+	editedMemberGuild discord.GuildID
+	editedMemberID    discord.UserID
+	editedMember      api.ModifyMemberData
+
 	// botPermissionsSet switches BotPermissions from the default (all permissions)
 	// to the configured botPermissions value, so tests can simulate a bot that is
 	// missing permissions.
@@ -172,6 +176,13 @@ func (p *TestDiscordProvider) EditRole(ctx context.Context, guildID discord.Guil
 func (p *TestDiscordProvider) DeleteRole(ctx context.Context, guildID discord.GuildID, roleID discord.RoleID) error {
 	p.deletedRoleGuild = guildID
 	p.deletedRoleID = roleID
+	return nil
+}
+
+func (p *TestDiscordProvider) EditMember(ctx context.Context, guildID discord.GuildID, userID discord.UserID, data api.ModifyMemberData) error {
+	p.editedMemberGuild = guildID
+	p.editedMemberID = userID
+	p.editedMember = data
 	return nil
 }
 
@@ -804,4 +815,81 @@ func TestFlowExecuteRoleDelete(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, discord.GuildID(123456789), discordProvider.deletedRoleGuild)
 	assert.Equal(t, discord.RoleID(555), discordProvider.deletedRoleID)
+}
+
+func TestFlowExecuteMemberVoiceMove(t *testing.T) {
+	d := &TestDiscordProvider{}
+	c := newDiscordTestContext(t, d)
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionMemberVoiceMove,
+		Data: FlowNodeData{
+			UserTarget:    "111",
+			ChannelTarget: "222",
+		},
+	}
+
+	err := node.Execute(c)
+	require.NoError(t, err)
+	assert.Equal(t, discord.UserID(111), d.editedMemberID)
+	assert.Equal(t, discord.ChannelID(222), d.editedMember.VoiceChannel)
+}
+
+func TestFlowExecuteMemberVoiceDisconnect(t *testing.T) {
+	d := &TestDiscordProvider{}
+	c := newDiscordTestContext(t, d)
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionMemberVoiceDisconnect,
+		Data: FlowNodeData{
+			UserTarget: "111",
+		},
+	}
+
+	err := node.Execute(c)
+	require.NoError(t, err)
+	assert.Equal(t, discord.UserID(111), d.editedMemberID)
+	assert.Equal(t, discord.NullChannelID, d.editedMember.VoiceChannel)
+}
+
+func TestFlowExecuteMemberVoiceMute(t *testing.T) {
+	d := &TestDiscordProvider{}
+	c := newDiscordTestContext(t, d)
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionMemberVoiceMute,
+		Data: FlowNodeData{
+			UserTarget:      "111",
+			MemberVoiceMute: true,
+		},
+	}
+
+	err := node.Execute(c)
+	require.NoError(t, err)
+	assert.Equal(t, discord.UserID(111), d.editedMemberID)
+	require.NotNil(t, d.editedMember.Mute)
+	assert.True(t, *d.editedMember.Mute)
+}
+
+func TestFlowExecuteMemberVoiceDeafen(t *testing.T) {
+	d := &TestDiscordProvider{}
+	c := newDiscordTestContext(t, d)
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionMemberVoiceDeafen,
+		Data: FlowNodeData{
+			UserTarget:        "111",
+			MemberVoiceDeafen: false,
+		},
+	}
+
+	err := node.Execute(c)
+	require.NoError(t, err)
+	assert.Equal(t, discord.UserID(111), d.editedMemberID)
+	require.NotNil(t, d.editedMember.Deaf)
+	assert.False(t, *d.editedMember.Deaf)
 }

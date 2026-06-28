@@ -161,6 +161,8 @@ const intputs: Record<string, any> = {
     MemberBanDeleteMessageDurationInput,
   member_timeout_duration_seconds: MemberTimeoutDurationInput,
   member_nick: MemberNickInput,
+  member_voice_mute: MemberVoiceMuteInput,
+  member_voice_deafen: MemberVoiceDeafenInput,
   log_level: LogLevelInput,
   log_message: LogMessageInput,
   condition_compare_base_value: ConditionCompareBaseValueInput,
@@ -1754,6 +1756,32 @@ function MemberNickInput({ data, updateData, errors }: InputProps) {
       }
       errors={errors}
       placeholders
+    />
+  );
+}
+
+function MemberVoiceMuteInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseCheckbox
+      field="member_voice_mute"
+      title="Tắt tiếng (mute)"
+      description="Bật để tắt tiếng thành viên trong kênh thoại; tắt để bỏ tắt tiếng."
+      value={!!data.member_voice_mute}
+      updateValue={(v) => updateData({ member_voice_mute: v || undefined })}
+      errors={errors}
+    />
+  );
+}
+
+function MemberVoiceDeafenInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseCheckbox
+      field="member_voice_deafen"
+      title="Chặn nghe (deafen)"
+      description="Bật để chặn nghe thành viên trong kênh thoại; tắt để bỏ chặn."
+      value={!!data.member_voice_deafen}
+      updateValue={(v) => updateData({ member_voice_deafen: v || undefined })}
+      errors={errors}
     />
   );
 }

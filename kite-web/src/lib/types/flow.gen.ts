@@ -36,6 +36,10 @@ export const FlowNodeTypeActionMemberEdit: FlowNodeType = "action_member_edit";
 export const FlowNodeTypeActionMemberRoleAdd: FlowNodeType = "action_member_role_add";
 export const FlowNodeTypeActionMemberRoleRemove: FlowNodeType = "action_member_role_remove";
 export const FlowNodeTypeActionMemberGet: FlowNodeType = "action_member_get";
+export const FlowNodeTypeActionMemberVoiceMove: FlowNodeType = "action_member_voice_move";
+export const FlowNodeTypeActionMemberVoiceDisconnect: FlowNodeType = "action_member_voice_disconnect";
+export const FlowNodeTypeActionMemberVoiceMute: FlowNodeType = "action_member_voice_mute";
+export const FlowNodeTypeActionMemberVoiceDeafen: FlowNodeType = "action_member_voice_deafen";
 export const FlowNodeTypeActionUserGet: FlowNodeType = "action_user_get";
 export const FlowNodeTypeActionChannelGet: FlowNodeType = "action_channel_get";
 export const FlowNodeTypeActionChannelCreate: FlowNodeType = "action_channel_create";
@@ -170,6 +174,11 @@ export interface FlowNodeData {
    * Modal
    */
   modal_data?: ModalData;
+  /**
+   * Member Voice Mute / Deafen
+   */
+  member_voice_mute?: boolean;
+  member_voice_deafen?: boolean;
   /**
    * Member Ban, Kick, Timeout, Edit, Get
    */

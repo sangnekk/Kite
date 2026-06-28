@@ -70,6 +70,10 @@ const (
 	FlowNodeTypeActionMemberRoleAdd         FlowNodeType = "action_member_role_add"
 	FlowNodeTypeActionMemberRoleRemove      FlowNodeType = "action_member_role_remove"
 	FlowNodeTypeActionMemberGet             FlowNodeType = "action_member_get"
+	FlowNodeTypeActionMemberVoiceMove       FlowNodeType = "action_member_voice_move"
+	FlowNodeTypeActionMemberVoiceDisconnect FlowNodeType = "action_member_voice_disconnect"
+	FlowNodeTypeActionMemberVoiceMute       FlowNodeType = "action_member_voice_mute"
+	FlowNodeTypeActionMemberVoiceDeafen     FlowNodeType = "action_member_voice_deafen"
 	FlowNodeTypeActionUserGet               FlowNodeType = "action_user_get"
 	FlowNodeTypeActionChannelGet            FlowNodeType = "action_channel_get"
 	FlowNodeTypeActionChannelCreate         FlowNodeType = "action_channel_create"
@@ -208,6 +212,10 @@ type FlowNodeData struct {
 
 	// Modal
 	ModalData *ModalData `json:"modal_data,omitempty"`
+
+	// Member Voice Mute / Deafen
+	MemberVoiceMute   bool `json:"member_voice_mute,omitempty"`
+	MemberVoiceDeafen bool `json:"member_voice_deafen,omitempty"`
 
 	// Member Ban, Kick, Timeout, Edit, Get
 	UserTarget                            string      `json:"user_target,omitempty"`

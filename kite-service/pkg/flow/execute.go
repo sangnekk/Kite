@@ -845,6 +845,93 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 		}
 
 		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionMemberVoiceMove:
+		userID, err := ctx.EvalTemplate(n.Data.UserTarget)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		channelID, err := ctx.EvalTemplate(n.Data.ChannelTarget)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		auditLogReason, err := ctx.EvalTemplate(n.Data.AuditLogReason)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		err = ctx.Discord.EditMember(ctx, ctx.Data.GuildID(), discord.UserID(userID.Snowflake()), api.ModifyMemberData{
+			VoiceChannel:   discord.ChannelID(channelID.Snowflake()),
+			AuditLogReason: api.AuditLogReason(auditLogReason.String()),
+		})
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionMemberVoiceDisconnect:
+		userID, err := ctx.EvalTemplate(n.Data.UserTarget)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		auditLogReason, err := ctx.EvalTemplate(n.Data.AuditLogReason)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		// Setting the voice channel to NullChannelID serializes as channel_id:
+		// null, which Discord interprets as "disconnect from voice".
+		err = ctx.Discord.EditMember(ctx, ctx.Data.GuildID(), discord.UserID(userID.Snowflake()), api.ModifyMemberData{
+			VoiceChannel:   discord.NullChannelID,
+			AuditLogReason: api.AuditLogReason(auditLogReason.String()),
+		})
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionMemberVoiceMute:
+		userID, err := ctx.EvalTemplate(n.Data.UserTarget)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		auditLogReason, err := ctx.EvalTemplate(n.Data.AuditLogReason)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		err = ctx.Discord.EditMember(ctx, ctx.Data.GuildID(), discord.UserID(userID.Snowflake()), api.ModifyMemberData{
+			Mute:           optBool(n.Data.MemberVoiceMute),
+			AuditLogReason: api.AuditLogReason(auditLogReason.String()),
+		})
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionMemberVoiceDeafen:
+		userID, err := ctx.EvalTemplate(n.Data.UserTarget)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		auditLogReason, err := ctx.EvalTemplate(n.Data.AuditLogReason)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		err = ctx.Discord.EditMember(ctx, ctx.Data.GuildID(), discord.UserID(userID.Snowflake()), api.ModifyMemberData{
+			Deaf:           optBool(n.Data.MemberVoiceDeafen),
+			AuditLogReason: api.AuditLogReason(auditLogReason.String()),
+		})
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		return n.ExecuteChildren(ctx)
 	case FlowNodeTypeActionUserGet:
 		userID, err := ctx.EvalTemplate(n.Data.UserTarget)
 		if err != nil {
@@ -2734,6 +2821,16 @@ func formatPermissionNames(perms discord.Permissions) string {
 		return fmt.Sprintf("(mã quyền %d)", uint64(perms))
 	}
 	return strings.Join(names, ", ")
+}
+
+// optBool maps a plain bool to arikawa's optional option.Bool, always producing
+// an explicit value so a voice mute/deafen toggle sends true OR false (never
+// omitting the field, which would leave the current state unchanged).
+func optBool(b bool) option.Bool {
+	if b {
+		return option.True
+	}
+	return option.False
 }
 
 // formatNumber renders a number according to a display style:

@@ -377,6 +377,45 @@ export const nodeActionMemberRoleRemoveDataSchema = nodeBaseDataSchema.extend({
   audit_log_reason: auditLogReasonSchema,
 });
 
+export const nodeActionMemberVoiceMoveDataSchema = nodeBaseDataSchema.extend({
+  user_target: z
+    .string()
+    .regex(numericRegex)
+    .or(z.string().regex(placeholderRegex)),
+  channel_target: z
+    .string()
+    .regex(numericRegex)
+    .or(z.string().regex(placeholderRegex)),
+  audit_log_reason: auditLogReasonSchema,
+});
+
+export const nodeActionMemberVoiceDisconnectDataSchema =
+  nodeBaseDataSchema.extend({
+    user_target: z
+      .string()
+      .regex(numericRegex)
+      .or(z.string().regex(placeholderRegex)),
+    audit_log_reason: auditLogReasonSchema,
+  });
+
+export const nodeActionMemberVoiceMuteDataSchema = nodeBaseDataSchema.extend({
+  user_target: z
+    .string()
+    .regex(numericRegex)
+    .or(z.string().regex(placeholderRegex)),
+  member_voice_mute: z.boolean().optional(),
+  audit_log_reason: auditLogReasonSchema,
+});
+
+export const nodeActionMemberVoiceDeafenDataSchema = nodeBaseDataSchema.extend({
+  user_target: z
+    .string()
+    .regex(numericRegex)
+    .or(z.string().regex(placeholderRegex)),
+  member_voice_deafen: z.boolean().optional(),
+  audit_log_reason: auditLogReasonSchema,
+});
+
 export const nodeActionMemberGetDataSchema = nodeBaseDataSchema.extend({
   guild_target: z
     .string()

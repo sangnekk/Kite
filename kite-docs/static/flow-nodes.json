@@ -2213,6 +2213,244 @@
       "creditsCost": 1
     },
     {
+      "type": "action_member_voice_move",
+      "category": "action",
+      "section": "Thoại",
+      "contextTypes": null,
+      "title": "Chuyển kênh thoại",
+      "description": "Chuyển thành viên sang kênh thoại khác",
+      "icon": "arrow-right-left",
+      "color": "#3b82f6",
+      "dataFields": [
+        "user_target",
+        "channel_target",
+        "audit_log_reason",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "user_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "channel_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "audit_log_reason": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "user_target",
+          "channel_target"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_member_voice_disconnect",
+      "category": "action",
+      "section": "Thoại",
+      "contextTypes": null,
+      "title": "Ngắt khỏi kênh thoại",
+      "description": "Ngắt thành viên khỏi kênh thoại",
+      "icon": "phone-off",
+      "color": "#3b82f6",
+      "dataFields": [
+        "user_target",
+        "audit_log_reason",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "user_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "audit_log_reason": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "user_target"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_member_voice_mute",
+      "category": "action",
+      "section": "Thoại",
+      "contextTypes": null,
+      "title": "Tắt/bật tiếng thoại",
+      "description": "Tắt hoặc bật tiếng thành viên trong kênh thoại",
+      "icon": "mic-off",
+      "color": "#3b82f6",
+      "dataFields": [
+        "user_target",
+        "member_voice_mute",
+        "audit_log_reason",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "user_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "member_voice_mute": {
+            "type": "boolean"
+          },
+          "audit_log_reason": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "user_target"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_member_voice_deafen",
+      "category": "action",
+      "section": "Thoại",
+      "contextTypes": null,
+      "title": "Chặn/bỏ chặn nghe",
+      "description": "Chặn hoặc bỏ chặn nghe của thành viên trong kênh thoại",
+      "icon": "volume-off",
+      "color": "#3b82f6",
+      "dataFields": [
+        "user_target",
+        "member_voice_deafen",
+        "audit_log_reason",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "user_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "member_voice_deafen": {
+            "type": "boolean"
+          },
+          "audit_log_reason": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "user_target"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
       "type": "action_user_get",
       "category": "action",
       "section": "Người dùng",
