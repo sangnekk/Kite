@@ -1,82 +1,97 @@
 import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  MousePointerClickIcon,
-  SatelliteDishIcon,
+  MousePointerClick,
+  SatelliteDish,
   SquareSlash,
 } from "lucide-react";
 import FlowExample from "../flow/FlowExample";
+import { actionColor, entryColor, suspendColor } from "@/lib/flow/nodes";
+import FlowBlock from "./FlowBlock";
+import Reveal from "./Reveal";
+import { ReactNode } from "react";
 
 interface ServiceProps {
   title: string;
   description: string;
-  icon: JSX.Element;
+  icon: ReactNode;
+  color: string;
 }
+
+const iconCls = "h-[18px] w-[18px]";
 
 const serviceList: ServiceProps[] = [
   {
     title: "Lệnh tùy chỉnh",
-    description:
-      "Tạo các lệnh tùy chỉnh để người dùng tương tác với bot của bạn.",
-    icon: <SquareSlash className="h-5 w-5" />,
+    description: "Tạo lệnh slash riêng để người dùng gọi bot của bạn.",
+    icon: <SquareSlash className={iconCls} />,
+    color: entryColor,
   },
   {
     title: "Thành phần tương tác",
-    description:
-      "Tạo nút bấm và menu để người dùng tương tác và tùy chỉnh hành vi bot.",
-    icon: <MousePointerClickIcon className="h-5 w-5" />,
+    description: "Thêm nút bấm và menu để người dùng tương tác trực tiếp.",
+    icon: <MousePointerClick className={iconCls} />,
+    color: actionColor,
   },
   {
     title: "Lắng nghe sự kiện",
-    description:
-      "Lắng nghe các sự kiện trong server Discord và phản hồi với logic tùy chỉnh.",
-    icon: <SatelliteDishIcon className="h-5 w-5" />,
+    description: "Phản hồi sự kiện trong server bằng logic của riêng bạn.",
+    icon: <SatelliteDish className={iconCls} />,
+    color: suspendColor,
   },
 ];
 
 export default function HomeFlowSection() {
   return (
-    <section id="flow" className="container py-24 sm:py-32">
-      <div className="grid lg:grid-cols-[1fr,1fr] gap-8 place-items-center">
-        <div>
-          <h2 className="text-3xl md:text-4xl font-bold">
-            Công cụ{" "}
-            <span className="bg-gradient-to-b from-primary/60 to-primary text-transparent bg-clip-text">
-              Lập trình trực quan
+    <section id="flow" className="relative py-24 sm:py-32">
+      <div className="mx-auto grid max-w-[1400px] items-center gap-12 px-4 sm:px-6 lg:grid-cols-[1fr_1.1fr]">
+        <Reveal>
+          <div className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-primary">
+            Lập trình trực quan
+          </div>
+          <h2 className="font-display text-3xl font-bold leading-tight tracking-tight text-stone-50 md:text-4xl">
+            Viết logic bằng cách{" "}
+            <span className="bg-gradient-to-r from-primary to-[#fb6f3b] bg-clip-text text-transparent">
+              nối các khối
             </span>
           </h2>
-
-          <p className="text-muted-foreground text-xl mt-4 mb-8 ">
-            Viết logic tùy chỉnh cho lệnh slash, nút bấm và nhiều thứ khác với
-            giao diện lập trình trực quan của Vibe Bot.
+          <p className="mt-4 max-w-xl text-lg text-stone-400">
+            Mỗi khối là một bước. Nối chúng lại để dựng lệnh slash, nút bấm và
+            phản hồi sự kiện — tất cả trên một canvas trực quan.
           </p>
 
-          <div className="flex flex-col gap-8">
-            {serviceList.map(({ icon, title, description }: ServiceProps) => (
-              <Card key={title}>
-                <CardHeader className="space-y-1 flex md:flex-row justify-start items-start gap-4">
-                  <div className="mt-1 bg-primary/20 p-2 rounded-2xl">
-                    {icon}
-                  </div>
-                  <div>
-                    <CardTitle>{title}</CardTitle>
-                    <CardDescription className="text-md mt-2">
-                      {description}
-                    </CardDescription>
-                  </div>
-                </CardHeader>
-              </Card>
+          <div className="mt-8 flex flex-col gap-3">
+            {serviceList.map(({ icon, title, description, color }, i) => (
+              <Reveal key={title} delay={i * 90}>
+                <FlowBlock
+                  color={color}
+                  icon={icon}
+                  title={title}
+                  description={description}
+                  className="px-4 py-3.5"
+                />
+              </Reveal>
             ))}
           </div>
-        </div>
+        </Reveal>
 
-        <div className="w-full hidden sm:block md:w-[600px] lg:w-[600px] h-[800px]">
-          <FlowExample />
-        </div>
+        {/* Real editor canvas, framed like an app window. */}
+        <Reveal delay={120}>
+          <div className="home-block overflow-hidden rounded-2xl shadow-2xl">
+            <div className="flex items-center gap-2 border-b border-white/10 bg-white/[0.03] px-4 py-2.5">
+              <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
+              <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
+              <span className="h-3 w-3 rounded-full bg-[#28c840]" />
+              <span className="ml-2 font-mono text-xs text-stone-400">
+                ban.flow
+              </span>
+              <span className="ml-auto font-mono text-[11px] text-stone-500">
+                5 khối · 4 kết nối
+              </span>
+            </div>
+            <div className="h-[460px] w-full bg-[#0c0a09]/60">
+              <FlowExample />
+            </div>
+          </div>
+        </Reveal>
       </div>
     </section>
   );

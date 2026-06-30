@@ -1,11 +1,6 @@
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import env from "@/lib/env/client";
 import { ChevronDown } from "lucide-react";
+import Reveal from "./Reveal";
 
 interface FAQProps {
   question: string;
@@ -47,46 +42,51 @@ const FAQList: FAQProps[] = [
 
 export default function HomeFAQSection() {
   return (
-    <section id="faq" className="container py-24 sm:py-32">
-      <h2 className="text-3xl md:text-4xl font-bold mb-4">
-        Câu hỏi{" "}
-        <span className="bg-gradient-to-b from-primary/60 to-primary text-transparent bg-clip-text">
-          thường gặp
-        </span>
-      </h2>
+    <section id="faq" className="relative py-24 sm:py-32">
+      <div className="mx-auto max-w-3xl px-4 sm:px-6">
+        <Reveal className="mb-12 text-center">
+          <div className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-primary">
+            Hỏi & Đáp
+          </div>
+          <h2 className="font-display text-3xl font-bold tracking-tight text-stone-50 md:text-4xl">
+            Câu hỏi thường gặp
+          </h2>
+        </Reveal>
 
-      <Accordion type="single" collapsible className="w-full AccordionRoot">
-        {FAQList.map(({ question, answer }: FAQProps) => (
-          <FAQItem key={question} question={question} answer={answer} />
-        ))}
-      </Accordion>
+        <div className="space-y-3">
+          {FAQList.map(({ question, answer }, i) => (
+            <Reveal key={question} delay={i * 60}>
+              <FAQItem question={question} answer={answer} />
+            </Reveal>
+          ))}
+        </div>
 
-      <h3 className="font-medium mt-4">
-        Vẫn còn thắc mắc?{" "}
-        <a
-          rel="noreferrer noopener"
-          href={env.NEXT_PUBLIC_DISCORD_LINK}
-          target="_blank"
-          className="text-primary transition-all border-primary hover:border-b-2"
-        >
-          Tham gia server Discord
-        </a>
-      </h3>
+        <p className="mt-10 text-center text-stone-400">
+          Vẫn còn thắc mắc?{" "}
+          <a
+            rel="noreferrer noopener"
+            href={env.NEXT_PUBLIC_DISCORD_LINK}
+            target="_blank"
+            className="font-medium text-primary underline-offset-4 hover:underline"
+          >
+            Tham gia server Discord
+          </a>
+        </p>
+      </div>
     </section>
   );
 }
 
 function FAQItem({ question, answer }: FAQProps) {
   return (
-    <details className="text-left border-b [&_svg]:open:-rotate-180">
-      <summary className="flex flex-1 items-center justify-between py-4 font-medium transition-all hover:underline cursor-pointer">
-        <div>{question}</div>
-        <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
+    <details className="home-block group rounded-xl px-5 [&_svg]:open:-rotate-180">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-4 font-medium text-stone-100 transition-colors hover:text-white">
+        <span>{question}</span>
+        <ChevronDown className="h-4 w-4 flex-none text-stone-400 transition-transform duration-200" />
       </summary>
-
-      <div className="overflow-hidden text-sm transition-all">
-        <p className="pb-4 pt-0">{answer}</p>
-      </div>
+      <p className="pb-5 pr-8 text-sm leading-relaxed text-stone-400">
+        {answer}
+      </p>
     </details>
   );
 }

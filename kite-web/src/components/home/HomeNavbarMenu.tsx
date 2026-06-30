@@ -56,10 +56,10 @@ export default function HomeNavbarMenu() {
     <NavigationMenu>
       <NavigationMenuList>
         <NavigationMenuItem>
-          <NavigationMenuTrigger>
+          <NavigationMenuTrigger className="bg-transparent font-display font-semibold tracking-tight">
             <img
               src={logo.src}
-              className="h-6 w-6 mr-2 hidden sm:block"
+              className="h-6 w-6 mr-2 hidden sm:block drop-shadow-[0_0_10px_rgba(249,115,22,0.75)]"
               alt=""
             />
             Vibe Bot
@@ -95,7 +95,9 @@ export default function HomeNavbarMenu() {
           </NavigationMenuContent>
         </NavigationMenuItem>
         <NavigationMenuItem>
-          <NavigationMenuTrigger>Công cụ</NavigationMenuTrigger>
+          <NavigationMenuTrigger className="bg-transparent">
+            Công cụ
+          </NavigationMenuTrigger>
           <NavigationMenuContent>
             <ul className="grid gap-3 p-4 w-[80dvw] md:w-[500px] md:grid-cols-2 lg:w-[600px]">
               {tools.map((tool) => (
@@ -133,7 +135,7 @@ export default function HomeNavbarMenu() {
           <NavigationMenuLink
             href={env.NEXT_PUBLIC_DOCS_LINK}
             target="_blank"
-            className={navigationMenuTriggerStyle()}
+            className={cn(navigationMenuTriggerStyle(), "bg-transparent")}
           >
             Tài liệu
           </NavigationMenuLink>

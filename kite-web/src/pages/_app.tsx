@@ -1,7 +1,12 @@
 import "@/styles/globals.css";
 import "@/styles/shadow.css";
+import "@/styles/home.css";
 import type { AppProps } from "next/app";
-import { Inter as FontSans } from "next/font/google";
+import {
+  Inter as FontSans,
+  Space_Grotesk as FontDisplay,
+  JetBrains_Mono as FontMono,
+} from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "next-themes";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,6 +19,22 @@ import * as swetrix from "swetrix";
 const fontSans = FontSans({
   subsets: ["latin"],
   variable: "--font-sans",
+});
+
+// Display face for the marketing home — geometric with a touch of personality,
+// deliberately not Inter so headlines read as a choice, not a default.
+const fontDisplay = FontDisplay({
+  subsets: ["latin"],
+  variable: "--font-display",
+  weight: ["500", "600", "700"],
+});
+
+// Mono face for eyebrows, node labels and data — encodes the "code editor"
+// world that the no-code builder replaces.
+const fontMono = FontMono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  weight: ["400", "500", "600"],
 });
 
 if (process.env.NODE_ENV === "production" && typeof window !== "undefined") {
@@ -39,7 +60,9 @@ export default function App({ Component, pageProps }: AppProps) {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider attribute="class">
           <TooltipProvider delayDuration={200}>
-            <Component {...pageProps} />
+            <div className={`${fontDisplay.variable} ${fontMono.variable}`}>
+              <Component {...pageProps} />
+            </div>
             <Toaster position="top-right" richColors={true} />
 
             <SpeedInsights />

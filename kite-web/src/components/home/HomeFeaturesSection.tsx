@@ -1,75 +1,110 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  CodeIcon,
-  DatabaseZapIcon,
-  EditIcon,
-  EyeIcon,
-  GamepadIcon,
-  RouterIcon,
-  ServerIcon,
-  UsersIcon,
+  Code2,
+  Infinity as InfinityIcon,
+  SlidersHorizontal,
+  Users,
 } from "lucide-react";
+import {
+  actionColor,
+  controlColor,
+  integrationColor,
+  optionColor,
+} from "@/lib/flow/nodes";
+import { ReactNode } from "react";
+import Reveal from "./Reveal";
 
 interface FeatureProps {
-  icon: JSX.Element;
+  icon: ReactNode;
   title: string;
   description: string;
+  color: string;
 }
+
+const iconCls = "h-5 w-5";
 
 const features: FeatureProps[] = [
   {
-    icon: <DatabaseZapIcon />,
-    title: "Hoạt động 24/7",
+    icon: <InfinityIcon className={iconCls} />,
+    title: "Online 24/7",
     description:
-      "Vibe Bot cung cấp hosting 24/7 cho bot Discord của bạn, không cần lo lắng về uptime.",
-  },
-
-  {
-    icon: <EditIcon />,
-    title: "Tùy chỉnh dễ dàng",
-    description:
-      "Tùy chỉnh giao diện và tính năng bot Discord với giao diện thân thiện của Vibe Bot.",
+      "Bot của bạn được lưu trữ và chạy liên tục — không lo downtime, không cần máy chủ riêng.",
+    color: integrationColor,
   },
   {
-    icon: <CodeIcon />,
+    icon: <SlidersHorizontal className={iconCls} />,
+    title: "Tùy chỉnh tất cả",
+    description:
+      "Đổi tên, ảnh đại diện, trạng thái và mọi hành vi của bot ngay trên giao diện trực quan.",
+    color: optionColor,
+  },
+  {
+    icon: <Code2 className={iconCls} />,
     title: "Không cần code",
     description:
-      "Bạn có thể tạo bot Discord mà không cần viết một dòng code nào.",
+      "Ghép các khối để dựng logic. Tạo bot hoàn chỉnh mà không viết một dòng code.",
+    color: actionColor,
   },
   {
-    icon: <UsersIcon />,
-    title: "Cộng tác",
+    icon: <Users className={iconCls} />,
+    title: "Cộng tác nhóm",
     description:
-      "Làm việc cùng nhau để tạo bot Discord hoàn hảo cho server của bạn.",
+      "Mời cả nhóm cùng dựng và chỉnh sửa bot cho server của bạn, theo thời gian thực.",
+    color: controlColor,
   },
 ];
 
 export default function HomeFeaturesSection() {
   return (
-    <section id="features" className="container text-center py-24 sm:py-32">
-      <h2 className="text-3xl md:text-4xl font-bold ">
-        <span className="bg-gradient-to-b from-primary/60 to-primary text-transparent bg-clip-text">
-          Tất cả{" "}
-        </span>
-        trong một nơi
-      </h2>
-      <p className="md:w-3/4 mx-auto mt-4 mb-8 text-xl text-muted-foreground">
-        Vibe Bot cung cấp mọi công cụ bạn cần để tạo bot Discord cho server của
-        bạn.
-      </p>
+    <section id="features" className="relative py-24 sm:py-32">
+      <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
+        <Reveal className="mb-14 text-center">
+          <div className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-primary">
+            Tất cả trong một
+          </div>
+          <h2 className="font-display text-3xl font-bold tracking-tight text-stone-50 md:text-4xl">
+            Mọi khối bạn cần để dựng bot
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-stone-400">
+            Vibe Bot gói toàn bộ công cụ làm bot Discord vào một canvas duy nhất.
+          </p>
+        </Reveal>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        {features.map(({ icon, title, description }: FeatureProps) => (
-          <Card key={title} className="bg-muted/50">
-            <CardHeader>
-              <CardTitle className="grid gap-4 place-items-center">
-                {icon}
-                {title}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>{description}</CardContent>
-          </Card>
-        ))}
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {features.map(({ icon, title, description, color }, i) => (
+            <Reveal key={title} delay={i * 90}>
+              <article
+                className="home-block group relative h-full overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1"
+                style={
+                  {
+                    "--c": color,
+                  } as React.CSSProperties
+                }
+              >
+                {/* Glow that blooms from the icon on hover. */}
+                <div
+                  className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-60"
+                  style={{ backgroundColor: color }}
+                  aria-hidden
+                />
+                <div
+                  className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl text-white"
+                  style={{
+                    backgroundColor: color,
+                    boxShadow: `0 8px 24px -6px ${color}`,
+                  }}
+                >
+                  {icon}
+                </div>
+                <h3 className="mb-2 text-lg font-semibold text-stone-100">
+                  {title}
+                </h3>
+                <p className="text-sm leading-relaxed text-stone-400">
+                  {description}
+                </p>
+              </article>
+            </Reveal>
+          ))}
+        </div>
       </div>
     </section>
   );

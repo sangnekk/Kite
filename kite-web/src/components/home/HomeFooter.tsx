@@ -4,104 +4,103 @@ import env from "@/lib/env/client";
 
 export default function HomeFooter() {
   return (
-    <footer id="footer">
-      <hr className="w-11/12 mx-auto" />
-
-      <section className="container py-20 grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-x-12 gap-y-8">
+    <footer id="footer" className="relative border-t border-white/10">
+      <div className="mx-auto grid max-w-[1400px] grid-cols-2 gap-x-8 gap-y-10 px-4 py-16 sm:px-6 md:grid-cols-4 xl:grid-cols-6">
         <div className="col-span-full xl:col-span-2">
-          <Link
-            rel="noreferrer noopener"
-            href="/"
-            className="font-bold text-xl flex items-center"
-          >
-            <img src={logo.src} alt="Vibe Bot Logo" className="h-10 w-10 mr-3" />
-            <div>Vibe Bot</div>
+          <Link href="/" className="flex items-center gap-3">
+            <img
+              src={logo.src}
+              alt="Vibe Bot"
+              className="h-9 w-9 drop-shadow-[0_0_10px_rgba(249,115,22,0.7)]"
+            />
+            <span className="font-display text-xl font-semibold text-stone-100">
+              Vibe Bot
+            </span>
           </Link>
+          <p className="mt-4 max-w-xs text-sm text-stone-500">
+            Dựng và lưu trữ bot Discord không cần code — mã nguồn mở, miễn phí.
+          </p>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <h3 className="font-bold text-lg">Liên hệ</h3>
-          <div>
-            <a
-              rel="noreferrer noopener"
-              href={env.NEXT_PUBLIC_GITHUB_LINK}
-              target="_blank"
-              className="opacity-60 hover:opacity-100"
-            >
-              Github
-            </a>
-          </div>
+        <FooterColumn title="Liên hệ">
+          <FooterLink href={env.NEXT_PUBLIC_GITHUB_LINK} external>
+            Github
+          </FooterLink>
+          <FooterLink href={env.NEXT_PUBLIC_DISCORD_LINK} external>
+            Discord
+          </FooterLink>
+          <FooterLink href={`mailto:${env.NEXT_PUBLIC_CONTACT_EMAIL}`} external>
+            Email
+          </FooterLink>
+        </FooterColumn>
 
-          <div>
-            <a
-              rel="noreferrer noopener"
-              href={env.NEXT_PUBLIC_DISCORD_LINK}
-              target="_blank"
-              className="opacity-60 hover:opacity-100"
-            >
-              Discord
-            </a>
-          </div>
+        <FooterColumn title="Tài nguyên">
+          <FooterLink href={env.NEXT_PUBLIC_DOCS_LINK} external>
+            Tài liệu
+          </FooterLink>
+        </FooterColumn>
 
-          <div>
-            <a
-              rel="noreferrer noopener"
-              href={`mailto:${env.NEXT_PUBLIC_CONTACT_EMAIL}`}
-              target="_blank"
-              className="opacity-60 hover:opacity-100"
-            >
-              Email
-            </a>
-          </div>
-        </div>
+        <FooterColumn title="Pháp lý">
+          <FooterLink href="/terms">Điều khoản dịch vụ</FooterLink>
+          <FooterLink href="/privacy">Chính sách bảo mật</FooterLink>
+          <FooterLink href="/refund">Chính sách hoàn tiền</FooterLink>
+        </FooterColumn>
+      </div>
 
-        <div className="flex flex-col gap-2">
-          <h3 className="font-bold text-lg">Tài nguyên</h3>
-          <div>
-            <a
-              href={env.NEXT_PUBLIC_DOCS_LINK}
-              className="opacity-60 hover:opacity-100"
-              target="_blank"
-            >
-              Tài liệu
-            </a>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <h3 className="font-bold text-lg">Pháp lý</h3>
-          <div>
-            <Link href="/terms" className="opacity-60 hover:opacity-100">
-              Điều khoản dịch vụ
-            </Link>
-          </div>
-
-          <div>
-            <Link href="/privacy" className="opacity-60 hover:opacity-100">
-              Chính sách bảo mật
-            </Link>
-          </div>
-
-          <div>
-            <Link href="/refund" className="opacity-60 hover:opacity-100">
-              Chính sách hoàn tiền
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="container pb-14 text-center">
-        <h3>
-          Copyright &copy; {new Date().getFullYear()} tạo bởi{" "}
+      <div className="mx-auto max-w-[1400px] px-4 pb-12 sm:px-6">
+        <p className="border-t border-white/5 pt-8 text-center font-mono text-xs text-stone-500">
+          © {new Date().getFullYear()} Vibe Bot · dựa trên Kite của{" "}
           <a
             target="_blank"
+            rel="noreferrer noopener"
             href="https://merlin.gg"
-            className="text-primary transition-all border-primary hover:border-b-2"
+            className="text-stone-400 underline-offset-4 hover:text-primary hover:underline"
           >
             Merlin Fuchs
           </a>
-        </h3>
-      </section>
+        </p>
+      </div>
     </footer>
+  );
+}
+
+function FooterColumn({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      <h3 className="font-mono text-xs uppercase tracking-[0.18em] text-stone-500">
+        {title}
+      </h3>
+      {children}
+    </div>
+  );
+}
+
+function FooterLink({
+  href,
+  external,
+  children,
+}: {
+  href: string;
+  external?: boolean;
+  children: React.ReactNode;
+}) {
+  const cls = "text-sm text-stone-400 transition-colors hover:text-stone-100";
+  if (external) {
+    return (
+      <a href={href} target="_blank" rel="noreferrer noopener" className={cls}>
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link href={href} className={cls}>
+      {children}
+    </Link>
   );
 }

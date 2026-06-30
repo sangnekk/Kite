@@ -62,6 +62,17 @@ const config = {
   				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
   				border: 'hsl(var(--sidebar-border))',
   				ring: 'hsl(var(--sidebar-ring))'
+  			},
+  			// Flow node category colors, mirrored from src/lib/flow/nodes.ts so the
+  			// marketing home speaks the exact same visual language as the editor.
+  			node: {
+  				entry: '#eab308',
+  				action: '#3b82f6',
+  				control: '#22c55e',
+  				option: '#8b5cf6',
+  				suspend: '#d946ef',
+  				integration: '#06b6d4',
+  				error: '#ef4444'
   			}
   		},
   		borderRadius: {
@@ -99,18 +110,34 @@ const config = {
   				'40%, 60%': {
   					transform: 'translate3d(4px, 0, 0)'
   				}
+  			},
+  			'home-float': {
+  				'0%, 100%': { transform: 'translateY(0)' },
+  				'50%': { transform: 'translateY(-10px)' }
+  			},
+  			'home-glow': {
+  				'0%, 100%': { opacity: '0.45' },
+  				'50%': { opacity: '0.85' }
+  			},
+  			'home-dash': {
+  				to: { 'stroke-dashoffset': '-16' }
   			}
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
   			'accordion-up': 'accordion-up 0.2s ease-out',
-  			shake: 'shake 0.82s cubic-bezier(.36,.07,.19,.97) both'
+  			shake: 'shake 0.82s cubic-bezier(.36,.07,.19,.97) both',
+  			'home-float': 'home-float 6s ease-in-out infinite',
+  			'home-glow': 'home-glow 5s ease-in-out infinite',
+  			'home-dash': 'home-dash 0.7s linear infinite'
   		},
   		fontFamily: {
   			sans: [
   				'var(--font-sans)',
                     ...fontFamily.sans
-                ]
+                ],
+  			display: ['var(--font-display)', 'var(--font-sans)', ...fontFamily.sans],
+  			mono: ['var(--font-mono)', ...fontFamily.mono]
   		}
   	}
   },
