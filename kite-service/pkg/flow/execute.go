@@ -2051,8 +2051,7 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 		// VietQR shows account info by default; only send the flag to hide it.
 		if n.Data.QRHideInfo {
 			query.Set("showinfo", "false")
-		}
-		if n.Data.QRFullAccount {
+		} else if n.Data.QRFullAccount {
 			query.Set("fullacc", "true")
 		}
 

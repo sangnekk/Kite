@@ -1581,13 +1581,23 @@ function QRHideInfoInput({ data, updateData, errors }: InputProps) {
       title="Ẩn thông tin tài khoản"
       description="Không hiển thị thông tin tài khoản trên ảnh QR (chỉ áp dụng QR online)."
       value={!!data.qr_hide_info}
-      updateValue={(v) => updateData({ qr_hide_info: v || undefined })}
+      updateValue={(v) => {
+        if (v) {
+          updateData({ qr_hide_info: true, qr_full_account: undefined });
+        } else {
+          updateData({ qr_hide_info: undefined });
+        }
+      }}
       errors={errors}
     />
   );
 }
 
 function QRFullAccountInput({ data, updateData, errors }: InputProps) {
+  if (data.qr_hide_info) {
+    return null;
+  }
+
   return (
     <BaseCheckbox
       field="qr_full_account"
