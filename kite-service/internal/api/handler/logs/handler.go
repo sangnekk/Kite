@@ -46,6 +46,8 @@ func (h *LogHandler) HandleLogEntryList(c *handler.Context) (*wire.LogEntryListR
 		entries, err = h.logStore.LogEntriesByEvent(c.Context(), c.App.ID, c.Query("event_id"), beforeID, limit)
 	} else if c.Query("message_id") != "" {
 		entries, err = h.logStore.LogEntriesByMessage(c.Context(), c.App.ID, c.Query("message_id"), beforeID, limit)
+	} else if c.Query("schedule_id") != "" {
+		entries, err = h.logStore.LogEntriesBySchedule(c.Context(), c.App.ID, c.Query("schedule_id"), beforeID, limit)
 	} else {
 		entries, err = h.logStore.LogEntriesByApp(c.Context(), c.App.ID, beforeID, limit)
 	}

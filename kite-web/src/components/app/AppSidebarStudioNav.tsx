@@ -8,6 +8,7 @@ import {
   BlocksIcon,
   SparklesIcon,
   WebhookIcon,
+  ClockIcon,
 } from "lucide-react";
 import { useAppFeature } from "@/lib/hooks/api";
 import { AI_FEATURES_ENABLED } from "@/lib/ai/featureFlags";
@@ -65,6 +66,12 @@ export default function AppSidebarStudioNav() {
         url: "/apps/[appId]/events",
         icon: SatelliteDishIcon,
         active: isActive("/apps/[appId]/events"),
+      },
+      {
+        name: "Lịch biểu",
+        url: "/apps/[appId]/schedules",
+        icon: ClockIcon,
+        active: isActive("/apps/[appId]/schedules"),
       },
       {
         name: "Mẫu tin nhắn",

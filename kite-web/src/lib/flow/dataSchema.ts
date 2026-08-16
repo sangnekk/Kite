@@ -125,6 +125,16 @@ export const nodeEntryEventDataSchema = nodeBaseDataSchema.extend({
   event_type: z.string(),
 });
 
+export const nodeEntryScheduleDataSchema = nodeBaseDataSchema.extend({
+  description: z.string().max(100).min(1),
+  schedule_type: z.enum(["interval", "daily", "weekly", "cron"]),
+  schedule_interval_seconds: z.number().optional(),
+  schedule_time: z.string().optional(),
+  schedule_weekdays: z.array(z.number()).optional(),
+  schedule_cron_expression: z.string().optional(),
+  schedule_timezone: z.string().optional(),
+});
+
 export const nodeEntryComponentButtonDataSchema = nodeBaseDataSchema.extend({});
 
 export const nodeMessageDataSchema = z.object({

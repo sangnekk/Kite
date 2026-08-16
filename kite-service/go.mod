@@ -1,6 +1,6 @@
 module github.com/kitecloud/kite/kite-service
 
-go 1.25
+go 1.25.0
 
 require (
 	github.com/cyrusaf/ctxlog v1.3.2
@@ -22,12 +22,12 @@ require (
 	github.com/knadh/koanf/v2 v2.1.1
 	github.com/lib/pq v1.10.9
 	github.com/matoous/go-nanoid/v2 v2.1.0
-	github.com/sangnekk/Kite/kite-web v0.0.0
 	github.com/minio/minio-go/v7 v7.0.76
 	github.com/openai/openai-go v1.10.3
 	github.com/pelletier/go-toml/v2 v2.2.2
 	github.com/ravener/discord-oauth2 v0.0.0-20230514095040-ae65713199b3
 	github.com/rs/cors v1.11.0
+	github.com/sangnekk/Kite/kite-web v0.0.0
 	github.com/sashabaranov/go-openai v1.40.3
 	github.com/sethvargo/go-limiter v1.0.0
 	github.com/stretchr/testify v1.9.0
@@ -78,6 +78,7 @@ require (
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.52.3 // indirect
 	github.com/prometheus/procfs v0.13.0 // indirect
+	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/tidwall/gjson v1.14.4 // indirect
@@ -88,13 +89,13 @@ require (
 	github.com/xrash/smetrics v0.0.0-20240312152122-5f08fbb34913 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/mock v0.4.0 // indirect
-	golang.org/x/crypto v0.32.0 // indirect
+	golang.org/x/crypto v0.48.0 // indirect
 	golang.org/x/exp v0.0.0-20240416160154-fe59bbe5cc7f // indirect
-	golang.org/x/net v0.34.0 // indirect
-	golang.org/x/sync v0.10.0 // indirect
-	golang.org/x/sys v0.29.0 // indirect
-	golang.org/x/text v0.21.0 // indirect
-	golang.org/x/time v0.10.0 // indirect
+	golang.org/x/net v0.49.0 // indirect
+	golang.org/x/sync v0.19.0 // indirect
+	golang.org/x/sys v0.41.0 // indirect
+	golang.org/x/text v0.34.0 // indirect
+	golang.org/x/time v0.15.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

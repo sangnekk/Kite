@@ -81,6 +81,17 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 		}
 
 		return nil
+	case FlowNodeTypeEntrySchedule:
+		if !ctx.IsEntry() {
+			return fmt.Errorf("schedule entry isn't the entry node")
+		}
+
+		err := n.ExecuteChildren(ctx)
+		if err != nil {
+			return err
+		}
+
+		return nil
 	case FlowNodeTypeActionResponseCreate:
 		if ctx.IsEntry() {
 			return n.resumeFromComponent(ctx)

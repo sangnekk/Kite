@@ -211,3 +211,16 @@ func (d *WebhookEventData) CommandData() *discord.CommandInteraction {
 }
 func (d *WebhookEventData) MessageComponentData() discord.ComponentInteraction { return nil }
 func (d *WebhookEventData) Event() ws.Event                                    { return nil }
+
+// ScheduleData is the flow context data for a scheduled flow run. There is no
+// triggering Discord event, so all Discord-specific fields return zero values;
+// the flow must target channels/users explicitly (e.g. action_message_create).
+type ScheduleData struct{}
+
+func (d *ScheduleData) Interaction() *discord.InteractionEvent               { return nil }
+func (d *ScheduleData) UserID() discord.UserID                               { return 0 }
+func (d *ScheduleData) GuildID() discord.GuildID                             { return 0 }
+func (d *ScheduleData) ChannelID() discord.ChannelID                         { return 0 }
+func (d *ScheduleData) CommandData() *discord.CommandInteraction             { return nil }
+func (d *ScheduleData) MessageComponentData() discord.ComponentInteraction   { return nil }
+func (d *ScheduleData) Event() ws.Event                                      { return nil }

@@ -3,3 +3,5 @@
 .idea/
 kite.toml
 .env
+claude.*
+*claude.*

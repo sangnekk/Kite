@@ -37,6 +37,7 @@ type Env struct {
 	MessageInstanceStore store.MessageInstanceStore
 	CommandStore         store.CommandStore
 	EventListenerStore   store.EventListenerStore
+	ScheduleStore        store.ScheduleStore
 	PluginInstanceStore  store.PluginInstanceStore
 	PluginValueStore     store.PluginValueStore
 	PluginRegistry       *plugin.Registry
@@ -53,6 +54,7 @@ type entityLinks struct {
 	CommandID         null.String
 	EventListenerID   null.String
 	MessageID         null.String
+	ScheduleID        null.String
 	MessageInstanceID null.Int
 	FlowSourceID      null.String // For message templates that have multiple flows
 }
@@ -175,7 +177,7 @@ func (s Env) executeTextCommand(
 		)
 	}
 
-	s.createUsageRecord(appID, fCtx.CreditsUsed(), links)
+	s.createUsageRecord(appID, model.UsageRecordTypeCommandFlowExecution, fCtx.CreditsUsed(), links)
 }
 
 func (s Env) executeFlowEvent(
@@ -222,6 +224,7 @@ func (s Env) executeFlowEvent(
 
 	s.createUsageRecord(
 		appID,
+		model.UsageRecordTypeCommandFlowExecution,
 		fCtx.CreditsUsed(),
 		links,
 	)
@@ -273,7 +276,49 @@ func (s Env) executeWebhookEvent(
 		s.createLogEntry(appID, model.LogLevelError, fmt.Sprintf("Failed to execute webhook event: %v", err), links)
 	}
 
-	s.createUsageRecord(appID, fCtx.CreditsUsed(), links)
+	s.createUsageRecord(appID, model.UsageRecordTypeCommandFlowExecution, fCtx.CreditsUsed(), links)
+}
+
+// executeScheduledFlow runs a schedule's flow. Like a webhook event there is no
+// Discord event or interaction; the flow acts as the bot via the app's session
+// (looked up by app id). It is modeled on executeWebhookEvent.
+func (s Env) executeScheduledFlow(
+	ctx context.Context,
+	appID string,
+	node *flow.CompiledFlowNode,
+	links entityLinks,
+) {
+	defer s.recoverPanic(appID, links)
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	var session *state.State
+	if s.SessionLookup != nil {
+		session = s.SessionLookup.SessionForApp(appID)
+	}
+
+	providers := s.flowProviders(appID, session, links)
+	fCtx := flow.NewContext(
+		ctx,
+		30*time.Second,
+		&ScheduleData{},
+		providers,
+		flow.FlowContextLimits{
+			MaxStackDepth: s.Config.MaxStackDepth,
+			MaxOperations: s.Config.MaxOperations,
+			MaxCredits:    s.Config.MaxCredits,
+		},
+		eval.NewContextForSchedule(session),
+		nil,
+	)
+	defer fCtx.Cancel()
+
+	if err := node.Execute(fCtx); err != nil {
+		s.createLogEntry(appID, model.LogLevelError, fmt.Sprintf("Failed to execute scheduled flow: %v", err), links)
+	}
+
+	s.createUsageRecord(appID, model.UsageRecordTypeScheduledFlowExecution, fCtx.CreditsUsed(), links)
 }
 
 func (s Env) createLogEntry(appID string, level model.LogLevel, message string, links entityLinks) {
@@ -288,6 +333,7 @@ func (s Env) createLogEntry(appID string, level model.LogLevel, message string, 
 		CommandID:       links.CommandID,
 		EventListenerID: links.EventListenerID,
 		MessageID:       links.MessageID,
+		ScheduleID:      links.ScheduleID,
 		CreatedAt:       time.Now().UTC(),
 	})
 	if err != nil {
@@ -295,17 +341,18 @@ func (s Env) createLogEntry(appID string, level model.LogLevel, message string, 
 	}
 }
 
-func (s Env) createUsageRecord(appID string, creditsUsed int, links entityLinks) {
+func (s Env) createUsageRecord(appID string, usageType model.UsageRecordType, creditsUsed int, links entityLinks) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 
 	start := time.Now()
 	err := s.UsageStore.CreateUsageRecord(ctx, model.UsageRecord{
 		AppID:           appID,
-		Type:            model.UsageRecordTypeCommandFlowExecution,
+		Type:            usageType,
 		CommandID:       links.CommandID,
 		EventListenerID: links.EventListenerID,
 		MessageID:       links.MessageID,
+		ScheduleID:      links.ScheduleID,
 		CreditsUsed:     creditsUsed,
 		CreatedAt:       time.Now().UTC(),
 	})

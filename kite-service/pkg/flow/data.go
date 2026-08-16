@@ -27,6 +27,13 @@ var commandOptionNameRe = regexp.MustCompile(`^[a-z0-9_]+$`)
 // Allows only lowercase alphanumeric characters and underscores.
 var resultKeyRe = regexp.MustCompile(`^[a-z0-9_]+$`)
 
+// Allows a 24-hour "HH:MM" time (used by daily/weekly schedule presets).
+var scheduleTimeRe = regexp.MustCompile(`^([01]?\d|2[0-3]):[0-5]\d$`)
+
+// The minimum interval (in seconds) allowed for an interval schedule. This caps
+// how fast a schedule can burn credits — see the billing rationale in the plan.
+const ScheduleMinIntervalSeconds = 60
+
 type FlowData struct {
 	Nodes []FlowNode `json:"nodes"`
 	Edges []FlowEdge `json:"edges"`
@@ -45,6 +52,7 @@ const (
 	FlowNodeTypeEntryCommand         FlowNodeType = "entry_command"
 	FlowNodeTypeEntryEvent           FlowNodeType = "entry_event"
 	FlowNodeTypeEntryComponentButton FlowNodeType = "entry_component_button"
+	FlowNodeTypeEntrySchedule        FlowNodeType = "entry_schedule"
 
 	FlowNodeTypeOptionCommandArgument       FlowNodeType = "option_command_argument"
 	FlowNodeTypeOptionCommandPermissions    FlowNodeType = "option_command_permissions"
@@ -311,6 +319,16 @@ type FlowNodeData struct {
 	// Event Entry
 	EventType string `json:"event_type,omitempty"`
 
+	// Schedule Entry (on the entry_schedule node). ScheduleType selects the
+	// preset; the backend normalizes it to an interval or a cron expression via
+	// CompiledFlowNode.ScheduleSpec().
+	ScheduleType            string `json:"schedule_type,omitempty"`             // interval | daily | weekly | cron
+	ScheduleIntervalSeconds int    `json:"schedule_interval_seconds,omitempty"` // interval: seconds between runs (min 60)
+	ScheduleTime            string `json:"schedule_time,omitempty"`             // daily/weekly: "HH:MM" (24h)
+	ScheduleWeekdays        []int  `json:"schedule_weekdays,omitempty"`         // weekly: 0-6 (Sunday=0)
+	ScheduleCronExpression  string `json:"schedule_cron_expression,omitempty"`  // cron: standard 5-field expression
+	ScheduleTimezone        string `json:"schedule_timezone,omitempty"`         // IANA timezone, empty = Asia/Ho_Chi_Minh
+
 	// Event Filter
 	EventFilterTarget EventFilterTarget `json:"event_filter_target,omitempty"`
 	EventFilterMode   ComparsionMode    `json:"event_filter_mode,omitempty"`
@@ -386,6 +404,31 @@ func (d FlowNodeData) Validate(nodeType FlowNodeType) error {
 		validation.Field(&d.Description, validation.When(nodeType == FlowNodeTypeEntryEvent,
 			validation.Required,
 			validation.Length(1, 100),
+		)),
+
+		// Schedule Entry
+		validation.Field(&d.Description, validation.When(nodeType == FlowNodeTypeEntrySchedule,
+			validation.Required,
+			validation.Length(1, 100),
+		)),
+		validation.Field(&d.ScheduleType, validation.When(nodeType == FlowNodeTypeEntrySchedule,
+			validation.Required,
+			validation.In("interval", "daily", "weekly", "cron"),
+		)),
+		validation.Field(&d.ScheduleIntervalSeconds, validation.When(nodeType == FlowNodeTypeEntrySchedule && d.ScheduleType == "interval",
+			validation.Required,
+			validation.Min(ScheduleMinIntervalSeconds).Error(fmt.Sprintf("must be at least %d seconds", ScheduleMinIntervalSeconds)),
+		)),
+		validation.Field(&d.ScheduleTime, validation.When(nodeType == FlowNodeTypeEntrySchedule && (d.ScheduleType == "daily" || d.ScheduleType == "weekly"),
+			validation.Required,
+			validation.Match(scheduleTimeRe).Error("must be a valid time in HH:MM format"),
+		)),
+		validation.Field(&d.ScheduleWeekdays, validation.When(nodeType == FlowNodeTypeEntrySchedule && d.ScheduleType == "weekly",
+			validation.Required,
+			validation.Each(validation.Min(0), validation.Max(6)),
+		)),
+		validation.Field(&d.ScheduleCronExpression, validation.When(nodeType == FlowNodeTypeEntrySchedule && d.ScheduleType == "cron",
+			validation.Required,
 		)),
 
 		// AI Chat Completion

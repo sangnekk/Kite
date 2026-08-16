@@ -19,6 +19,8 @@ import {
   CommandListResponse,
   EventListenerGetResponse,
   EventListenerListResponse,
+  ScheduleGetResponse,
+  ScheduleListResponse,
   FeaturesGetResponse,
   LogEntry,
   LogSummaryGetResponse,
@@ -97,6 +99,7 @@ export function useLogEntriesQuery(
     commandId?: string;
     eventId?: string;
     messageId?: string;
+    scheduleId?: string;
     refetchInterval?: number;
   }
 ) {
@@ -109,6 +112,9 @@ export function useLogEntriesQuery(
   }
   if (args?.messageId) {
     query.set("message_id", args.messageId);
+  }
+  if (args?.scheduleId) {
+    query.set("schedule_id", args.scheduleId);
   }
   if (args?.limit) {
     query.set("limit", args.limit.toString());
@@ -197,6 +203,26 @@ export function useEventListenerQuery(appId: string, eventId: string) {
         `/v1/apps/${appId}/event-listeners/${eventId}`
       ),
     enabled: !!appId && !!eventId,
+  });
+}
+
+export function useSchedulesQuery(appId: string) {
+  return useQuery({
+    queryKey: ["apps", appId, "schedules"],
+    queryFn: () =>
+      apiRequest<ScheduleListResponse>(`/v1/apps/${appId}/schedules`),
+    enabled: !!appId,
+  });
+}
+
+export function useScheduleQuery(appId: string, scheduleId: string) {
+  return useQuery({
+    queryKey: ["apps", appId, "schedules", scheduleId],
+    queryFn: () =>
+      apiRequest<ScheduleGetResponse>(
+        `/v1/apps/${appId}/schedules/${scheduleId}`
+      ),
+    enabled: !!appId && !!scheduleId,
   });
 }
 

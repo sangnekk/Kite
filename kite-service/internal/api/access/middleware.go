@@ -134,6 +134,29 @@ func (m *AccessManager) EventListenerAccess(next handler.HandlerFunc) handler.Ha
 	}
 }
 
+func (m *AccessManager) ScheduleAccess(next handler.HandlerFunc) handler.HandlerFunc {
+	return func(c *handler.Context) error {
+		scheduleID := c.Param("scheduleID")
+		appID := c.Param("appID")
+
+		schedule, err := m.scheduleStore.Schedule(c.Context(), scheduleID)
+		if err != nil {
+			if errors.Is(err, store.ErrNotFound) {
+				return handler.ErrNotFound("unknown_schedule", "Schedule not found")
+			}
+			return err
+		}
+
+		// We assume that app access has already been checked
+		if schedule.AppID != appID {
+			return handler.ErrForbidden("missing_access", "Access to schedule missing")
+		}
+
+		c.Schedule = schedule
+		return next(c)
+	}
+}
+
 func (m *AccessManager) WebhookIntegrationAccess(next handler.HandlerFunc) handler.HandlerFunc {
 	return func(c *handler.Context) error {
 		integrationID := c.Param("integrationID")

@@ -252,6 +252,7 @@ export interface BillingPlan {
   feature_max_variables: number /* int */;
   feature_max_messages: number /* int */;
   feature_max_event_listeners: number /* int */;
+  feature_max_schedules: number /* int */;
   feature_priority_support: boolean;
   feature_custom_bot_status: boolean;
   feature_ai_included: boolean;
@@ -394,6 +395,48 @@ export type EventListenerUpdateEnabledResponse = EventListener;
 export type EventListenerDeleteResponse = Empty;
 
 //////////
+// source: schedule.go
+
+export interface Schedule {
+  id: string;
+  app_id: string;
+  module_id: null | string;
+  creator_user_id: string;
+  enabled: boolean;
+  description: string;
+  trigger_type: string;
+  interval_seconds: number /* int */;
+  cron_expression: string;
+  timezone: string;
+  next_run_at: null | string /* RFC3339 */;
+  last_run_at: null | string /* RFC3339 */;
+  flow_source: FlowData;
+  created_at: string /* RFC3339 */;
+  updated_at: string /* RFC3339 */;
+}
+export type ScheduleGetResponse = Schedule;
+export type ScheduleListResponse = (Schedule | undefined)[];
+export interface ScheduleCreateRequest {
+  flow_source: FlowData;
+  enabled: boolean;
+}
+export type ScheduleCreateResponse = Schedule;
+export interface SchedulesImportRequest {
+  schedules: ScheduleCreateRequest[];
+}
+export type SchedulesImportResponse = (Schedule | undefined)[];
+export interface ScheduleUpdateRequest {
+  flow_source: FlowData;
+  enabled: boolean;
+}
+export type ScheduleUpdateResponse = Schedule;
+export interface ScheduleUpdateEnabledRequest {
+  enabled: boolean;
+}
+export type ScheduleUpdateEnabledResponse = Schedule;
+export type ScheduleDeleteResponse = Empty;
+
+//////////
 // source: feature.go
 
 export interface Features {
@@ -404,6 +447,7 @@ export interface Features {
   max_variables: number /* int */;
   max_messages: number /* int */;
   max_event_listeners: number /* int */;
+  max_schedules: number /* int */;
   priority_support: boolean;
   custom_bot_status: boolean;
   ai_included: boolean;
@@ -421,6 +465,7 @@ export interface LogEntry {
   command_id: null | string;
   event_listener_id: null | string;
   message_id: null | string;
+  schedule_id: null | string;
   created_at: string /* RFC3339 */;
 }
 export type LogEntryListResponse = (LogEntry | undefined)[];

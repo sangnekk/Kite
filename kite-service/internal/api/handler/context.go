@@ -22,6 +22,7 @@ type Context struct {
 	Variable            *model.Variable
 	Message             *model.Message
 	EventListener       *model.EventListener
+	Schedule            *model.Schedule
 	PluginInstance      *model.PluginInstance
 	WebhookIntegration  *model.WebhookIntegration
 }

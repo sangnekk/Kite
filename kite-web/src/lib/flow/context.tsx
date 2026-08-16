@@ -9,7 +9,11 @@ import {
 import { create, useStore } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
-export type FlowContextType = "command" | "component_button" | "event_discord";
+export type FlowContextType =
+  | "command"
+  | "component_button"
+  | "event_discord"
+  | "schedule";
 
 export interface FlowContextStore {
   type: FlowContextType;

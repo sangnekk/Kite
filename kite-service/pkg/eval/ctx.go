@@ -401,6 +401,20 @@ func NewContextFromWebhookEvent(payload json.RawMessage) Context {
 	}
 }
 
+// NewContextForSchedule builds the eval context for a scheduled flow run. There
+// is no triggering event, user, channel or guild — only the bot ("app") is
+// available (and only when the app has an active session).
+func NewContextForSchedule(session *state.State) Context {
+	env := Env{}
+	if session != nil {
+		env["app"] = NewAppEnv(session)
+	}
+
+	return Context{
+		Env: env,
+	}
+}
+
 func NewContextFromTextCommand(event ws.Event, args map[string]any, session *state.State) Context {
 	eventEnv := NewEventEnv(event)
 

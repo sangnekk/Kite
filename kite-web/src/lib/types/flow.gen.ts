@@ -293,6 +293,17 @@ export interface FlowNodeData {
    */
   event_type?: string;
   /**
+   * Schedule Entry (on the entry_schedule node). ScheduleType selects the
+   * preset; the backend normalizes it to an interval or a cron expression via
+   * CompiledFlowNode.ScheduleSpec().
+   */
+  schedule_type?: string; // interval | daily | weekly | cron
+  schedule_interval_seconds?: number /* int */; // interval: seconds between runs (min 60)
+  schedule_time?: string; // daily/weekly: "HH:MM" (24h)
+  schedule_weekdays?: number /* int */[]; // weekly: 0-6 (Sunday=0)
+  schedule_cron_expression?: string; // cron: standard 5-field expression
+  schedule_timezone?: string; // IANA timezone, empty = Asia/Ho_Chi_Minh
+  /**
    * Event Filter
    */
   event_filter_target?: EventFilterTarget;

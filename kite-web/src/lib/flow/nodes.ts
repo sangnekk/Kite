@@ -82,6 +82,7 @@ import {
   nodeEntryCommandDataSchema,
   nodeEntryComponentButtonDataSchema,
   nodeEntryEventDataSchema,
+  nodeEntryScheduleDataSchema,
   nodeOptionCommandArgumentDataSchema,
   nodeOptionCommandContextsSchema,
   nodeOptionCommandPermissionsSchema,
@@ -161,6 +162,24 @@ export const nodeTypes: Record<string, NodeValues> = {
       "Kích hoạt khi người dùng nhấn nút. Thả các hành động vào đây!",
     dataSchema: nodeEntryComponentButtonDataSchema,
     dataFields: [],
+    fixed: true,
+  },
+  entry_schedule: {
+    color: entryColor,
+    icon: "clock",
+    defaultTitle: "Lịch biểu",
+    defaultDescription:
+      "Chạy luồng theo lịch định kỳ. Thả các hành động vào đây!",
+    dataSchema: nodeEntryScheduleDataSchema,
+    dataFields: [
+      "description",
+      "schedule_type",
+      "schedule_interval_seconds",
+      "schedule_time",
+      "schedule_weekdays",
+      "schedule_cron_expression",
+      "schedule_timezone",
+    ],
     fixed: true,
   },
   action_response_create: {

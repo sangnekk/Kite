@@ -178,6 +178,7 @@ type BillingPlan struct {
 	FeatureMaxVariables         int  `json:"feature_max_variables"`
 	FeatureMaxMessages          int  `json:"feature_max_messages"`
 	FeatureMaxEventListeners    int  `json:"feature_max_event_listeners"`
+	FeatureMaxSchedules         int  `json:"feature_max_schedules"`
 	FeaturePrioritySupport      bool `json:"feature_priority_support"`
 	FeatureCustomBotStatus      bool `json:"feature_custom_bot_status"`
 	FeatureAIIncluded           bool `json:"feature_ai_included"`

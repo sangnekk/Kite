@@ -1,5 +1,5 @@
 -- name: CreateLogEntry :exec
-INSERT INTO logs (app_id, message, level, command_id, event_listener_id, message_id, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *;
+INSERT INTO logs (app_id, message, level, command_id, event_listener_id, message_id, schedule_id, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *;
 
 -- name: GetLogEntriesByApp :many
 SELECT * FROM logs 
@@ -26,6 +26,14 @@ ORDER BY created_at DESC LIMIT $3;
 
 -- name: GetLogEntriesByMessage :many
 SELECT * FROM logs WHERE app_id = $1 AND message_id = $2 AND (sqlc.narg(before_id)::bigint IS NULL OR id < sqlc.narg(before_id)::bigint) ORDER BY created_at DESC LIMIT $3;
+
+-- name: GetLogEntriesBySchedule :many
+SELECT * FROM logs
+WHERE
+    app_id = $1 AND
+    schedule_id = $2 AND
+    (sqlc.narg(before_id)::bigint IS NULL OR id < sqlc.narg(before_id)::bigint)
+ORDER BY created_at DESC LIMIT $3;
 
 -- name: GetLogSummary :one
 SELECT COUNT(*) AS total_entries,

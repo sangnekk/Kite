@@ -24,6 +24,10 @@ func CompileEventListener(data FlowData) (*CompiledFlowNode, error) {
 	return compile(data, FlowNodeTypeEntryEvent)
 }
 
+func CompileSchedule(data FlowData) (*CompiledFlowNode, error) {
+	return compile(data, FlowNodeTypeEntrySchedule)
+}
+
 func compile(data FlowData, entryType FlowNodeType) (*CompiledFlowNode, error) {
 	var entryNode *CompiledFlowNode
 	nodeMap := make(map[string]*CompiledFlowNode)
@@ -105,7 +109,12 @@ type ConnectedFlowNodes struct {
 func (n *CompiledFlowNode) IsEntry() bool {
 	return n.Type == FlowNodeTypeEntryCommand ||
 		n.Type == FlowNodeTypeEntryComponentButton ||
-		n.Type == FlowNodeTypeEntryEvent
+		n.Type == FlowNodeTypeEntryEvent ||
+		n.Type == FlowNodeTypeEntrySchedule
+}
+
+func (n *CompiledFlowNode) IsScheduleEntry() bool {
+	return n.Type == FlowNodeTypeEntrySchedule
 }
 
 func (n *CompiledFlowNode) IsComponentButtonEntry() bool {
@@ -520,6 +529,86 @@ func (n *CompiledFlowNode) EventDescription() string {
 		return ""
 	}
 	return n.Data.Description
+}
+
+func (n *CompiledFlowNode) ScheduleDescription() string {
+	if !n.IsScheduleEntry() {
+		return ""
+	}
+	return n.Data.Description
+}
+
+// ScheduleSpec is the normalized trigger of a schedule entry node. The friendly
+// presets (daily/weekly) are compiled down to a standard cron expression so the
+// scheduler only has to deal with two cases: a fixed interval or a cron
+// expression evaluated in a timezone.
+type ScheduleSpec struct {
+	TriggerType     string // "interval" | "cron"
+	IntervalSeconds int
+	CronExpression  string
+	Timezone        string
+}
+
+// ScheduleSpec normalizes the entry_schedule node's preset into an interval or a
+// cron expression. daily/weekly presets build a "M H * * [dow]" cron expression.
+func (n *CompiledFlowNode) ScheduleSpec() ScheduleSpec {
+	if !n.IsScheduleEntry() {
+		return ScheduleSpec{}
+	}
+
+	timezone := n.Data.ScheduleTimezone
+	if timezone == "" {
+		timezone = "Asia/Ho_Chi_Minh"
+	}
+
+	switch n.Data.ScheduleType {
+	case "interval":
+		return ScheduleSpec{
+			TriggerType:     "interval",
+			IntervalSeconds: n.Data.ScheduleIntervalSeconds,
+			Timezone:        timezone,
+		}
+	case "daily":
+		hour, minute := parseScheduleTime(n.Data.ScheduleTime)
+		return ScheduleSpec{
+			TriggerType:    "cron",
+			CronExpression: fmt.Sprintf("%d %d * * *", minute, hour),
+			Timezone:       timezone,
+		}
+	case "weekly":
+		hour, minute := parseScheduleTime(n.Data.ScheduleTime)
+		days := "*"
+		if len(n.Data.ScheduleWeekdays) > 0 {
+			parts := make([]string, len(n.Data.ScheduleWeekdays))
+			for i, d := range n.Data.ScheduleWeekdays {
+				parts[i] = strconv.Itoa(d)
+			}
+			days = strings.Join(parts, ",")
+		}
+		return ScheduleSpec{
+			TriggerType:    "cron",
+			CronExpression: fmt.Sprintf("%d %d * * %s", minute, hour, days),
+			Timezone:       timezone,
+		}
+	case "cron":
+		return ScheduleSpec{
+			TriggerType:    "cron",
+			CronExpression: n.Data.ScheduleCronExpression,
+			Timezone:       timezone,
+		}
+	}
+
+	return ScheduleSpec{Timezone: timezone}
+}
+
+func parseScheduleTime(v string) (hour int, minute int) {
+	parts := strings.SplitN(v, ":", 2)
+	if len(parts) != 2 {
+		return 0, 0
+	}
+	hour, _ = strconv.Atoi(parts[0])
+	minute, _ = strconv.Atoi(parts[1])
+	return hour, minute
 }
 
 func (n *CompiledFlowNode) IsAction() bool {

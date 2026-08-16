@@ -5,10 +5,11 @@ INSERT INTO usage_records (
     command_id,
     event_listener_id,
     message_id,
+    schedule_id,
     credits_used,
     created_at
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7
+    $1, $2, $3, $4, $5, $6, $7, $8
 ) RETURNING *;
 
 -- name: GetUsageRecordsByAppBetween :many

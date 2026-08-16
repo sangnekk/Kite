@@ -23,6 +23,7 @@ type LogEntry struct {
 	CommandID       null.String `json:"command_id"`
 	EventListenerID null.String `json:"event_listener_id"`
 	MessageID       null.String `json:"message_id"`
+	ScheduleID      null.String `json:"schedule_id"`
 	CreatedAt       time.Time   `json:"created_at"`
 }
 

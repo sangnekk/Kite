@@ -11,6 +11,7 @@ type AccessManager struct {
 	variableStore           store.VariableStore
 	messageStore            store.MessageStore
 	eventListenerStore      store.EventListenerStore
+	scheduleStore           store.ScheduleStore
 	pluginInstanceStore     store.PluginInstanceStore
 	webhookIntegrationStore store.WebhookIntegrationStore
 	planManager             *plan.PlanManager
@@ -22,6 +23,7 @@ func NewAccessManager(
 	variableStore store.VariableStore,
 	messageStore store.MessageStore,
 	eventListenerStore store.EventListenerStore,
+	scheduleStore store.ScheduleStore,
 	pluginInstanceStore store.PluginInstanceStore,
 	webhookIntegrationStore store.WebhookIntegrationStore,
 	planManager *plan.PlanManager,
@@ -32,6 +34,7 @@ func NewAccessManager(
 		variableStore:           variableStore,
 		messageStore:            messageStore,
 		eventListenerStore:      eventListenerStore,
+		scheduleStore:           scheduleStore,
 		pluginInstanceStore:     pluginInstanceStore,
 		webhookIntegrationStore: webhookIntegrationStore,
 		planManager:             planManager,

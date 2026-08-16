@@ -8,6 +8,7 @@ type Features struct {
 	MaxVariables         int  `json:"max_variables"`
 	MaxMessages          int  `json:"max_messages"`
 	MaxEventListeners    int  `json:"max_event_listeners"`
+	MaxSchedules         int  `json:"max_schedules"`
 	PrioritySupport      bool `json:"priority_support"`
 	CustomBotStatus      bool `json:"custom_bot_status"`
 	AIIncluded           bool `json:"ai_included"`

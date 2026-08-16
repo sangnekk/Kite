@@ -23,6 +23,7 @@ type Plan struct {
 	FeatureMaxVariables         int
 	FeatureMaxMessages          int
 	FeatureMaxEventListeners    int
+	FeatureMaxSchedules         int
 	FeaturePrioritySupport      bool
 	FeatureCustomBotStatus      bool
 	FeatureAIIncluded           bool
@@ -38,6 +39,7 @@ func (p Plan) Features() Features {
 		MaxVariables:         p.FeatureMaxVariables,
 		MaxMessages:          p.FeatureMaxMessages,
 		MaxEventListeners:    p.FeatureMaxEventListeners,
+		MaxSchedules:         p.FeatureMaxSchedules,
 		PrioritySupport:      p.FeaturePrioritySupport,
 		CustomBotStatus:      p.FeatureCustomBotStatus,
 		AIIncluded:           p.FeatureAIIncluded,
@@ -53,6 +55,7 @@ type Features struct {
 	MaxVariables         int
 	MaxMessages          int
 	MaxEventListeners    int
+	MaxSchedules         int
 	PrioritySupport      bool
 	CustomBotStatus      bool
 	AIIncluded           bool
@@ -68,6 +71,7 @@ func (f Features) Merge(other Features) Features {
 		MaxVariables:         max(f.MaxVariables, other.MaxVariables),
 		MaxMessages:          max(f.MaxMessages, other.MaxMessages),
 		MaxEventListeners:    max(f.MaxEventListeners, other.MaxEventListeners),
+		MaxSchedules:         max(f.MaxSchedules, other.MaxSchedules),
 		PrioritySupport:      f.PrioritySupport || other.PrioritySupport,
 		CustomBotStatus:      f.CustomBotStatus || other.CustomBotStatus,
 		AIIncluded:           f.AIIncluded || other.AIIncluded,

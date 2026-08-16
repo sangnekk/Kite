@@ -18,6 +18,7 @@ func (c *Client) CreateUsageRecord(ctx context.Context, record model.UsageRecord
 		CommandID:       pgtype.Text{String: record.CommandID.String, Valid: record.CommandID.Valid},
 		EventListenerID: pgtype.Text{String: record.EventListenerID.String, Valid: record.EventListenerID.Valid},
 		MessageID:       pgtype.Text{String: record.MessageID.String, Valid: record.MessageID.Valid},
+		ScheduleID:      pgtype.Text{String: record.ScheduleID.String, Valid: record.ScheduleID.Valid},
 		CreditsUsed:     int32(record.CreditsUsed),
 		CreatedAt:       pgtype.Timestamp{Time: record.CreatedAt, Valid: true},
 	})
@@ -188,6 +189,7 @@ func rowToUsageRecord(row pgmodel.UsageRecord) model.UsageRecord {
 		CommandID:       null.NewString(row.CommandID.String, row.CommandID.Valid),
 		EventListenerID: null.NewString(row.EventListenerID.String, row.EventListenerID.Valid),
 		MessageID:       null.NewString(row.MessageID.String, row.MessageID.Valid),
+		ScheduleID:      null.NewString(row.ScheduleID.String, row.ScheduleID.Valid),
 		CreditsUsed:     int(row.CreditsUsed),
 		CreatedAt:       row.CreatedAt.Time,
 	}

@@ -13,6 +13,7 @@ type LogStore interface {
 	LogEntriesByCommand(ctx context.Context, appID string, commandID string, beforeID int64, limit int) ([]*model.LogEntry, error)
 	LogEntriesByEvent(ctx context.Context, appID string, eventID string, beforeID int64, limit int) ([]*model.LogEntry, error)
 	LogEntriesByMessage(ctx context.Context, appID string, messageID string, beforeID int64, limit int) ([]*model.LogEntry, error)
+	LogEntriesBySchedule(ctx context.Context, appID string, scheduleID string, beforeID int64, limit int) ([]*model.LogEntry, error)
 	LogSummary(ctx context.Context, appID string, start time.Time, end time.Time) (*model.LogSummary, error)
 	DeleteLogEntriesBefore(ctx context.Context, before time.Time) error
 }

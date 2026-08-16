@@ -20,6 +20,7 @@ import (
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/logs"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/message"
 	pluginhandler "github.com/kitecloud/kite/kite-service/internal/api/handler/plugin"
+	schedulehandler "github.com/kitecloud/kite/kite-service/internal/api/handler/schedule"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/usage"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/user"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/variable"
@@ -47,6 +48,7 @@ func (s *APIServer) RegisterRoutes(
 	messageStore store.MessageStore,
 	messageInstanceStore store.MessageInstanceStore,
 	eventListenerStore store.EventListenerStore,
+	scheduleStore store.ScheduleStore,
 	pluginInstanceStore store.PluginInstanceStore,
 	webhookIntegrationStore store.WebhookIntegrationStore,
 	subscriptionStore store.SubscriptionStore,
@@ -73,6 +75,7 @@ func (s *APIServer) RegisterRoutes(
 		variableStore,
 		messageStore,
 		eventListenerStore,
+		scheduleStore,
 		pluginInstanceStore,
 		webhookIntegrationStore,
 		planManager,
@@ -276,6 +279,20 @@ func (s *APIServer) RegisterRoutes(
 	eventListenerGroup.Patch("/", handler.TypedWithBody(eventListenerHandler.HandleEventListenerUpdate))
 	eventListenerGroup.Delete("/", handler.Typed(eventListenerHandler.HandleEventListenerDelete))
 	eventListenerGroup.Put("/enabled", handler.TypedWithBody(eventListenerHandler.HandleEventListenerUpdateEnabled))
+
+	// Schedule routes
+	scheduleHandler := schedulehandler.NewScheduleHandler(scheduleStore)
+
+	schedulesGroup := appGroup.Group("/schedules")
+	schedulesGroup.Get("/", handler.Typed(scheduleHandler.HandleScheduleList))
+	schedulesGroup.Post("/", handler.TypedWithBody(scheduleHandler.HandleScheduleCreate))
+	schedulesGroup.Post("/import", handler.TypedWithBody(scheduleHandler.HandleSchedulesImport))
+
+	scheduleGroup := schedulesGroup.Group("/{scheduleID}", accessManager.ScheduleAccess)
+	scheduleGroup.Get("/", handler.Typed(scheduleHandler.HandleScheduleGet))
+	scheduleGroup.Patch("/", handler.TypedWithBody(scheduleHandler.HandleScheduleUpdate))
+	scheduleGroup.Delete("/", handler.Typed(scheduleHandler.HandleScheduleDelete))
+	scheduleGroup.Put("/enabled", handler.TypedWithBody(scheduleHandler.HandleScheduleUpdateEnabled))
 
 	// Plugin instance routes
 	pluginHandler := pluginhandler.NewPluginHandler(pluginRegistry, pluginInstanceStore)

@@ -82,6 +82,7 @@ func StartServer(c context.Context, cfg *config.Config) error {
 			MessageInstanceStore: pg,
 			CommandStore:         pg,
 			EventListenerStore:   pg,
+			ScheduleStore:        pg,
 			PluginInstanceStore:  pg,
 			PluginValueStore:     pg,
 			PluginRegistry:       pluginRegistry,
@@ -115,6 +116,12 @@ func StartServer(c context.Context, cfg *config.Config) error {
 	gatewayMgr.Run(ctx)
 
 	eng.SetSessionLookup(gatewayMgr)
+
+	// The scheduler runs on every cluster (sharded by app id like the engine), not
+	// just the primary one: a scheduled flow must execute on the cluster that owns
+	// the app's gateway session. It's started after SetSessionLookup so fired flows
+	// can look up their bot session.
+	eng.RunScheduler(ctx)
 
 	usageMgr := usage.NewUsageManager(pg, pg, pg, planManager)
 
@@ -158,7 +165,7 @@ func StartServer(c context.Context, cfg *config.Config) error {
 			Plans:                   cfg.Billing.Plans,
 		},
 	},
-		pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg,
+		pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg,
 		assetStore, gatewayMgr, planManager, pluginRegistry, tokenCrypt, commandManager,
 		aiRegistry, pg, eng,
 	)

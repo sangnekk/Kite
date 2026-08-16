@@ -27,6 +27,10 @@ func (c *Client) CreateLogEntry(ctx context.Context, entry model.LogEntry) error
 			String: entry.MessageID.String,
 			Valid:  entry.MessageID.Valid,
 		},
+		ScheduleID: pgtype.Text{
+			String: entry.ScheduleID.String,
+			Valid:  entry.ScheduleID.Valid,
+		},
 		CreatedAt: pgtype.Timestamp{
 			Time:  entry.CreatedAt,
 			Valid: true,
@@ -131,6 +135,31 @@ func (c *Client) LogEntriesByMessage(ctx context.Context, appID string, messageI
 	return res, nil
 }
 
+func (c *Client) LogEntriesBySchedule(ctx context.Context, appID string, scheduleID string, beforeID int64, limit int) ([]*model.LogEntry, error) {
+	rows, err := c.Q.GetLogEntriesBySchedule(ctx, pgmodel.GetLogEntriesByScheduleParams{
+		AppID: appID,
+		ScheduleID: pgtype.Text{
+			String: scheduleID,
+			Valid:  true,
+		},
+		Limit: int32(limit),
+		BeforeID: pgtype.Int8{
+			Int64: beforeID,
+			Valid: beforeID != 0,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var res []*model.LogEntry
+	for _, row := range rows {
+		res = append(res, rowToLogEntry(row))
+	}
+
+	return res, nil
+}
+
 func (c *Client) LogSummary(ctx context.Context, appID string, start time.Time, end time.Time) (*model.LogSummary, error) {
 	res, err := c.Q.GetLogSummary(ctx, pgmodel.GetLogSummaryParams{
 		AppID:   appID,
@@ -163,6 +192,7 @@ func rowToLogEntry(row pgmodel.Log) *model.LogEntry {
 		CommandID:       null.NewString(row.CommandID.String, row.CommandID.Valid),
 		EventListenerID: null.NewString(row.EventListenerID.String, row.EventListenerID.Valid),
 		MessageID:       null.NewString(row.MessageID.String, row.MessageID.Valid),
+		ScheduleID:      null.NewString(row.ScheduleID.String, row.ScheduleID.Valid),
 		CreatedAt:       row.CreatedAt.Time,
 	}
 }

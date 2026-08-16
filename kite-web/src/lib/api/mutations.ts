@@ -37,6 +37,13 @@ import {
   EventListenerUpdateEnabledResponse,
   EventListenerUpdateRequest,
   EventListenerUpdateResponse,
+  ScheduleCreateRequest,
+  ScheduleCreateResponse,
+  ScheduleDeleteResponse,
+  ScheduleUpdateEnabledRequest,
+  ScheduleUpdateEnabledResponse,
+  ScheduleUpdateRequest,
+  ScheduleUpdateResponse,
   MessageCreateRequest,
   MessageCreateResponse,
   MessageDeleteResponse,
@@ -412,6 +419,94 @@ export function useEventListenerDeleteMutation(appId: string, eventId: string) {
     onSuccess: () => {
       client.invalidateQueries({
         queryKey: ["apps", appId, "event-listeners"],
+      });
+    },
+  });
+}
+
+export function useScheduleCreateMutation(appId: string) {
+  const client = useQueryClient();
+
+  return useMutation({
+    mutationFn: (req: ScheduleCreateRequest) =>
+      apiRequest<ScheduleCreateResponse>(`/v1/apps/${appId}/schedules`, {
+        method: "POST",
+        body: JSON.stringify(req),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }),
+    onSuccess: () => {
+      client.invalidateQueries({
+        queryKey: ["apps", appId, "schedules"],
+      });
+    },
+  });
+}
+
+export function useScheduleUpdateMutation(appId: string, scheduleId: string) {
+  const client = useQueryClient();
+
+  return useMutation({
+    mutationFn: (req: ScheduleUpdateRequest) =>
+      apiRequest<ScheduleUpdateResponse>(
+        `/v1/apps/${appId}/schedules/${scheduleId}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(req),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      ),
+    onSuccess: () => {
+      client.invalidateQueries({
+        queryKey: ["apps", appId, "schedules"],
+      });
+    },
+  });
+}
+
+export function useScheduleUpdateEnabledMutation(
+  appId: string,
+  scheduleId: string
+) {
+  const client = useQueryClient();
+
+  return useMutation({
+    mutationFn: (req: ScheduleUpdateEnabledRequest) =>
+      apiRequest<ScheduleUpdateEnabledResponse>(
+        `/v1/apps/${appId}/schedules/${scheduleId}/enabled`,
+        {
+          method: "PUT",
+          body: JSON.stringify(req),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      ),
+    onSuccess: () => {
+      client.invalidateQueries({
+        queryKey: ["apps", appId, "schedules"],
+      });
+    },
+  });
+}
+
+export function useScheduleDeleteMutation(appId: string, scheduleId: string) {
+  const client = useQueryClient();
+
+  return useMutation({
+    mutationFn: () =>
+      apiRequest<ScheduleDeleteResponse>(
+        `/v1/apps/${appId}/schedules/${scheduleId}`,
+        {
+          method: "DELETE",
+        }
+      ),
+    onSuccess: () => {
+      client.invalidateQueries({
+        queryKey: ["apps", appId, "schedules"],
       });
     },
   });

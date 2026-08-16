@@ -17,6 +17,8 @@ import {
   useCommandsQuery,
   useEventListenerQuery,
   useEventListenersQuery,
+  useScheduleQuery,
+  useSchedulesQuery,
   useAppFeaturesQuery,
   useLogSummaryQuery,
   useMessageInstancesQuery,
@@ -47,6 +49,8 @@ import {
   CommandListResponse,
   EventListenerGetResponse,
   EventListenerListResponse,
+  ScheduleGetResponse,
+  ScheduleListResponse,
   FeaturesGetResponse,
   LogSummaryGetResponse,
   MessageGetResponse,
@@ -162,6 +166,27 @@ export function useEventListener(
   const query = useEventListenerQuery(
     router.query.appId as string,
     router.query.eventId as string
+  );
+  return useResponseData(query, callback);
+}
+
+export function useSchedules(
+  callback?: (res: APIResponse<ScheduleListResponse>) => void
+) {
+  const router = useRouter();
+
+  const query = useSchedulesQuery(router.query.appId as string);
+  return useResponseData(query, callback);
+}
+
+export function useSchedule(
+  callback?: (res: APIResponse<ScheduleGetResponse>) => void
+) {
+  const router = useRouter();
+
+  const query = useScheduleQuery(
+    router.query.appId as string,
+    router.query.scheduleId as string
   );
   return useResponseData(query, callback);
 }
