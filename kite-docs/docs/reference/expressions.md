@@ -48,6 +48,17 @@ app:
 Trong **sự kiện**, các placeholder như `user`, `message`, `channel` chỉ khả dụng với một số loại sự kiện nhất định. Xem [Dữ liệu của sự kiện](/reference/event#dữ-liệu-của-sự-kiện).
 :::
 
+Trong flow nhận [sự kiện nội bộ](/reference/custom-events), dữ liệu do flow phát gửi sang nằm trong `event.payload`:
+
+```yaml
+event:
+  name: string
+  payload: object
+  timestamp: string
+```
+
+Ví dụ payload `{ "test": "abc" }` được đọc bằng `{{ event.payload.test }}`. `result()` chỉ đọc kết quả của một khối trong cùng flow, không đọc payload của event nhận.
+
 Ngoài ra còn có một số hàm đặc biệt để truy cập dữ liệu động:
 
 ```py

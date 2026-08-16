@@ -13,6 +13,7 @@ export type FlowContextType =
   | "command"
   | "component_button"
   | "event_discord"
+  | "event_custom"
   | "schedule";
 
 export interface FlowContextStore {

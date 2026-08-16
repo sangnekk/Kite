@@ -76,6 +76,15 @@ type Command struct {
 	LastDeployedAt pgtype.Timestamp
 }
 
+type CustomEvent struct {
+	ID          string
+	AppID       string
+	Name        string
+	Description string
+	CreatedAt   pgtype.Timestamp
+	UpdatedAt   pgtype.Timestamp
+}
+
 type Entitlement struct {
 	ID             string
 	Type           string
@@ -100,6 +109,7 @@ type EventListener struct {
 	FlowSource    []byte
 	CreatedAt     pgtype.Timestamp
 	UpdatedAt     pgtype.Timestamp
+	CustomEventID pgtype.Text
 }
 
 type Log struct {

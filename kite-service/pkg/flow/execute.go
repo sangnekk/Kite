@@ -92,6 +92,57 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 		}
 
 		return nil
+	case FlowNodeTypeEntryCustomEvent:
+		if !ctx.IsEntry() {
+			return fmt.Errorf("custom event entry isn't the entry node")
+		}
+
+		if err := n.ExecuteChildren(ctx); err != nil {
+			return err
+		}
+		return nil
+	case FlowNodeTypeActionEventEmit:
+		if ctx.InternalEvent == nil {
+			return traceError(n, fmt.Errorf("internal event provider is not configured"))
+		}
+
+		payload, err := evaluateInternalEventPayload(ctx, n.Data.EventPayload)
+		if err != nil {
+			return traceError(n, err)
+		}
+		encoded, err := json.Marshal(payload)
+		if err != nil {
+			return traceError(n, fmt.Errorf("failed to encode event payload: %w", err))
+		}
+		if len(encoded) > MaxInternalEventPayloadBytes {
+			return traceError(n, fmt.Errorf("event payload exceeds %d bytes", MaxInternalEventPayloadBytes))
+		}
+
+		depth := 1
+		correlationID := ""
+		if data, ok := ctx.Data.(InternalEventContextData); ok {
+			depth = data.InternalEventDepth() + 1
+			correlationID = data.InternalEventCorrelationID()
+		}
+
+		result, err := ctx.InternalEvent.EmitInternalEvent(ctx, provider.InternalEventEmitRequest{
+			CustomEventID: n.Data.CustomEventID,
+			Payload:       payload,
+			Mode:          n.Data.EventExecutionMode,
+			CorrelationID: correlationID,
+			Depth:         depth,
+		})
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		ctx.StoreNodeResult(n, thing.FromAny(map[string]any{
+			"event_id":         result.EventID,
+			"event_name":       result.EventName,
+			"subscriber_count": result.SubscriberCount,
+			"mode":             string(n.Data.EventExecutionMode),
+		}))
+		return n.ExecuteChildren(ctx)
 	case FlowNodeTypeActionResponseCreate:
 		if ctx.IsEntry() {
 			return n.resumeFromComponent(ctx)
@@ -2520,6 +2571,51 @@ func aiModelCredits(modelKey string, fallback int) int {
 		return m.Credits
 	}
 	return fallback
+}
+
+func evaluateInternalEventPayload(ctx *FlowContext, payload map[string]any) (map[string]any, error) {
+	if payload == nil {
+		return map[string]any{}, nil
+	}
+
+	value, err := evaluateInternalEventValue(ctx, payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to evaluate event payload: %w", err)
+	}
+	return value.(map[string]any), nil
+}
+
+func evaluateInternalEventValue(ctx *FlowContext, value any) (any, error) {
+	switch value := value.(type) {
+	case string:
+		result, err := ctx.EvalTemplate(value)
+		if err != nil {
+			return nil, err
+		}
+		return result.ToAny(), nil
+	case map[string]any:
+		result := make(map[string]any, len(value))
+		for key, item := range value {
+			evaluated, err := evaluateInternalEventValue(ctx, item)
+			if err != nil {
+				return nil, fmt.Errorf("field %q: %w", key, err)
+			}
+			result[key] = evaluated
+		}
+		return result, nil
+	case []any:
+		result := make([]any, len(value))
+		for i, item := range value {
+			evaluated, err := evaluateInternalEventValue(ctx, item)
+			if err != nil {
+				return nil, fmt.Errorf("item %d: %w", i, err)
+			}
+			result[i] = evaluated
+		}
+		return result, nil
+	default:
+		return value, nil
+	}
 }
 
 func (n *CompiledFlowNode) CreditsCost() int {

@@ -14,8 +14,10 @@ import { ScrollArea } from "../ui/scroll-area";
 
 export default function FlowNodeExplorer({
   category,
+  onNodeAdded,
 }: {
   category: NodeCategory;
+  onNodeAdded?: () => void;
 }) {
   const contextType = useFlowContext((c) => c.type);
 
@@ -138,6 +140,7 @@ export default function FlowNodeExplorer({
                         key={node.type}
                         type={node.type}
                         values={node.values}
+                        onAdded={onNodeAdded}
                       />
                     ))}
                   </div>
@@ -151,8 +154,16 @@ export default function FlowNodeExplorer({
   );
 }
 
-function AvailableNode({ type, values }: { type: string; values: NodeValues }) {
-  const { addNodes, addEdges } = useReactFlow();
+function AvailableNode({
+  type,
+  values,
+  onAdded,
+}: {
+  type: string;
+  values: NodeValues;
+  onAdded?: () => void;
+}) {
+  const { addNodes, addEdges, screenToFlowPosition } = useReactFlow();
 
   function onStartDrag(e: DragEvent) {
     e.dataTransfer.setData("application/reactflow", type);
@@ -160,12 +171,14 @@ function AvailableNode({ type, values }: { type: string; values: NodeValues }) {
   }
 
   function onClick() {
-    const [nodes, edges] = createNode(type, {
-      x: 0 + 200 * Math.random() - 100,
-      y: 0 + 100 * Math.random() + 200,
+    const center = screenToFlowPosition({
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 2,
     });
+    const [nodes, edges] = createNode(type, center);
     addNodes(nodes);
     addEdges(edges);
+    onAdded?.();
   }
 
   return (

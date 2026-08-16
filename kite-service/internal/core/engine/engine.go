@@ -26,10 +26,12 @@ type Engine struct {
 func NewEngine(
 	env Env,
 ) *Engine {
-	return &Engine{
+	engine := &Engine{
 		env:  env,
 		apps: make(map[string]*App),
 	}
+	engine.env.InternalEventDispatcher = engine
+	return engine
 }
 
 func (e *Engine) Run(ctx context.Context) {

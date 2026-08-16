@@ -2,6 +2,7 @@ import AppLayout from "@/components/app/AppLayout";
 import EventListenerList from "@/components/app/EventListerList";
 import { Separator } from "@/components/ui/separator";
 import env from "@/lib/env/client";
+import CustomEventRegistry from "@/components/app/CustomEventRegistry";
 
 const breadcrumbs = [
   {
@@ -12,6 +13,8 @@ const breadcrumbs = [
 export default function AppEventsPage() {
   return (
     <AppLayout title="Sự kiện" breadcrumbs={breadcrumbs}>
+      <CustomEventRegistry />
+      <Separator className="my-8" />
       <div>
         <h1 className="text-lg font-semibold md:text-2xl mb-1">
           Bộ lắng nghe sự kiện

@@ -17,6 +17,7 @@ import {
   BillingCheckoutStatusResponse,
   CommandGetResponse,
   CommandListResponse,
+  CustomEventListResponse,
   EventListenerGetResponse,
   EventListenerListResponse,
   ScheduleGetResponse,
@@ -191,6 +192,15 @@ export function useEventListenersQuery(appId: string) {
       apiRequest<EventListenerListResponse>(
         `/v1/apps/${appId}/event-listeners`
       ),
+    enabled: !!appId,
+  });
+}
+
+export function useCustomEventsQuery(appId: string) {
+  return useQuery({
+    queryKey: ["apps", appId, "custom-events"],
+    queryFn: () =>
+      apiRequest<CustomEventListResponse>(`/v1/apps/${appId}/custom-events`),
     enabled: !!appId,
   });
 }

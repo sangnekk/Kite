@@ -12,6 +12,7 @@ export interface FlowData {
 export type FlowNodeType = string;
 export const FlowNodeTypeEntryCommand: FlowNodeType = "entry_command";
 export const FlowNodeTypeEntryEvent: FlowNodeType = "entry_event";
+export const FlowNodeTypeEntryCustomEvent: FlowNodeType = "entry_custom_event";
 export const FlowNodeTypeEntryComponentButton: FlowNodeType = "entry_component_button";
 export const FlowNodeTypeOptionCommandArgument: FlowNodeType = "option_command_argument";
 export const FlowNodeTypeOptionCommandPermissions: FlowNodeType = "option_command_permissions";
@@ -90,6 +91,7 @@ export const FlowNodeTypeActionMessageUnpin: FlowNodeType = "action_message_unpi
 export const FlowNodeTypeActionMessagePurge: FlowNodeType = "action_message_purge";
 export const FlowNodeTypeActionChannelSlowmode: FlowNodeType = "action_channel_slowmode";
 export const FlowNodeTypeActionQRCreate: FlowNodeType = "action_qr_create";
+export const FlowNodeTypeActionEventEmit: FlowNodeType = "action_event_emit";
 export const FlowNodeTypeControlConditionCompare: FlowNodeType = "control_condition_compare";
 export const FlowNodeTypeControlConditionItemCompare: FlowNodeType = "control_condition_item_compare";
 export const FlowNodeTypeControlConditionUser: FlowNodeType = "control_condition_user";
@@ -292,6 +294,13 @@ export interface FlowNodeData {
    * Event Entry
    */
   event_type?: string;
+  /**
+   * Custom internal event subscriber/publisher configuration.
+   */
+  custom_event_id?: string;
+  event_payload?: { [key: string]: any };
+  event_execution_mode?: "async" | "sync";
+  event_filter?: string;
   /**
    * Schedule Entry (on the entry_schedule node). ScheduleType selects the
    * preset; the backend normalizes it to an interval or a cron expression via

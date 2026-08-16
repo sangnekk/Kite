@@ -33,6 +33,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { getNodeId } from "@/lib/flow/nodes";
+import { useCustomEvents } from "@/lib/hooks/api";
 
 const WEBHOOK_SOURCES = ["sepay", "thueapibank", "custom_webhook"];
 
@@ -40,6 +41,7 @@ interface FormFields {
   source: string;
   type: string;
   description: string;
+  customEventId: string;
 }
 
 export default function EventListenerCreateDialog({
@@ -53,26 +55,37 @@ export default function EventListenerCreateDialog({
   const appId = useAppId();
 
   const createMutation = useEventListenerCreateMutation(appId);
+  const customEvents = useCustomEvents() ?? [];
   const form = useForm<FormFields>({
     defaultValues: {
       source: "discord",
       type: "",
       description: "",
+      customEventId: "",
     },
   });
 
   const source = form.watch("source");
   const isWebhookSource = WEBHOOK_SOURCES.includes(source);
+  const isInternalSource = source === "internal";
 
   function onSubmit(data: FormFields) {
     if (createMutation.isPending) return;
 
+    if (isInternalSource && !data.customEventId) {
+      toast.error("Hãy đăng ký một event key trước trong mục Sự kiện nội bộ.");
+      return;
+    }
+
     const eventType = isWebhookSource ? data.source : data.type;
+    const flowSource = isInternalSource
+      ? getInitialCustomEventFlowData(data.customEventId, data.description)
+      : getInitialFlowData(eventType, data.description);
 
     createMutation.mutate(
       {
         source: data.source,
-        flow_source: getInitialFlowData(eventType, data.description),
+        flow_source: flowSource,
         enabled: true,
       },
       {
@@ -143,27 +156,30 @@ export default function EventListenerCreateDialog({
                       <SelectItem value="discord">Discord</SelectItem>
                       <SelectItem value="sepay">SePay</SelectItem>
                       <SelectItem value="thueapibank">ThueAPIBank</SelectItem>
-                      <SelectItem value="custom_webhook">Webhook tùy chỉnh</SelectItem>
+                      <SelectItem value="custom_webhook">
+                        Webhook tùy chỉnh
+                      </SelectItem>
+                      <SelectItem value="internal">Sự kiện nội bộ</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            {!isWebhookSource && (
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem className="min-w-48">
-                  <FormLabel>Sự kiện</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn loại sự kiện" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
+            {!isWebhookSource && !isInternalSource && (
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem className="min-w-48">
+                    <FormLabel>Sự kiện</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Chọn loại sự kiện" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
                       <SelectItem value="message_create">
                         Tạo tin nhắn
                       </SelectItem>
@@ -206,12 +222,49 @@ export default function EventListenerCreateDialog({
                       <SelectItem value="voice_state_update">
                         User join/leave kênh voice
                       </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+            {isInternalSource && (
+              <FormField
+                control={form.control}
+                name="customEventId"
+                render={({ field }) => (
+                  <FormItem>
+                      <FormLabel>Event key</FormLabel>
+                      <FormDescription>
+                        Chọn tín hiệu đã đăng ký ở phía trên trang Events. Emit
+                        node cũng dùng chính danh sách này, không cho nhập tự do.
+                      </FormDescription>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="font-mono">
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {customEvents.map(
+                            (event) =>
+                              event && (
+                                <SelectItem
+                                  key={event.id}
+                                  value={event.id}
+                                  className="font-mono"
+                                >
+                                  {event.name}
+                                </SelectItem>
+                              )
+                          )}
+                        </SelectContent>
+                      </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
             <DialogFooter>
               <LoadingButton type="submit" loading={createMutation.isPending}>
@@ -233,6 +286,23 @@ function getInitialFlowData(type: string, description: string) {
         position: { x: 0, y: 0 },
         data: { event_type: type, description },
         type: "entry_event",
+      },
+    ],
+    edges: [],
+  };
+}
+
+function getInitialCustomEventFlowData(
+  customEventId: string,
+  description: string
+) {
+  return {
+    nodes: [
+      {
+        id: getNodeId(),
+        position: { x: 0, y: 0 },
+        data: { custom_event_id: customEventId, description },
+        type: "entry_custom_event",
       },
     ],
     edges: [],

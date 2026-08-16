@@ -14,6 +14,7 @@ import (
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/auth"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/billing"
 	commandhandler "github.com/kitecloud/kite/kite-service/internal/api/handler/command"
+	customevent "github.com/kitecloud/kite/kite-service/internal/api/handler/custom_event"
 	eventlistener "github.com/kitecloud/kite/kite-service/internal/api/handler/event_listener"
 	flowhandler "github.com/kitecloud/kite/kite-service/internal/api/handler/flow"
 	integrationhandler "github.com/kitecloud/kite/kite-service/internal/api/handler/integration"
@@ -48,6 +49,7 @@ func (s *APIServer) RegisterRoutes(
 	messageStore store.MessageStore,
 	messageInstanceStore store.MessageInstanceStore,
 	eventListenerStore store.EventListenerStore,
+	customEventStore store.CustomEventStore,
 	scheduleStore store.ScheduleStore,
 	pluginInstanceStore store.PluginInstanceStore,
 	webhookIntegrationStore store.WebhookIntegrationStore,
@@ -267,7 +269,7 @@ func (s *APIServer) RegisterRoutes(
 	)
 
 	// Event listener routes
-	eventListenerHandler := eventlistener.NewEventListenerHandler(eventListenerStore)
+	eventListenerHandler := eventlistener.NewEventListenerHandler(eventListenerStore, customEventStore)
 
 	eventListenersGroup := appGroup.Group("/event-listeners")
 	eventListenersGroup.Get("/", handler.Typed(eventListenerHandler.HandleEventListenerList))
@@ -279,6 +281,15 @@ func (s *APIServer) RegisterRoutes(
 	eventListenerGroup.Patch("/", handler.TypedWithBody(eventListenerHandler.HandleEventListenerUpdate))
 	eventListenerGroup.Delete("/", handler.Typed(eventListenerHandler.HandleEventListenerDelete))
 	eventListenerGroup.Put("/enabled", handler.TypedWithBody(eventListenerHandler.HandleEventListenerUpdateEnabled))
+
+	// App-scoped registry used by custom-event publishers and subscribers.
+	customEventHandler := customevent.NewHandler(customEventStore)
+	customEventsGroup := appGroup.Group("/custom-events")
+	customEventsGroup.Get("/", handler.Typed(customEventHandler.List))
+	customEventsGroup.Post("/", handler.TypedWithBody(customEventHandler.Create))
+	customEventGroup := customEventsGroup.Group("/{customEventID}")
+	customEventGroup.Get("/", handler.Typed(customEventHandler.Get))
+	customEventGroup.Patch("/", handler.TypedWithBody(customEventHandler.Update))
 
 	// Schedule routes
 	scheduleHandler := schedulehandler.NewScheduleHandler(scheduleStore)

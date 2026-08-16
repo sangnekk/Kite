@@ -32,13 +32,14 @@ INSERT INTO event_listeners (
     app_id,
     module_id,
     creator_user_id,
+    custom_event_id,
     filter,
     flow_source,
     created_at,
     updated_at
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
-) RETURNING id, source, type, description, enabled, app_id, module_id, creator_user_id, filter, flow_source, created_at, updated_at
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+) RETURNING id, source, type, description, enabled, app_id, module_id, creator_user_id, filter, flow_source, created_at, updated_at, custom_event_id
 `
 
 type CreateEventListenerParams struct {
@@ -50,6 +51,7 @@ type CreateEventListenerParams struct {
 	AppID         string
 	ModuleID      pgtype.Text
 	CreatorUserID string
+	CustomEventID pgtype.Text
 	Filter        []byte
 	FlowSource    []byte
 	CreatedAt     pgtype.Timestamp
@@ -66,6 +68,7 @@ func (q *Queries) CreateEventListener(ctx context.Context, arg CreateEventListen
 		arg.AppID,
 		arg.ModuleID,
 		arg.CreatorUserID,
+		arg.CustomEventID,
 		arg.Filter,
 		arg.FlowSource,
 		arg.CreatedAt,
@@ -85,6 +88,7 @@ func (q *Queries) CreateEventListener(ctx context.Context, arg CreateEventListen
 		&i.FlowSource,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.CustomEventID,
 	)
 	return i, err
 }
@@ -123,7 +127,7 @@ func (q *Queries) GetEnabledEventListenerIDs(ctx context.Context) ([]string, err
 }
 
 const getEnabledEventListenersUpdatesSince = `-- name: GetEnabledEventListenersUpdatesSince :many
-SELECT id, source, type, description, enabled, app_id, module_id, creator_user_id, filter, flow_source, created_at, updated_at FROM event_listeners WHERE enabled = TRUE AND updated_at > $1
+SELECT id, source, type, description, enabled, app_id, module_id, creator_user_id, filter, flow_source, created_at, updated_at, custom_event_id FROM event_listeners WHERE enabled = TRUE AND updated_at > $1
 `
 
 func (q *Queries) GetEnabledEventListenersUpdatesSince(ctx context.Context, updatedAt pgtype.Timestamp) ([]EventListener, error) {
@@ -148,6 +152,7 @@ func (q *Queries) GetEnabledEventListenersUpdatesSince(ctx context.Context, upda
 			&i.FlowSource,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.CustomEventID,
 		); err != nil {
 			return nil, err
 		}
@@ -160,7 +165,7 @@ func (q *Queries) GetEnabledEventListenersUpdatesSince(ctx context.Context, upda
 }
 
 const getEventListener = `-- name: GetEventListener :one
-SELECT id, source, type, description, enabled, app_id, module_id, creator_user_id, filter, flow_source, created_at, updated_at FROM event_listeners WHERE id = $1
+SELECT id, source, type, description, enabled, app_id, module_id, creator_user_id, filter, flow_source, created_at, updated_at, custom_event_id FROM event_listeners WHERE id = $1
 `
 
 func (q *Queries) GetEventListener(ctx context.Context, id string) (EventListener, error) {
@@ -179,12 +184,13 @@ func (q *Queries) GetEventListener(ctx context.Context, id string) (EventListene
 		&i.FlowSource,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.CustomEventID,
 	)
 	return i, err
 }
 
 const getEventListenersByApp = `-- name: GetEventListenersByApp :many
-SELECT id, source, type, description, enabled, app_id, module_id, creator_user_id, filter, flow_source, created_at, updated_at FROM event_listeners WHERE app_id = $1 ORDER BY created_at DESC
+SELECT id, source, type, description, enabled, app_id, module_id, creator_user_id, filter, flow_source, created_at, updated_at, custom_event_id FROM event_listeners WHERE app_id = $1 ORDER BY created_at DESC
 `
 
 func (q *Queries) GetEventListenersByApp(ctx context.Context, appID string) ([]EventListener, error) {
@@ -209,6 +215,7 @@ func (q *Queries) GetEventListenersByApp(ctx context.Context, appID string) ([]E
 			&i.FlowSource,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.CustomEventID,
 		); err != nil {
 			return nil, err
 		}
@@ -224,21 +231,23 @@ const updateEventListener = `-- name: UpdateEventListener :one
 UPDATE event_listeners SET
     enabled = $2,
     type = $3,
-    filter = $4,
-    description = $5,
-    flow_source = $6,
-    updated_at = $7
-WHERE id = $1 RETURNING id, source, type, description, enabled, app_id, module_id, creator_user_id, filter, flow_source, created_at, updated_at
+    custom_event_id = $4,
+    filter = $5,
+    description = $6,
+    flow_source = $7,
+    updated_at = $8
+WHERE id = $1 RETURNING id, source, type, description, enabled, app_id, module_id, creator_user_id, filter, flow_source, created_at, updated_at, custom_event_id
 `
 
 type UpdateEventListenerParams struct {
-	ID          string
-	Enabled     bool
-	Type        string
-	Filter      []byte
-	Description string
-	FlowSource  []byte
-	UpdatedAt   pgtype.Timestamp
+	ID            string
+	Enabled       bool
+	Type          string
+	CustomEventID pgtype.Text
+	Filter        []byte
+	Description   string
+	FlowSource    []byte
+	UpdatedAt     pgtype.Timestamp
 }
 
 func (q *Queries) UpdateEventListener(ctx context.Context, arg UpdateEventListenerParams) (EventListener, error) {
@@ -246,6 +255,7 @@ func (q *Queries) UpdateEventListener(ctx context.Context, arg UpdateEventListen
 		arg.ID,
 		arg.Enabled,
 		arg.Type,
+		arg.CustomEventID,
 		arg.Filter,
 		arg.Description,
 		arg.FlowSource,
@@ -265,6 +275,7 @@ func (q *Queries) UpdateEventListener(ctx context.Context, arg UpdateEventListen
 		&i.FlowSource,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.CustomEventID,
 	)
 	return i, err
 }

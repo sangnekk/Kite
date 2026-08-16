@@ -18,6 +18,7 @@ type EventListener struct {
 	AppID         string               `json:"app_id"`
 	ModuleID      null.String          `json:"module_id"`
 	CreatorUserID string               `json:"creator_user_id"`
+	CustomEventID null.String          `json:"custom_event_id"`
 	Filter        *EventListenerFilter `json:"filter"`
 	FlowSource    flow.FlowData        `json:"flow_source"`
 	CreatedAt     time.Time            `json:"created_at"`
@@ -43,6 +44,7 @@ func (req EventListenerCreateRequest) Validate() error {
 			string(model.EventSourceSePay),
 			string(model.EventSourceThueAPIBank),
 			string(model.EventSourceCustom),
+			string(model.EventSourceInternal),
 		)),
 		validation.Field(&req.FlowSource, validation.Required),
 	)
@@ -101,6 +103,7 @@ func EventListenerToWire(eventListener *model.EventListener) *EventListener {
 		AppID:         eventListener.AppID,
 		ModuleID:      eventListener.ModuleID,
 		CreatorUserID: eventListener.CreatorUserID,
+		CustomEventID: eventListener.CustomEventID,
 		Filter:        (*EventListenerFilter)(eventListener.Filter),
 		FlowSource:    eventListener.FlowSource,
 		CreatedAt:     eventListener.CreatedAt,

@@ -31,7 +31,10 @@ export default function FlowNodeHandle({
       type={type}
       position={position}
       isConnectable={isConnectable}
-      className="rounded-full"
+      className={cn(
+        "rounded-full touch-none",
+        "after:absolute after:-inset-4 after:content-[''] md:after:hidden"
+      )}
       style={{
         backgroundColor: color ?? primaryColor,
         translate:

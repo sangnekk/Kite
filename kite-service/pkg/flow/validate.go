@@ -89,6 +89,12 @@ func compileForEntry(data FlowData) error {
 		case FlowNodeTypeEntryComponentButton:
 			_, err := CompileComponentButton(data)
 			return err
+		case FlowNodeTypeEntrySchedule:
+			_, err := CompileSchedule(data)
+			return err
+		case FlowNodeTypeEntryCustomEvent:
+			_, err := CompileCustomEventListener(data)
+			return err
 		}
 	}
 	return fmt.Errorf("no entry node — add exactly one entry_* node")

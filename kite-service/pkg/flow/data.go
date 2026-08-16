@@ -30,6 +30,8 @@ var resultKeyRe = regexp.MustCompile(`^[a-z0-9_]+$`)
 // Allows a 24-hour "HH:MM" time (used by daily/weekly schedule presets).
 var scheduleTimeRe = regexp.MustCompile(`^([01]?\d|2[0-3]):[0-5]\d$`)
 
+const MaxInternalEventPayloadBytes = 64 * 1024
+
 // The minimum interval (in seconds) allowed for an interval schedule. This caps
 // how fast a schedule can burn credits — see the billing rationale in the plan.
 const ScheduleMinIntervalSeconds = 60
@@ -53,6 +55,7 @@ const (
 	FlowNodeTypeEntryEvent           FlowNodeType = "entry_event"
 	FlowNodeTypeEntryComponentButton FlowNodeType = "entry_component_button"
 	FlowNodeTypeEntrySchedule        FlowNodeType = "entry_schedule"
+	FlowNodeTypeEntryCustomEvent     FlowNodeType = "entry_custom_event"
 
 	FlowNodeTypeOptionCommandArgument       FlowNodeType = "option_command_argument"
 	FlowNodeTypeOptionCommandPermissions    FlowNodeType = "option_command_permissions"
@@ -132,6 +135,7 @@ const (
 	FlowNodeTypeActionMessagePurge          FlowNodeType = "action_message_purge"
 	FlowNodeTypeActionChannelSlowmode       FlowNodeType = "action_channel_slowmode"
 	FlowNodeTypeActionQRCreate              FlowNodeType = "action_qr_create"
+	FlowNodeTypeActionEventEmit             FlowNodeType = "action_event_emit"
 
 	FlowNodeTypeControlConditionCompare     FlowNodeType = "control_condition_compare"
 	FlowNodeTypeControlConditionItemCompare FlowNodeType = "control_condition_item_compare"
@@ -319,6 +323,12 @@ type FlowNodeData struct {
 	// Event Entry
 	EventType string `json:"event_type,omitempty"`
 
+	// Custom internal event subscriber/publisher configuration.
+	CustomEventID      string                              `json:"custom_event_id,omitempty"`
+	EventPayload       map[string]any                      `json:"event_payload,omitempty"`
+	EventExecutionMode provider.InternalEventExecutionMode `json:"event_execution_mode,omitempty"`
+	EventFilter        string                              `json:"event_filter,omitempty"`
+
 	// Schedule Entry (on the entry_schedule node). ScheduleType selects the
 	// preset; the backend normalizes it to an interval or a cron expression via
 	// CompiledFlowNode.ScheduleSpec().
@@ -404,6 +414,22 @@ func (d FlowNodeData) Validate(nodeType FlowNodeType) error {
 		validation.Field(&d.Description, validation.When(nodeType == FlowNodeTypeEntryEvent,
 			validation.Required,
 			validation.Length(1, 100),
+		)),
+
+		// Custom Event Entry / Emit
+		validation.Field(&d.CustomEventID, validation.When(nodeType == FlowNodeTypeEntryCustomEvent || nodeType == FlowNodeTypeActionEventEmit,
+			validation.Required,
+		)),
+		validation.Field(&d.Description, validation.When(nodeType == FlowNodeTypeEntryCustomEvent,
+			validation.Required,
+			validation.Length(1, 100),
+		)),
+		validation.Field(&d.EventFilter, validation.When(nodeType == FlowNodeTypeEntryCustomEvent,
+			validation.Length(0, 2000),
+		)),
+		validation.Field(&d.EventExecutionMode, validation.When(nodeType == FlowNodeTypeActionEventEmit,
+			validation.Required,
+			validation.In(provider.InternalEventExecutionModeAsync, provider.InternalEventExecutionModeSync),
 		)),
 
 		// Schedule Entry

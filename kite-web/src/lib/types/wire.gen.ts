@@ -353,6 +353,28 @@ export interface CommandsDeployResponse {
 }
 
 //////////
+// source: custom_event.go
+
+export interface CustomEvent {
+  id: string;
+  app_id: string;
+  name: string;
+  description: string;
+  created_at: string /* RFC3339 */;
+  updated_at: string /* RFC3339 */;
+}
+export type CustomEventListResponse = (CustomEvent | undefined)[];
+export type CustomEventGetResponse = CustomEvent;
+export interface CustomEventCreateRequest {
+  name: string;
+  description: string;
+}
+export type CustomEventCreateResponse = CustomEvent;
+export type CustomEventUpdateRequest = CustomEventCreateRequest;
+export type CustomEventUpdateResponse = CustomEvent;
+export type CustomEventDeleteResponse = Empty;
+
+//////////
 // source: event_listener.go
 
 export interface EventListener {
@@ -364,6 +386,7 @@ export interface EventListener {
   app_id: string;
   module_id: null | string;
   creator_user_id: string;
+  custom_event_id: null | string;
   filter?: EventListenerFilter;
   flow_source: FlowData;
   created_at: string /* RFC3339 */;

@@ -5,12 +5,12 @@ import (
 	"log/slog"
 	"net/http"
 
+	webhookevent "github.com/kitecloud/kite/kite-service/internal/api/handler/webhook_event"
 	"github.com/kitecloud/kite/kite-service/internal/config"
 	"github.com/kitecloud/kite/kite-service/internal/core/command"
 	"github.com/kitecloud/kite/kite-service/internal/core/plan"
 	"github.com/kitecloud/kite/kite-service/internal/store"
 	"github.com/kitecloud/kite/kite-service/internal/util"
-	webhookevent "github.com/kitecloud/kite/kite-service/internal/api/handler/webhook_event"
 	"github.com/kitecloud/kite/kite-service/pkg/plugin"
 	"github.com/kitecloud/kite/kite-service/pkg/provider"
 	"github.com/rs/cors"
@@ -75,9 +75,10 @@ func NewAPIServer(
 	variableValueStore store.VariableValueStore,
 	messageStore store.MessageStore,
 	messageInstanceStore store.MessageInstanceStore,
-	eventListenerStore      store.EventListenerStore,
-	scheduleStore           store.ScheduleStore,
-	pluginInstanceStore     store.PluginInstanceStore,
+	eventListenerStore store.EventListenerStore,
+	customEventStore store.CustomEventStore,
+	scheduleStore store.ScheduleStore,
+	pluginInstanceStore store.PluginInstanceStore,
 	webhookIntegrationStore store.WebhookIntegrationStore,
 	subscriptionStore store.SubscriptionStore,
 	paymentSessionStore store.PaymentSessionStore,
@@ -108,6 +109,7 @@ func NewAPIServer(
 		messageStore,
 		messageInstanceStore,
 		eventListenerStore,
+		customEventStore,
 		scheduleStore,
 		pluginInstanceStore,
 		webhookIntegrationStore,

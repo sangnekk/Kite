@@ -10,9 +10,10 @@ Mỗi bộ lắng nghe sự kiện là một flow độc lập. Khi sự kiện 
 
 Sự kiện là **điểm vào** thứ hai để khởi động flow, bên cạnh [lệnh](/reference/command) (xem [lược đồ tổng thể](/)). Khác với lệnh do người dùng chủ động gọi, sự kiện được kích hoạt tự động bởi hoạt động trong server hoặc từ các dịch vụ bên ngoài qua webhook.
 
-Kite hỗ trợ hai **nguồn sự kiện**:
+Kite hỗ trợ ba **nguồn sự kiện**:
 - **Discord** — hoạt động xảy ra trong server Discord (tin nhắn, thành viên, reaction, voice...)
 - **Webhook** — sự kiện từ dịch vụ bên ngoài như SePay, ThueAPIBank, hoặc bất kỳ dịch vụ nào hỗ trợ webhook (xem [Tích hợp Webhook](/reference/integration))
+- **Sự kiện nội bộ** — tín hiệu do một flow khác trong cùng ứng dụng phát, kèm payload tùy chỉnh (xem [Sự kiện nội bộ tùy chỉnh](/reference/custom-events))
 
 ![Ví dụ luồng sự kiện](./img/example-event-flow.png)
 
@@ -20,7 +21,7 @@ Kite hỗ trợ hai **nguồn sự kiện**:
 
 1. Bấm biểu tượng **sự kiện** trên thanh bên trái của bảng điều khiển
 2. Bấm **Tạo bộ lắng nghe**
-3. Chọn **Nguồn**: `Discord` hoặc một trong các tích hợp webhook (SePay, ThueAPIBank, Webhook tùy chỉnh)
+3. Chọn **Nguồn**: `Discord`, `Sự kiện nội bộ` hoặc một trong các tích hợp webhook (SePay, ThueAPIBank, Webhook tùy chỉnh)
 4. Với nguồn Discord: chọn loại sự kiện cụ thể (Message Create, Member Join...)
 5. Trong trình soạn thảo, kéo các khối hành động và nối chúng với khối **Lắng nghe sự kiện**
 6. Lưu lại bằng cách bấm **Save Changes**
@@ -89,6 +90,19 @@ Với các sự kiện từ tích hợp webhook (SePay, ThueAPIBank, Custom Webh
 | `event.data.{field}` | Bất kỳ trường nào trong payload — tùy theo dịch vụ |
 | `app` | Bot của bạn — `app.user.id`, `app.user.mention` |
 
+### Sự kiện nội bộ
+
+Payload do flow phát gửi sang nằm trong `event.payload`:
+
+| Placeholder | Mô tả |
+| --- | --- |
+| `event.name` | Tên event đã đăng ký |
+| `event.payload` | Toàn bộ payload tùy chỉnh |
+| `event.payload.{field}` | Một trường trong payload |
+| `event.timestamp` | Thời điểm event được phát |
+
+Ví dụ payload `{ "test": "abc" }` được đọc bằng `{{ event.payload.test }}`, không phải `result('...').test`. Xem [hướng dẫn đầy đủ](/reference/custom-events).
+
 Không có `user`, `message`, `channel`, `guild` trong webhook event. Cấu trúc `event.data` phụ thuộc vào dịch vụ gửi webhook — xem ví dụ và danh sách trường tại [Tích hợp Webhook](/reference/integration#ví-dụ-với-sepay).
 
 ### Ví dụ truy cập dữ liệu
@@ -103,8 +117,13 @@ Không có `user`, `message`, `channel`, `guild` trong webhook event. Cấu trú
 | Message Delete Bulk | `Đã xóa {{ len(event.message_ids) }} tin nhắn` |
 | SePay (webhook) | `Nhận {{ event.data.transferAmount }}đ từ {{ event.data.gateway }}` |
 | Custom Webhook | `{{ event.data.order_id }}` |
+| Sự kiện nội bộ | `{{ event.payload.test }}` |
 
 ## Sự kiện được hỗ trợ
+
+### Nội bộ
+
+Event nội bộ phải được đăng ký trước ở trang **Sự kiện**. Một flow dùng khối **Phát sự kiện nội bộ** để emit payload; một hoặc nhiều bộ lắng nghe độc lập có thể nhận cùng event key. Xem [Sự kiện nội bộ tùy chỉnh](/reference/custom-events).
 
 ### Webhook
 
@@ -236,6 +255,7 @@ Xem thêm tại [Bộ lọc sự kiện](./blocks/options/option_event_filter.md
 ## Liên quan
 
 - [Khối Lắng nghe sự kiện](/reference/blocks/entries/entry_event) — điểm bắt đầu của flow sự kiện
+- [Sự kiện nội bộ tùy chỉnh](/reference/custom-events) — đăng ký, phát và nhận payload giữa các flow
 - [Bộ lọc sự kiện](/reference/blocks/options/option_event_filter) — giới hạn khi nào flow chạy
 - [Tích hợp Webhook](/reference/integration) — cài đặt SePay, ThueAPIBank, Custom Webhook
 - [Lệnh tùy chỉnh](/reference/command) — điểm vào còn lại để người dùng chủ động gọi

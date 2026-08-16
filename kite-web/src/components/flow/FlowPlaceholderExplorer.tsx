@@ -163,6 +163,18 @@ function useGlobalPlaceholders() {
     });
   }
 
+  if (contextType === "event_custom") {
+    res.push({
+      label: "Custom Event",
+      placeholders: [
+        { label: "Event", value: `event` },
+        { label: "Event Name", value: `event.name` },
+        { label: "Event Payload", value: `event.payload` },
+        { label: "Event Timestamp", value: `event.timestamp` },
+      ],
+    });
+  }
+
   return res;
 }
 

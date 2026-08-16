@@ -87,3 +87,10 @@ export const nodeActionRegexMatchResultSchema = z.object({
     .array(z.string())
     .describe("Captured groups (index 0 is the full match)"),
 });
+
+export const nodeActionEventEmitResultSchema = z.object({
+  event_id: z.string(),
+  event_name: z.string(),
+  subscriber_count: z.number(),
+  mode: z.enum(["async", "sync"]),
+});

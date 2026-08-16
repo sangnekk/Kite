@@ -17,22 +17,24 @@ INSERT INTO event_listeners (
     app_id,
     module_id,
     creator_user_id,
+    custom_event_id,
     filter,
     flow_source,
     created_at,
     updated_at
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
 ) RETURNING *;
 
 -- name: UpdateEventListener :one
 UPDATE event_listeners SET
     enabled = $2,
     type = $3,
-    filter = $4,
-    description = $5,
-    flow_source = $6,
-    updated_at = $7
+    custom_event_id = $4,
+    filter = $5,
+    description = $6,
+    flow_source = $7,
+    updated_at = $8
 WHERE id = $1 RETURNING *;
 
 -- name: GetEnabledEventListenersUpdatesSince :many

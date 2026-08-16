@@ -82,6 +82,7 @@ func StartServer(c context.Context, cfg *config.Config) error {
 			MessageInstanceStore: pg,
 			CommandStore:         pg,
 			EventListenerStore:   pg,
+			CustomEventStore:     pg,
 			ScheduleStore:        pg,
 			PluginInstanceStore:  pg,
 			PluginValueStore:     pg,
@@ -165,7 +166,7 @@ func StartServer(c context.Context, cfg *config.Config) error {
 			Plans:                   cfg.Billing.Plans,
 		},
 	},
-		pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg,
+		pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg,
 		assetStore, gatewayMgr, planManager, pluginRegistry, tokenCrypt, commandManager,
 		aiRegistry, pg, eng,
 	)

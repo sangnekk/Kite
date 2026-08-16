@@ -2,6 +2,7 @@ package engine
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/diamondburned/arikawa/v3/discord"
 	"github.com/diamondburned/arikawa/v3/gateway"
@@ -217,10 +218,28 @@ func (d *WebhookEventData) Event() ws.Event                                    {
 // the flow must target channels/users explicitly (e.g. action_message_create).
 type ScheduleData struct{}
 
-func (d *ScheduleData) Interaction() *discord.InteractionEvent               { return nil }
-func (d *ScheduleData) UserID() discord.UserID                               { return 0 }
-func (d *ScheduleData) GuildID() discord.GuildID                             { return 0 }
-func (d *ScheduleData) ChannelID() discord.ChannelID                         { return 0 }
-func (d *ScheduleData) CommandData() *discord.CommandInteraction             { return nil }
-func (d *ScheduleData) MessageComponentData() discord.ComponentInteraction   { return nil }
-func (d *ScheduleData) Event() ws.Event                                      { return nil }
+func (d *ScheduleData) Interaction() *discord.InteractionEvent             { return nil }
+func (d *ScheduleData) UserID() discord.UserID                             { return 0 }
+func (d *ScheduleData) GuildID() discord.GuildID                           { return 0 }
+func (d *ScheduleData) ChannelID() discord.ChannelID                       { return 0 }
+func (d *ScheduleData) CommandData() *discord.CommandInteraction           { return nil }
+func (d *ScheduleData) MessageComponentData() discord.ComponentInteraction { return nil }
+func (d *ScheduleData) Event() ws.Event                                    { return nil }
+
+type InternalEventData struct {
+	name          string
+	payload       map[string]any
+	timestamp     time.Time
+	correlationID string
+	depth         int
+}
+
+func (d *InternalEventData) Interaction() *discord.InteractionEvent             { return nil }
+func (d *InternalEventData) UserID() discord.UserID                             { return 0 }
+func (d *InternalEventData) GuildID() discord.GuildID                           { return 0 }
+func (d *InternalEventData) ChannelID() discord.ChannelID                       { return 0 }
+func (d *InternalEventData) CommandData() *discord.CommandInteraction           { return nil }
+func (d *InternalEventData) MessageComponentData() discord.ComponentInteraction { return nil }
+func (d *InternalEventData) Event() ws.Event                                    { return nil }
+func (d *InternalEventData) InternalEventDepth() int                            { return d.depth }
+func (d *InternalEventData) InternalEventCorrelationID() string                 { return d.correlationID }

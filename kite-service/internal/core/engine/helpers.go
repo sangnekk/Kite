@@ -37,6 +37,7 @@ type Env struct {
 	MessageInstanceStore store.MessageInstanceStore
 	CommandStore         store.CommandStore
 	EventListenerStore   store.EventListenerStore
+	CustomEventStore     store.CustomEventStore
 	ScheduleStore        store.ScheduleStore
 	PluginInstanceStore  store.PluginInstanceStore
 	PluginValueStore     store.PluginValueStore
@@ -46,8 +47,9 @@ type Env struct {
 	HttpClient           *http.Client
 	// AIProvider routes AI requests to the upstream that owns each model. Nil
 	// when no AI provider is configured, in which case a mock is used.
-	AIProvider *AIProvider
-	TokenCrypt *util.SymmetricCrypt
+	AIProvider              *AIProvider
+	TokenCrypt              *util.SymmetricCrypt
+	InternalEventDispatcher InternalEventDispatcher
 }
 
 type entityLinks struct {
@@ -83,6 +85,7 @@ func (s Env) flowProviders(appID string, session *state.State, links entityLinks
 			appID,
 			links,
 		),
+		InternalEvent: NewInternalEventProvider(appID, s.CustomEventStore, s.InternalEventDispatcher),
 	}
 }
 

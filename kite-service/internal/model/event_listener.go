@@ -12,10 +12,11 @@ import (
 type EventSource string
 
 const (
-	EventSourceDiscord    EventSource = "discord"
-	EventSourceSePay      EventSource = "sepay"
+	EventSourceDiscord     EventSource = "discord"
+	EventSourceSePay       EventSource = "sepay"
 	EventSourceThueAPIBank EventSource = "thueapibank"
-	EventSourceCustom     EventSource = "custom_webhook"
+	EventSourceCustom      EventSource = "custom_webhook"
+	EventSourceInternal    EventSource = "internal"
 )
 
 type EventListenerType string
@@ -50,6 +51,7 @@ type EventListener struct {
 	AppID         string
 	ModuleID      null.String
 	CreatorUserID string
+	CustomEventID null.String
 	Filter        *EventListenerFilter
 	FlowSource    flow.FlowData
 	CreatedAt     time.Time

@@ -17,6 +17,7 @@ import {
   useCommandsQuery,
   useEventListenerQuery,
   useEventListenersQuery,
+  useCustomEventsQuery,
   useScheduleQuery,
   useSchedulesQuery,
   useAppFeaturesQuery,
@@ -49,6 +50,7 @@ import {
   CommandListResponse,
   EventListenerGetResponse,
   EventListenerListResponse,
+  CustomEventListResponse,
   ScheduleGetResponse,
   ScheduleListResponse,
   FeaturesGetResponse,
@@ -155,6 +157,14 @@ export function useEventListeners(
   const router = useRouter();
 
   const query = useEventListenersQuery(router.query.appId as string);
+  return useResponseData(query, callback);
+}
+
+export function useCustomEvents(
+  callback?: (res: APIResponse<CustomEventListResponse>) => void
+) {
+  const router = useRouter();
+  const query = useCustomEventsQuery(router.query.appId as string);
   return useResponseData(query, callback);
 }
 

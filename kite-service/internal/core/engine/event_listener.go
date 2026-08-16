@@ -24,7 +24,13 @@ func NewEventListener(
 	listener *model.EventListener,
 	env Env,
 ) (*EventListener, error) {
-	flow, err := flow.CompileEventListener(listener.FlowSource)
+	var compiled *flow.CompiledFlowNode
+	var err error
+	if listener.Source == model.EventSourceInternal {
+		compiled, err = flow.CompileCustomEventListener(listener.FlowSource)
+	} else {
+		compiled, err = flow.CompileEventListener(listener.FlowSource)
+	}
 	if err != nil {
 		slog.Error(
 			"Failed to compile event listener flow",
@@ -37,7 +43,7 @@ func NewEventListener(
 
 	return &EventListener{
 		listener: listener,
-		flow:     flow,
+		flow:     compiled,
 		env:      env,
 	}, nil
 }

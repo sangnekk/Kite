@@ -26,6 +26,7 @@ import { createNode, getNodeValues } from "@/lib/flow/nodes";
 import { useHookedTheme } from "@/lib/hooks/theme";
 import "@xyflow/react/dist/base.css";
 import { ListTreeIcon } from "lucide-react";
+import { useIsMobile } from "@/lib/hooks/use-mobile";
 
 interface Props {
   initialData?: FlowData;
@@ -41,6 +42,7 @@ export default function FlowEditor({
   onNodeClick,
 }: Props) {
   const { theme } = useHookedTheme();
+  const isMobile = useIsMobile();
 
   // TODO: refactor?
   const [nodes, setNodes, onNodesChange] = useNodesState(
@@ -204,6 +206,8 @@ export default function FlowEditor({
       onDrop={onDrop}
       onDragOver={onDragOver}
       onConnect={onConnect}
+      connectOnClick
+      connectionRadius={isMobile ? 32 : 20}
       isValidConnection={isValidConnection}
       onSelectionChange={onSelectionChange}
       onNodeClick={onNodeClick}
@@ -221,7 +225,7 @@ export default function FlowEditor({
       <Controls
         showInteractive={false}
         position="bottom-right"
-        className="scale-110"
+        className="mb-16 scale-110 md:mb-0"
       >
         <ControlButton onClick={format}>
           <ListTreeIcon className="size-5" />

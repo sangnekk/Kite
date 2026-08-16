@@ -3,6 +3,7 @@ import FlowEdgeDeleteButton from "@/components/flow/FlowEdgeDeleteButton";
 import FlowEdgeFixed from "@/components/flow/FlowEdgeFixed";
 import FlowNodeActionBase from "@/components/flow/FlowNodeActionBase";
 import FlowNodeEntryEvent from "@/components/flow/FlowNodeEntryEvent";
+import FlowNodeEntryCustomEvent from "@/components/flow/FlowNodeEntryCustomEvent";
 import FlowNodeEntrySchedule from "@/components/flow/FlowNodeEntrySchedule";
 import FlowNodeConditionCompare from "@/components/flow/FlowNodeConditionCompare";
 import FlowNodeConditionItem from "@/components/flow/FlowNodeConditionItem";
@@ -25,6 +26,7 @@ import FlowNodeControlErrorHandler from "@/components/flow/FlowNodeControlErrorH
 export const nodeTypes = {
   entry_command: FlowNodeEntryCommand,
   entry_event: FlowNodeEntryEvent,
+  entry_custom_event: FlowNodeEntryCustomEvent,
   entry_schedule: FlowNodeEntrySchedule,
   entry_component_button: FlowNodeEntryComponentButton,
 
@@ -106,6 +108,7 @@ export const nodeTypes = {
   action_balance_leaderboard: FlowNodeActionBase,
   action_random_generate: FlowNodeActionBase,
   action_log: FlowNodeActionBase,
+  action_event_emit: FlowNodeActionBase,
 
   control_condition_compare: FlowNodeConditionCompare,
   control_condition_item_compare: FlowNodeConditionItem,

@@ -125,6 +125,19 @@ export const nodeEntryEventDataSchema = nodeBaseDataSchema.extend({
   event_type: z.string(),
 });
 
+export const nodeEntryCustomEventDataSchema = nodeBaseDataSchema.extend({
+  custom_event_id: z.string().min(1),
+  description: z.string().max(100).min(1),
+  event_filter: z.string().max(2000).optional(),
+});
+
+export const nodeActionEventEmitDataSchema = nodeBaseDataSchema.extend({
+  custom_event_id: z.string().min(1),
+  event_payload: z.record(z.unknown()).optional(),
+  event_execution_mode: z.enum(["async", "sync"]),
+  temporary_name: z.string().optional(),
+});
+
 export const nodeEntryScheduleDataSchema = nodeBaseDataSchema.extend({
   description: z.string().max(100).min(1),
   schedule_type: z.enum(["interval", "daily", "weekly", "cron"]),

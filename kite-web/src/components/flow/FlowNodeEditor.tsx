@@ -7,6 +7,7 @@ import { getNodeId, useNodeValues } from "@/lib/flow/nodes";
 import {
   useBanks,
   useCommands,
+  useCustomEvents,
   useMessages,
   useVariables,
 } from "@/lib/hooks/api";
@@ -22,6 +23,8 @@ import {
 import { Node, useNodes, useReactFlow, useStoreApi } from "@xyflow/react";
 import {
   ChevronDownIcon,
+  CheckIcon,
+  ChevronsUpDownIcon,
   CircleAlertIcon,
   CopyIcon,
   HelpCircleIcon,
@@ -33,7 +36,14 @@ import {
   XIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { forwardRef, useCallback, useEffect, useMemo, useRef } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { NodeData, NodeProps } from "../../lib/flow/dataSchema";
 import MessageCreateDialog from "../app/MessageCreateDialog";
 import VariableCreateDialog from "../app/VariableCreateDialog";
@@ -77,6 +87,16 @@ import FlowPlaceholderExplorer, {
 } from "./FlowPlaceholderExplorer";
 import env from "@/lib/env/client";
 import { ScrollArea } from "../ui/scroll-area";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "../ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { cn } from "@/lib/utils";
 
 interface Props {
   nodeId: string;
@@ -110,6 +130,10 @@ const intputs: Record<string, any> = {
   event_filter_target: EventFilterTargetInput,
   event_filter_mode: EventFilterModeInput,
   event_filter_value: EventFilterValueInput,
+  custom_event_id: CustomEventIDInput,
+  event_payload: EventPayloadInput,
+  event_execution_mode: EventExecutionModeInput,
+  event_filter: EventFilterInput,
   message_data: MessageDataInput,
   message_template_id: MessageTemplateInput,
   message_target: MessageTargetInput,
@@ -299,7 +323,7 @@ export default function FlowNodeEditor({ nodeId }: Props) {
   const docsPage = nodeTypeDocsPage(node.type!);
 
   return (
-    <div className="absolute top-0 left-0 bg-background w-96 h-full flex flex-col">
+    <div className="relative bg-background w-full h-full flex flex-col md:absolute md:top-0 md:left-0 md:w-96">
       <ScrollArea>
         <div className="p-5">
           <div className="flex-none">
@@ -922,6 +946,256 @@ function EventFilterValueInput({ data, updateData, errors }: InputProps) {
         })
       }
       errors={errors}
+    />
+  );
+}
+
+function CustomEventIDInput({ data, updateData, errors }: InputProps) {
+  const appId = useAppId();
+  const events = useCustomEvents() ?? [];
+  const [open, setOpen] = useState(false);
+  const selected = events.find((event) => event?.id === data.custom_event_id);
+  const error = errors.custom_event_id;
+
+  return (
+    <div>
+      <div className="font-medium text-foreground">Sự kiện nội bộ</div>
+      <div className="mt-1 text-sm text-muted-foreground">
+        Chọn event đã đăng ký. Event mới được tạo tại tab Events để tránh sai
+        tên.
+      </div>
+      <Popover open={open} onOpenChange={setOpen} modal>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="mt-2 min-h-11 w-full justify-between font-normal"
+          >
+            <span className="truncate font-mono">
+              {selected?.name ?? "Chọn event key..."}
+            </span>
+            <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="start"
+          className="w-[var(--radix-popover-trigger-width)] p-0"
+        >
+          <Command>
+            <CommandInput placeholder="Tìm event key..." />
+            <CommandList>
+              <CommandEmpty>Không tìm thấy event key.</CommandEmpty>
+              <CommandGroup>
+                {events.map(
+                  (event) =>
+                    event && (
+                      <CommandItem
+                        key={event.id}
+                        value={event.name}
+                        onSelect={() => {
+                          updateData({ custom_event_id: event.id });
+                          setOpen(false);
+                        }}
+                        className="min-h-11"
+                      >
+                        <CheckIcon
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            event.id === data.custom_event_id
+                              ? "opacity-100"
+                              : "opacity-0"
+                          )}
+                        />
+                        <span className="truncate font-mono">{event.name}</span>
+                      </CommandItem>
+                    )
+                )}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+      {error && (
+        <div className="flex items-center space-x-1 pt-2 text-sm text-red-600 dark:text-red-400">
+          <CircleAlertIcon className="h-5 w-5 flex-none" />
+          <div>{error}</div>
+        </div>
+      )}
+      <Link
+        href={`/apps/${appId}/events`}
+        className="mt-1 inline-block text-xs text-primary hover:underline"
+      >
+        Quản lý event trong tab Events
+      </Link>
+    </div>
+  );
+}
+
+function EventPayloadInput({ data, updateData }: InputProps) {
+  const [advanced, setAdvanced] = useState(false);
+  const payload = data.event_payload || {};
+
+  function updatePayload(next: Record<string, unknown>) {
+    updateData({ event_payload: next });
+  }
+
+  function renameField(previousKey: string, nextKey: string) {
+    if (
+      nextKey !== previousKey &&
+      Object.prototype.hasOwnProperty.call(payload, nextKey)
+    ) {
+      return;
+    }
+    const next: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(payload)) {
+      next[key === previousKey ? nextKey : key] = value;
+    }
+    updatePayload(next);
+  }
+
+  function updateField(key: string, rawValue: string) {
+    let value: unknown = rawValue;
+    try {
+      value = JSON.parse(rawValue);
+    } catch {
+      // Templates and ordinary text remain strings.
+    }
+    updatePayload({ ...payload, [key]: value });
+  }
+
+  function removeField(key: string) {
+    const next = { ...payload };
+    delete next[key];
+    updatePayload(next);
+  }
+
+  function addField() {
+    let index = Object.keys(payload).length + 1;
+    let key = `field_${index}`;
+    while (Object.prototype.hasOwnProperty.call(payload, key)) {
+      key = `field_${++index}`;
+    }
+    updatePayload({ ...payload, [key]: "" });
+  }
+
+  return (
+    <div>
+      <div className="font-medium text-foreground mb-1">Payload</div>
+      <div className="text-muted-foreground text-sm mb-2">
+        Object JSON gửi cho flow nhận. Giá trị chuỗi hỗ trợ biến template.
+      </div>
+      {advanced ? (
+        <JsonEditor src={payload} onChange={updatePayload} />
+      ) : (
+        <div className="space-y-3">
+          {Object.entries(payload).map(([key, value], index) => {
+            const textValue =
+              typeof value === "string" ? value : JSON.stringify(value) ?? "";
+            return (
+              <div key={index} className="relative space-y-2 rounded-lg border p-3">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1 min-h-11 min-w-11 text-muted-foreground"
+                  onClick={() => removeField(key)}
+                  aria-label={`Xóa trường ${key}`}
+                >
+                  <TrashIcon className="h-4 w-4" />
+                </Button>
+                <div className="pr-10">
+                  <div className="mb-1 text-xs font-medium text-muted-foreground">
+                    Khóa
+                  </div>
+                  <Input
+                    className="min-h-11 font-mono"
+                    value={key}
+                    onChange={(event) => renameField(key, event.target.value)}
+                  />
+                </div>
+                <div>
+                  <div className="mb-1 text-xs font-medium text-muted-foreground">
+                    Giá trị
+                  </div>
+                  <div className="relative">
+                    <FlowPlaceholderInput
+                      value={textValue}
+                      onChange={(value) => updateField(key, value)}
+                      placeholder="Văn bản, số, true hoặc {{biến}}"
+                    />
+                    <FlowPlaceholderExplorer
+                      onSelect={(placeholder) =>
+                        updateField(key, `${textValue}{{${placeholder}}}`)
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          {Object.keys(payload).length === 0 && (
+            <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
+              Payload đang trống. Thêm trường nếu flow nhận cần dữ liệu.
+            </div>
+          )}
+          <Button
+            type="button"
+            variant="outline"
+            className="min-h-11 w-full gap-2"
+            onClick={addField}
+          >
+            <PlusIcon className="h-4 w-4" />
+            Thêm trường payload
+          </Button>
+        </div>
+      )}
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="mt-2 w-full"
+        onClick={() => setAdvanced((value) => !value)}
+      >
+        {advanced ? "Dùng trình nhập key/value" : "Chỉnh JSON nâng cao"}
+      </Button>
+    </div>
+  );
+}
+
+function EventExecutionModeInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      type="select"
+      field="event_execution_mode"
+      title="Chế độ thực thi"
+      description="Async phát rồi chạy tiếp; sync chờ tất cả flow nhận hoàn tất."
+      options={[
+        { value: "async", label: "Async — không chờ" },
+        { value: "sync", label: "Sync — chờ hoàn tất" },
+      ]}
+      value={data.event_execution_mode || "async"}
+      updateValue={(value) =>
+        updateData({ event_execution_mode: value as "async" | "sync" })
+      }
+      errors={errors}
+    />
+  );
+}
+
+function EventFilterInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      type="textarea"
+      field="event_filter"
+      title="Điều kiện lọc"
+      description="Chỉ chạy flow khi biểu thức trả về true. Để trống để nhận mọi payload."
+      value={data.event_filter || ""}
+      updateValue={(value) => updateData({ event_filter: value || undefined })}
+      errors={errors}
+      placeholders
+      disablePlaceholderBrackets
     />
   );
 }

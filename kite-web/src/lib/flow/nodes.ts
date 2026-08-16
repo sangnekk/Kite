@@ -82,6 +82,8 @@ import {
   nodeEntryCommandDataSchema,
   nodeEntryComponentButtonDataSchema,
   nodeEntryEventDataSchema,
+  nodeEntryCustomEventDataSchema,
+  nodeActionEventEmitDataSchema,
   nodeEntryScheduleDataSchema,
   nodeOptionCommandArgumentDataSchema,
   nodeOptionCommandContextsSchema,
@@ -108,6 +110,7 @@ import {
   nodeActionRoleCreateResultSchema,
   nodeActionRoleEditResultSchema,
   nodeActionRegexMatchResultSchema,
+  nodeActionEventEmitResultSchema,
 } from "./resultSchema";
 
 export const primaryColor = "#3B82F6";
@@ -152,6 +155,15 @@ export const nodeTypes: Record<string, NodeValues> = {
       "Lắng nghe sự kiện để kích hoạt luồng. Thả các hành động vào đây!",
     dataSchema: nodeEntryEventDataSchema,
     dataFields: ["event_type", "description"],
+    fixed: true,
+  },
+  entry_custom_event: {
+    color: entryColor,
+    icon: "radio-tower",
+    defaultTitle: "Khi có sự kiện nội bộ",
+    defaultDescription: "Kích hoạt flow từ một event đã đăng ký trong ứng dụng.",
+    dataSchema: nodeEntryCustomEventDataSchema,
+    dataFields: ["custom_event_id", "description", "event_filter"],
     fixed: true,
   },
   entry_component_button: {
@@ -1100,6 +1112,22 @@ export const nodeTypes: Record<string, NodeValues> = {
     dataFields: ["log_level", "log_message", "custom_label"],
     creditsCost: 1,
   },
+  action_event_emit: {
+    color: actionColor,
+    icon: "send",
+    defaultTitle: "Phát sự kiện nội bộ",
+    defaultDescription: "Phát một event đã đăng ký cho các flow đang lắng nghe.",
+    dataSchema: nodeActionEventEmitDataSchema,
+    resultSchema: nodeActionEventEmitResultSchema,
+    dataFields: [
+      "custom_event_id",
+      "event_payload",
+      "event_execution_mode",
+      "temporary_name",
+      "custom_label",
+    ],
+    creditsCost: 1,
+  },
   control_condition_compare: {
     color: controlColor,
     icon: "arrow-left-right",
@@ -1348,7 +1376,10 @@ export function createNode(
       id,
       type,
       position,
-      data: {},
+      data:
+        type === "action_event_emit"
+          ? { event_execution_mode: "async", event_payload: {} }
+          : {},
       ...props,
     },
   ];

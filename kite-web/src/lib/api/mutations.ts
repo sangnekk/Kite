@@ -28,6 +28,10 @@ import {
   CommandUpdateEnabledResponse,
   CommandUpdateRequest,
   CommandUpdateResponse,
+  CustomEventCreateRequest,
+  CustomEventCreateResponse,
+  CustomEventUpdateRequest,
+  CustomEventUpdateResponse,
   EventListenerCreateRequest,
   EventListenerCreateResponse,
   EventListenerDeleteResponse,
@@ -330,6 +334,37 @@ export function useEventListenerCreateMutation(appId: string) {
         queryKey: ["apps", appId, "event-listeners"],
       });
     },
+  });
+}
+
+export function useCustomEventCreateMutation(appId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (req: CustomEventCreateRequest) =>
+      apiRequest<CustomEventCreateResponse>(`/v1/apps/${appId}/custom-events`, {
+        method: "POST",
+        body: JSON.stringify(req),
+        headers: { "Content-Type": "application/json" },
+      }),
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: ["apps", appId, "custom-events"] }),
+  });
+}
+
+export function useCustomEventUpdateMutation(appId: string, customEventId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (req: CustomEventUpdateRequest) =>
+      apiRequest<CustomEventUpdateResponse>(
+        `/v1/apps/${appId}/custom-events/${customEventId}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(req),
+          headers: { "Content-Type": "application/json" },
+        }
+      ),
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: ["apps", appId, "custom-events"] }),
   });
 }
 

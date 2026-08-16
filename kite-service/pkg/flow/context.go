@@ -71,6 +71,13 @@ type FlowContextData interface {
 	ChannelID() discord.ChannelID
 }
 
+// InternalEventContextData is implemented while a custom event subscriber is
+// running. Emit nodes use it to preserve correlation and recursion depth.
+type InternalEventContextData interface {
+	InternalEventDepth() int
+	InternalEventCorrelationID() string
+}
+
 type FlowContextLimits struct {
 	MaxStackDepth int
 	MaxOperations int

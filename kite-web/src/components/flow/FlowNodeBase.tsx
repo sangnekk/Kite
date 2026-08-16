@@ -5,7 +5,7 @@ import FlowNodeMarkers from "./FlowNodeMarkers";
 import DynamicIcon from "../icons/DynamicIcon";
 
 interface Props extends NodeProps {
-  title?: string;
+  title?: ReactNode;
   description?: string;
   children: ReactNode;
   highlight?: boolean;

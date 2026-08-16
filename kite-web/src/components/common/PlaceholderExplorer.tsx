@@ -58,7 +58,7 @@ export default function PlaceholderExplorer({
   return (
     <Popover open={open} onOpenChange={setOpen} modal>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
-      <PopoverContent className="w-[350px] p-0">
+      <PopoverContent className="w-[min(350px,calc(100vw-2rem))] p-0">
         <Command>
           <CommandInput placeholder="Tìm placeholder..." />
           <CommandList>

@@ -2,6 +2,7 @@ import {
   useEventListenerDeleteMutation,
   useEventListenerUpdateEnabledMutation,
 } from "@/lib/api/mutations";
+import { useCustomEvents } from "@/lib/hooks/api";
 import { useAppId } from "@/lib/hooks/params";
 import { EventListener } from "@/lib/types/wire.gen";
 import { formatDateTime } from "@/lib/utils";
@@ -10,6 +11,7 @@ import {
   CopyPlusIcon,
   EllipsisIcon,
   SatelliteDishIcon,
+  RadioTowerIcon,
   Trash2Icon,
   WebhookIcon,
 } from "lucide-react";
@@ -19,6 +21,7 @@ const SOURCE_LABELS: Record<string, string> = {
   sepay: "SePay",
   thueapibank: "ThueAPIBank",
   custom_webhook: "Webhook tùy chỉnh",
+  internal: "Sự kiện nội bộ",
 };
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -52,6 +55,10 @@ export default function EventListenerListEntry({
   const router = useRouter();
 
   const appId = useAppId();
+  const customEvents = useCustomEvents() ?? [];
+  const customEvent = customEvents.find(
+    (event) => event?.id === listener.custom_event_id
+  );
 
   const deleteMutation = useEventListenerDeleteMutation(appId, listener.id);
 
@@ -105,13 +112,17 @@ export default function EventListenerListEntry({
       </div>
       <CardHeader>
         <CardTitle className="text-base flex items-center space-x-2">
-          {listener.source === "discord" ? (
+          {listener.source === "internal" ? (
+            <RadioTowerIcon className="h-5 w-5 text-muted-foreground" />
+          ) : listener.source === "discord" ? (
             <SatelliteDishIcon className="h-5 w-5 text-muted-foreground" />
           ) : (
             <WebhookIcon className="h-5 w-5 text-muted-foreground" />
           )}
           <div>
-            {listener.source !== "discord"
+            {listener.source === "internal"
+              ? <span className="font-mono">{customEvent?.name ?? listener.type}</span>
+              : listener.source !== "discord"
               ? SOURCE_LABELS[listener.source] ?? listener.source
               : listener.type}
           </div>

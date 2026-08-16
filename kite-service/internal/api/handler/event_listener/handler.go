@@ -11,15 +11,18 @@ import (
 	"github.com/kitecloud/kite/kite-service/internal/store"
 	"github.com/kitecloud/kite/kite-service/internal/util"
 	"github.com/kitecloud/kite/kite-service/pkg/flow"
+	"gopkg.in/guregu/null.v4"
 )
 
 type EventListenerHandler struct {
 	eventListenerStore store.EventListenerStore
+	customEventStore   store.CustomEventStore
 }
 
-func NewEventListenerHandler(eventListenerStore store.EventListenerStore) *EventListenerHandler {
+func NewEventListenerHandler(eventListenerStore store.EventListenerStore, customEventStore store.CustomEventStore) *EventListenerHandler {
 	return &EventListenerHandler{
 		eventListenerStore: eventListenerStore,
+		customEventStore:   customEventStore,
 	}
 }
 
@@ -53,12 +56,12 @@ func (h *EventListenerHandler) HandleEventListenerCreate(c *handler.Context, req
 		}
 	}
 
-	eventFlow, err := flow.CompileEventListener(req.FlowSource)
+	eventFlow, customEvent, err := h.compileFlow(c, model.EventSource(req.Source), req.FlowSource)
 	if err != nil {
 		return nil, fmt.Errorf("failed to compile event listener: %w", err)
 	}
 
-	eventListener, err := h.eventListenerStore.CreateEventListener(c.Context(), &model.EventListener{
+	modelListener := &model.EventListener{
 		ID:            util.UniqueID(),
 		AppID:         c.App.ID,
 		CreatorUserID: c.Session.UserID,
@@ -70,7 +73,12 @@ func (h *EventListenerHandler) HandleEventListenerCreate(c *handler.Context, req
 		Enabled:    req.Enabled,
 		CreatedAt:  time.Now().UTC(),
 		UpdatedAt:  time.Now().UTC(),
-	})
+	}
+	if customEvent != nil {
+		modelListener.CustomEventID = null.StringFrom(customEvent.ID)
+		modelListener.Type = model.EventListenerType(customEvent.Name)
+	}
+	eventListener, err := h.eventListenerStore.CreateEventListener(c.Context(), modelListener)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create event listener: %w", err)
 	}
@@ -95,12 +103,12 @@ func (h *EventListenerHandler) HandleEventListenersImport(c *handler.Context, re
 	res := make([]*wire.EventListener, len(req.EventListeners))
 
 	for i, listener := range req.EventListeners {
-		eventFlow, err := flow.CompileEventListener(listener.FlowSource)
+		eventFlow, customEvent, err := h.compileFlow(c, model.EventSource(listener.Source), listener.FlowSource)
 		if err != nil {
 			return nil, fmt.Errorf("failed to compile event listener: %w", err)
 		}
 
-		eventListener, err := h.eventListenerStore.CreateEventListener(c.Context(), &model.EventListener{
+		modelListener := &model.EventListener{
 			ID:            util.UniqueID(),
 			AppID:         c.App.ID,
 			CreatorUserID: c.Session.UserID,
@@ -112,7 +120,12 @@ func (h *EventListenerHandler) HandleEventListenersImport(c *handler.Context, re
 			Enabled:    listener.Enabled,
 			CreatedAt:  time.Now().UTC(),
 			UpdatedAt:  time.Now().UTC(),
-		})
+		}
+		if customEvent != nil {
+			modelListener.CustomEventID = null.StringFrom(customEvent.ID)
+			modelListener.Type = model.EventListenerType(customEvent.Name)
+		}
+		eventListener, err := h.eventListenerStore.CreateEventListener(c.Context(), modelListener)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create event listener: %w", err)
 		}
@@ -124,20 +137,26 @@ func (h *EventListenerHandler) HandleEventListenersImport(c *handler.Context, re
 }
 
 func (h *EventListenerHandler) HandleEventListenerUpdate(c *handler.Context, req wire.EventListenerUpdateRequest) (*wire.EventListenerUpdateResponse, error) {
-	eventFlow, err := flow.CompileEventListener(req.FlowSource)
+	eventFlow, customEvent, err := h.compileFlow(c, c.EventListener.Source, req.FlowSource)
 	if err != nil {
 		return nil, fmt.Errorf("failed to compile event listener: %w", err)
 	}
 
-	eventListener, err := h.eventListenerStore.UpdateEventListener(c.Context(), &model.EventListener{
+	modelListener := &model.EventListener{
 		ID:          c.EventListener.ID,
 		Type:        model.EventListenerType(eventFlow.EventListenerType()),
 		Description: eventFlow.EventDescription(),
 		// TODO: Filter:      eventFlow.EventListenerFilter(),
-		FlowSource: req.FlowSource,
-		Enabled:    req.Enabled,
-		UpdatedAt:  time.Now().UTC(),
-	})
+		FlowSource:    req.FlowSource,
+		Enabled:       req.Enabled,
+		UpdatedAt:     time.Now().UTC(),
+		CustomEventID: c.EventListener.CustomEventID,
+	}
+	if customEvent != nil {
+		modelListener.CustomEventID = null.StringFrom(customEvent.ID)
+		modelListener.Type = model.EventListenerType(customEvent.Name)
+	}
+	eventListener, err := h.eventListenerStore.UpdateEventListener(c.Context(), modelListener)
 	if err != nil {
 		if errors.Is(err, store.ErrNotFound) {
 			return nil, handler.ErrNotFound("unknown_event_listener", "Event listener not found")
@@ -150,12 +169,13 @@ func (h *EventListenerHandler) HandleEventListenerUpdate(c *handler.Context, req
 
 func (h *EventListenerHandler) HandleEventListenerUpdateEnabled(c *handler.Context, req wire.EventListenerUpdateEnabledRequest) (*wire.EventListenerUpdateEnabledResponse, error) {
 	eventListener, err := h.eventListenerStore.UpdateEventListener(c.Context(), &model.EventListener{
-		ID:          c.EventListener.ID,
-		Type:        c.EventListener.Type,
-		Description: c.EventListener.Description,
-		FlowSource:  c.EventListener.FlowSource,
-		Enabled:     req.Enabled,
-		UpdatedAt:   time.Now().UTC(),
+		ID:            c.EventListener.ID,
+		Type:          c.EventListener.Type,
+		Description:   c.EventListener.Description,
+		FlowSource:    c.EventListener.FlowSource,
+		CustomEventID: c.EventListener.CustomEventID,
+		Enabled:       req.Enabled,
+		UpdatedAt:     time.Now().UTC(),
 	})
 	if err != nil {
 		if errors.Is(err, store.ErrNotFound) {
@@ -165,6 +185,25 @@ func (h *EventListenerHandler) HandleEventListenerUpdateEnabled(c *handler.Conte
 	}
 
 	return wire.EventListenerToWire(eventListener), nil
+}
+
+func (h *EventListenerHandler) compileFlow(c *handler.Context, source model.EventSource, data flow.FlowData) (*flow.CompiledFlowNode, *model.CustomEvent, error) {
+	if source != model.EventSourceInternal {
+		compiled, err := flow.CompileEventListener(data)
+		return compiled, nil, err
+	}
+	compiled, err := flow.CompileCustomEventListener(data)
+	if err != nil {
+		return nil, nil, err
+	}
+	event, err := h.customEventStore.CustomEvent(c.Context(), compiled.Data.CustomEventID)
+	if errors.Is(err, store.ErrNotFound) || (err == nil && event.AppID != c.App.ID) {
+		return nil, nil, handler.ErrBadRequest("unknown_custom_event", "Custom event not found in this app")
+	}
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to resolve custom event: %w", err)
+	}
+	return compiled, event, nil
 }
 
 func (h *EventListenerHandler) HandleEventListenerDelete(c *handler.Context) (*wire.EventListenerDeleteResponse, error) {

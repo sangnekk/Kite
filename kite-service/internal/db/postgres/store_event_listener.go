@@ -81,6 +81,7 @@ func (c *Client) CreateEventListener(ctx context.Context, listener *model.EventL
 			Valid:  listener.ModuleID.Valid,
 		},
 		CreatorUserID: listener.CreatorUserID,
+		CustomEventID: pgtype.Text{String: listener.CustomEventID.String, Valid: listener.CustomEventID.Valid},
 		Filter:        rawFilter,
 		FlowSource:    flowSource,
 		CreatedAt:     pgtype.Timestamp{Time: listener.CreatedAt.UTC(), Valid: true},
@@ -108,13 +109,14 @@ func (c *Client) UpdateEventListener(ctx context.Context, listener *model.EventL
 	}
 
 	row, err := c.Q.UpdateEventListener(ctx, pgmodel.UpdateEventListenerParams{
-		ID:          listener.ID,
-		Enabled:     listener.Enabled,
-		Type:        string(listener.Type),
-		Description: listener.Description,
-		Filter:      rawFilter,
-		FlowSource:  flowSource,
-		UpdatedAt:   pgtype.Timestamp{Time: listener.UpdatedAt.UTC(), Valid: true},
+		ID:            listener.ID,
+		Enabled:       listener.Enabled,
+		Type:          string(listener.Type),
+		CustomEventID: pgtype.Text{String: listener.CustomEventID.String, Valid: listener.CustomEventID.Valid},
+		Description:   listener.Description,
+		Filter:        rawFilter,
+		FlowSource:    flowSource,
+		UpdatedAt:     pgtype.Timestamp{Time: listener.UpdatedAt.UTC(), Valid: true},
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -187,6 +189,7 @@ func rowToEventListener(row pgmodel.EventListener) (*model.EventListener, error)
 		AppID:         row.AppID,
 		ModuleID:      null.NewString(row.ModuleID.String, row.ModuleID.Valid),
 		CreatorUserID: row.CreatorUserID,
+		CustomEventID: null.NewString(row.CustomEventID.String, row.CustomEventID.Valid),
 		Filter:        filter,
 		FlowSource:    flowSource,
 		CreatedAt:     row.CreatedAt.Time,

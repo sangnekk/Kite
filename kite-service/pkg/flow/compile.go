@@ -8,6 +8,7 @@ import (
 	"github.com/diamondburned/arikawa/v3/discord"
 	"github.com/diamondburned/arikawa/v3/gateway"
 	"github.com/diamondburned/arikawa/v3/utils/json/option"
+	"github.com/kitecloud/kite/kite-service/pkg/thing"
 )
 
 type FlowCompiler struct{}
@@ -26,6 +27,10 @@ func CompileEventListener(data FlowData) (*CompiledFlowNode, error) {
 
 func CompileSchedule(data FlowData) (*CompiledFlowNode, error) {
 	return compile(data, FlowNodeTypeEntrySchedule)
+}
+
+func CompileCustomEventListener(data FlowData) (*CompiledFlowNode, error) {
+	return compile(data, FlowNodeTypeEntryCustomEvent)
 }
 
 func compile(data FlowData, entryType FlowNodeType) (*CompiledFlowNode, error) {
@@ -110,7 +115,8 @@ func (n *CompiledFlowNode) IsEntry() bool {
 	return n.Type == FlowNodeTypeEntryCommand ||
 		n.Type == FlowNodeTypeEntryComponentButton ||
 		n.Type == FlowNodeTypeEntryEvent ||
-		n.Type == FlowNodeTypeEntrySchedule
+		n.Type == FlowNodeTypeEntrySchedule ||
+		n.Type == FlowNodeTypeEntryCustomEvent
 }
 
 func (n *CompiledFlowNode) IsScheduleEntry() bool {
@@ -123,6 +129,10 @@ func (n *CompiledFlowNode) IsComponentButtonEntry() bool {
 
 func (n *CompiledFlowNode) IsEventListenerEntry() bool {
 	return n.Type == FlowNodeTypeEntryEvent
+}
+
+func (n *CompiledFlowNode) IsCustomEventEntry() bool {
+	return n.Type == FlowNodeTypeEntryCustomEvent
 }
 
 func (n *CompiledFlowNode) IsCommandEntry() bool {
@@ -475,6 +485,19 @@ func (n *CompiledFlowNode) EventListenerType() string {
 }
 
 func (n *CompiledFlowNode) FilterEvent(ctx *FlowContext) (bool, error) {
+	if n.IsCustomEventEntry() && n.Data.EventFilter != "" {
+		result, err := ctx.EvalExpression(n.Data.EventFilter)
+		if err != nil {
+			return false, err
+		}
+		if result.Type != thing.TypeBool {
+			return false, fmt.Errorf("custom event filter must return a boolean")
+		}
+		if !result.Bool() {
+			return false, nil
+		}
+	}
+
 	if len(n.Parents.Default) == 0 {
 		return true, nil
 	}
@@ -525,7 +548,7 @@ func (n *CompiledFlowNode) FilterEvent(ctx *FlowContext) (bool, error) {
 }
 
 func (n *CompiledFlowNode) EventDescription() string {
-	if !n.IsEventListenerEntry() {
+	if !n.IsEventListenerEntry() && !n.IsCustomEventEntry() {
 		return ""
 	}
 	return n.Data.Description

@@ -121,7 +121,7 @@ export default function AppEventListenerPage() {
       {listener && (
         <FlowPage
           flowData={listener.flow_source}
-          context="event_discord"
+          context={listener.source === "internal" ? "event_custom" : "event_discord"}
           hasUnsavedChanges={hasUnsavedChanges}
           onChange={onChange}
           isSaving={isSaving}

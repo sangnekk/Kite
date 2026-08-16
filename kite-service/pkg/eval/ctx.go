@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/diamondburned/arikawa/v3/discord"
 	"github.com/diamondburned/arikawa/v3/gateway"
@@ -413,6 +414,22 @@ func NewContextForSchedule(session *state.State) Context {
 	return Context{
 		Env: env,
 	}
+}
+
+// NewContextFromInternalEvent exposes only the explicit event envelope and the
+// bot identity. Discord entities must be passed deliberately in the payload.
+func NewContextFromInternalEvent(name string, payload map[string]any, timestamp time.Time, session *state.State) Context {
+	env := Env{
+		"event": map[string]any{
+			"name":      name,
+			"payload":   payload,
+			"timestamp": timestamp.UTC().Format(time.RFC3339Nano),
+		},
+	}
+	if session != nil {
+		env["app"] = NewAppEnv(session)
+	}
+	return Context{Env: env}
 }
 
 func NewContextFromTextCommand(event ws.Event, args map[string]any, session *state.State) Context {

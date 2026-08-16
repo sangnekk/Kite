@@ -36,6 +36,14 @@ func (ctx *FlowContext) EvalTemplate(template string) (thing.Thing, error) {
 	return res, nil
 }
 
+func (ctx *FlowContext) EvalExpression(expression string) (thing.Thing, error) {
+	res, err := eval.Eval(ctx, expression, ctx.EvalCtx)
+	if err != nil {
+		return thing.Null, fmt.Errorf("failed to evaluate expression: %w", err)
+	}
+	return res, nil
+}
+
 type nodeEvalPatcher struct{}
 
 func (p *nodeEvalPatcher) Visit(node *ast.Node) {

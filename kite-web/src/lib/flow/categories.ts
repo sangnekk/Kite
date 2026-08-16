@@ -198,6 +198,11 @@ export const nodeCategories = {
       nodeTypes: ["action_log"],
       contextTypes: null,
     },
+    {
+      title: "Sự kiện nội bộ",
+      nodeTypes: ["action_event_emit"],
+      contextTypes: null,
+    },
   ],
   control_flow: [
     {
