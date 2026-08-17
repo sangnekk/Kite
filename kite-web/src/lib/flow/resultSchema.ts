@@ -94,3 +94,25 @@ export const nodeActionEventEmitResultSchema = z.object({
   subscriber_count: z.number(),
   mode: z.enum(["async", "sync"]),
 });
+
+const customTableRowResultSchema = z.record(z.unknown());
+
+export const nodeActionTableInsertResultSchema = z.object({
+  id: z.string(),
+  row: customTableRowResultSchema,
+});
+
+export const nodeActionTableFindOneResultSchema = z.object({
+  found: z.boolean(),
+  row: customTableRowResultSchema.nullable(),
+});
+
+export const nodeActionTableQueryResultSchema = z.object({
+  rows: z.array(customTableRowResultSchema),
+  count: z.number(),
+  total_count: z.number(),
+});
+
+export const nodeActionTableMutationResultSchema = z.object({
+  affected_rows: z.number(),
+});

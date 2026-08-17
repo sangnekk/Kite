@@ -24,6 +24,12 @@ func (c *Client) CustomEventsByApp(ctx context.Context, appID string) ([]*model.
 	return events, nil
 }
 
+func (c *Client) CountCustomEventsByApp(ctx context.Context, appID string) (int, error) {
+	var count int
+	err := c.DB.QueryRow(ctx, `SELECT COUNT(*) FROM custom_events WHERE app_id = $1`, appID).Scan(&count)
+	return count, err
+}
+
 func (c *Client) CustomEvent(ctx context.Context, id string) (*model.CustomEvent, error) {
 	row, err := c.Q.GetCustomEvent(ctx, id)
 	if errors.Is(err, pgx.ErrNoRows) {

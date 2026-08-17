@@ -21,6 +21,8 @@ type Plan struct {
 	FeatureMaxGuilds            int
 	FeatureMaxCommands          int
 	FeatureMaxVariables         int
+	FeatureMaxCustomTables      int
+	FeatureMaxCustomEvents      int
 	FeatureMaxMessages          int
 	FeatureMaxEventListeners    int
 	FeatureMaxSchedules         int
@@ -37,6 +39,8 @@ func (p Plan) Features() Features {
 		MaxGuilds:            p.FeatureMaxGuilds,
 		MaxCommands:          p.FeatureMaxCommands,
 		MaxVariables:         p.FeatureMaxVariables,
+		MaxCustomTables:      p.FeatureMaxCustomTables,
+		MaxCustomEvents:      p.FeatureMaxCustomEvents,
 		MaxMessages:          p.FeatureMaxMessages,
 		MaxEventListeners:    p.FeatureMaxEventListeners,
 		MaxSchedules:         p.FeatureMaxSchedules,
@@ -53,6 +57,8 @@ type Features struct {
 	MaxGuilds            int
 	MaxCommands          int
 	MaxVariables         int
+	MaxCustomTables      int
+	MaxCustomEvents      int
 	MaxMessages          int
 	MaxEventListeners    int
 	MaxSchedules         int
@@ -69,6 +75,8 @@ func (f Features) Merge(other Features) Features {
 		MaxGuilds:            max(f.MaxGuilds, other.MaxGuilds),
 		MaxCommands:          max(f.MaxCommands, other.MaxCommands),
 		MaxVariables:         max(f.MaxVariables, other.MaxVariables),
+		MaxCustomTables:      mergeSignedFeatureLimit(f.MaxCustomTables, other.MaxCustomTables),
+		MaxCustomEvents:      mergeSignedFeatureLimit(f.MaxCustomEvents, other.MaxCustomEvents),
 		MaxMessages:          max(f.MaxMessages, other.MaxMessages),
 		MaxEventListeners:    max(f.MaxEventListeners, other.MaxEventListeners),
 		MaxSchedules:         max(f.MaxSchedules, other.MaxSchedules),
@@ -84,4 +92,11 @@ func max(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func mergeSignedFeatureLimit(current, other int) int {
+	if current == -1 || other == -1 {
+		return -1
+	}
+	return max(current, other)
 }

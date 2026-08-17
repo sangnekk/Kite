@@ -5,6 +5,69 @@ import { ConfigValues as PluginConfigValues, Metadata as PluginMetadata, Config 
 interface Empty {}
 
 //////////
+// source: ai.go
+
+/**
+ * AICreditsResponse reports the app's AI copilot credit budget for today.
+ */
+export interface AICreditsResponse {
+  included: boolean;
+  used_today: number /* int */;
+  limit_per_day: number /* int */;
+  remaining: number /* int */;
+}
+/**
+ * AIConsumeCreditRequest asks the server to gate-and-charge one AI turn. Model
+ * is the registry key whose per-model credit cost is charged.
+ */
+export interface AIConsumeCreditRequest {
+  model?: string;
+}
+/**
+ * AIConsumeCreditResponse reports what was charged and the budget left.
+ */
+export interface AIConsumeCreditResponse {
+  charged: number /* int */;
+  remaining: number /* int */;
+}
+/**
+ * AIConversationSummary is a row in the conversation picker.
+ */
+export interface AIConversationSummary {
+  id: string;
+  title: string;
+  updated_at: string /* RFC3339 */;
+}
+export type AIConversationListResponse = (AIConversationSummary | undefined)[];
+/**
+ * AIConversationResponse is a full conversation (messages = opaque UIMessage JSON).
+ */
+export interface AIConversationResponse {
+  id: string;
+  title: string;
+  messages: Record<string, any> | null;
+}
+/**
+ * AIConversationUpsertRequest creates/updates a conversation by id.
+ */
+export interface AIConversationUpsertRequest {
+  context: string;
+  title: string;
+  messages: Record<string, any> | null;
+}
+/**
+ * AIModel is one selectable AI model exposed to the flow editor. Only the
+ * fields a no-code user needs to pick a model are exposed; the upstream model
+ * spelling and provider routing stay server-side.
+ */
+export interface AIModel {
+  key: string;
+  name: string;
+  credits: number /* int */;
+}
+export type AIModelListResponse = (AIModel | undefined)[];
+
+//////////
 // source: app.go
 
 export interface App {
@@ -36,6 +99,10 @@ export type AppGetResponse = App;
 export interface AppSettings {
   enable_prefix_commands: boolean;
   command_prefix: string;
+  /**
+   * MessageContentIntent reports whether the bot has the privileged message
+   * content intent. Without it only @mention commands work.
+   */
   message_content_intent: boolean;
 }
 export type AppSettingsGetResponse = AppSettings;
@@ -186,26 +253,35 @@ export interface BillingCheckoutResponse {
   expires_at: string /* RFC3339 */;
   fields: BillingCheckoutField[];
 }
-export interface BillingSePayIPNRequest {
-  id: number /* int64 */;
-  gateway: string;
-  transactionDate: string;
-  accountNumber: string;
-  code: null | string;
-  content: string;
-  transferType: string;
-  transferAmount: number /* int64 */;
-  accumulated: number /* int64 */;
-  subAccount: null | string;
-  referenceCode: string;
-  description: string;
-}
 export interface BillingCheckoutStatusResponse {
   payment_id: string;
   status: string;
   paid: boolean;
   amount: number /* int */;
   subscription_created: boolean;
+}
+export interface BillingPaymentWebhookRequest {
+  refNo: string;
+  amount: string;
+  transactionDate: string;
+  postingDate: string;
+  description: string;
+  sender: string;
+  senderAccoundNo: string;
+}
+export interface BillingSePayIPNRequest {
+  id: number /* int64 */;
+  gateway: string;
+  transactionDate: string;
+  accountNumber: string;
+  code?: string;
+  content: string;
+  transferType: string;
+  transferAmount: number /* int64 */;
+  accumulated: number /* int64 */;
+  subAccount?: string;
+  referenceCode: string;
+  description: string;
 }
 export interface SubscriptionManageResponse {
   update_payment_method_url: string;
@@ -250,6 +326,8 @@ export interface BillingPlan {
   feature_max_guilds: number /* int */;
   feature_max_commands: number /* int */;
   feature_max_variables: number /* int */;
+  feature_max_custom_tables: number /* int */;
+  feature_max_custom_events: number /* int */;
   feature_max_messages: number /* int */;
   feature_max_event_listeners: number /* int */;
   feature_max_schedules: number /* int */;
@@ -259,39 +337,6 @@ export interface BillingPlan {
   feature_ai_credit_per_day: number /* int */;
 }
 export type BillingPlanListResponse = (BillingPlan | undefined)[];
-
-export interface AIConversationSummary {
-  id: string;
-  title: string;
-  updated_at: string;
-}
-export type AIConversationListResponse = (AIConversationSummary | undefined)[];
-
-export interface AIConversationResponse {
-  id: string;
-  title: string;
-  messages: any[];
-}
-
-export interface AIConversationUpsertRequest {
-  context: string;
-  title: string;
-  messages: any[];
-}
-
-export interface AICreditsResponse {
-  included: boolean;
-  used_today: number /* int */;
-  limit_per_day: number /* int */;
-  remaining: number /* int */;
-}
-
-export interface AIModel {
-  key: string;
-  name: string;
-  credits: number;
-}
-export type AIModelListResponse = (AIModel | undefined)[];
 
 //////////
 // source: collaborator.go
@@ -375,6 +420,126 @@ export type CustomEventUpdateResponse = CustomEvent;
 export type CustomEventDeleteResponse = Empty;
 
 //////////
+// source: custom_table.go
+
+export interface CustomTableColumn {
+  id: string;
+  name: string;
+  type: any /* provider.CustomTableColumnType */;
+  required?: boolean;
+  unique?: boolean;
+  has_default?: boolean;
+  default_value?: any;
+}
+export interface CustomTableSchema {
+  columns: CustomTableColumn[];
+}
+export interface CustomTable {
+  id: string;
+  app_id: string;
+  name: string;
+  description: string;
+  scope: any /* provider.CustomTableScope */;
+  schema: CustomTableSchema;
+  created_at: string /* RFC3339 */;
+  updated_at: string /* RFC3339 */;
+}
+export type CustomTableListResponse = (CustomTable | undefined)[];
+export type CustomTableGetResponse = CustomTable;
+export interface CustomTableCreateRequest {
+  name: string;
+  description: string;
+  scope: any /* provider.CustomTableScope */;
+  schema: CustomTableSchema;
+}
+export type CustomTableCreateResponse = CustomTable;
+export type CustomTableUpdateRequest = CustomTableCreateRequest;
+export type CustomTableUpdateResponse = CustomTable;
+export type CustomTableDeleteResponse = Empty;
+export interface CustomTableFilter {
+  column_id: string;
+  operator: any /* provider.CustomTableFilterOperator */;
+  value?: any;
+}
+export interface CustomTableSort {
+  column_id: string;
+  direction: string;
+}
+export interface CustomTableQueryRequest {
+  scope_id?: string;
+  filter_mode?: any /* provider.CustomTableFilterMode */;
+  filters?: CustomTableFilter[];
+  sort?: CustomTableSort[];
+  limit?: number /* int */;
+  offset?: number /* int */;
+}
+export interface CustomTableRow {
+  id: string;
+  table_id: string;
+  scope_id?: string;
+  data: { [key: string]: any};
+  version: number /* int64 */;
+  created_at: string /* RFC3339 */;
+  updated_at: string /* RFC3339 */;
+}
+export interface CustomTableRowInsertRequest {
+  scope_id?: string;
+  fields: { [key: string]: any};
+}
+export type CustomTableRowInsertResponse = CustomTableRow;
+export type CustomTableRowQueryRequest = CustomTableQueryRequest;
+export interface CustomTableRowQueryResponse {
+  rows: (CustomTableRow | undefined)[];
+  count: number /* int */;
+  total_count: number /* int64 */;
+}
+export interface CustomTableRowPatchRequest {
+  fields: { [key: string]: any};
+}
+export type CustomTableRowPatchResponse = CustomTableRow;
+export type CustomTableRowDeleteResponse = Empty;
+export interface CustomTableMutation {
+  column_id: string;
+  operation: any /* provider.CustomTableMutationOperation */;
+  value?: any;
+}
+export interface CustomTableRowsUpdateRequest {
+  query: CustomTableQueryRequest;
+  updates: CustomTableMutation[];
+}
+export interface CustomTableRowsDeleteRequest {
+  query: CustomTableQueryRequest;
+}
+export interface CustomTableMutationResponse {
+  affected_rows: number /* int64 */;
+}
+export type CustomTableTransferFormat = string;
+export const CustomTableTransferFormatCSV: CustomTableTransferFormat = "csv";
+export const CustomTableTransferFormatJSON: CustomTableTransferFormat = "json";
+export type CustomTableImportMode = string;
+export const CustomTableImportModeAppend: CustomTableImportMode = "append";
+export const CustomTableImportModeReplace: CustomTableImportMode = "replace";
+export interface CustomTableImportRequest {
+  scope_id?: string;
+  format: CustomTableTransferFormat;
+  mode: CustomTableImportMode;
+  content: string;
+}
+export interface CustomTableImportResponse {
+  inserted_rows: number /* int */;
+}
+export interface CustomTableExportRequest {
+  scope_id?: string;
+  format: CustomTableTransferFormat;
+}
+export interface CustomTableExportResponse {
+  filename: string;
+  content_type: string;
+  content: string;
+  row_count: number /* int */;
+}
+
+//////////
 // source: event_listener.go
 
 export interface EventListener {
@@ -418,48 +583,6 @@ export type EventListenerUpdateEnabledResponse = EventListener;
 export type EventListenerDeleteResponse = Empty;
 
 //////////
-// source: schedule.go
-
-export interface Schedule {
-  id: string;
-  app_id: string;
-  module_id: null | string;
-  creator_user_id: string;
-  enabled: boolean;
-  description: string;
-  trigger_type: string;
-  interval_seconds: number /* int */;
-  cron_expression: string;
-  timezone: string;
-  next_run_at: null | string /* RFC3339 */;
-  last_run_at: null | string /* RFC3339 */;
-  flow_source: FlowData;
-  created_at: string /* RFC3339 */;
-  updated_at: string /* RFC3339 */;
-}
-export type ScheduleGetResponse = Schedule;
-export type ScheduleListResponse = (Schedule | undefined)[];
-export interface ScheduleCreateRequest {
-  flow_source: FlowData;
-  enabled: boolean;
-}
-export type ScheduleCreateResponse = Schedule;
-export interface SchedulesImportRequest {
-  schedules: ScheduleCreateRequest[];
-}
-export type SchedulesImportResponse = (Schedule | undefined)[];
-export interface ScheduleUpdateRequest {
-  flow_source: FlowData;
-  enabled: boolean;
-}
-export type ScheduleUpdateResponse = Schedule;
-export interface ScheduleUpdateEnabledRequest {
-  enabled: boolean;
-}
-export type ScheduleUpdateEnabledResponse = Schedule;
-export type ScheduleDeleteResponse = Empty;
-
-//////////
 // source: feature.go
 
 export interface Features {
@@ -468,6 +591,8 @@ export interface Features {
   max_guilds: number /* int */;
   max_commands: number /* int */;
   max_variables: number /* int */;
+  max_custom_tables: number /* int */;
+  max_custom_events: number /* int */;
   max_messages: number /* int */;
   max_event_listeners: number /* int */;
   max_schedules: number /* int */;
@@ -477,6 +602,40 @@ export interface Features {
   ai_credit_per_day: number /* int */;
 }
 export type FeaturesGetResponse = Features;
+
+//////////
+// source: flow.go
+
+/**
+ * FlowValidateRequest carries a flow graph to validate (the same FlowData shape
+ * the editor stores).
+ */
+export interface FlowValidateRequest {
+  flow: Record<string, any> | null;
+}
+/**
+ * FlowValidateResponse reports whether the flow passes data + connectivity +
+ * compile validation; Error holds the first problem found (empty when valid).
+ */
+export interface FlowValidateResponse {
+  valid: boolean;
+  error?: string;
+}
+
+//////////
+// source: integration.go
+
+/**
+ * Bank mirrors an entry in static_contents/banks.json (VietQR bank list).
+ */
+export interface Bank {
+  name: string;
+  code: string;
+  bin: string;
+  short_name: string;
+  supported: boolean;
+}
+export type BankListResponse = (Bank | undefined)[];
 
 //////////
 // source: log.go
@@ -603,6 +762,48 @@ export type PluginInstanceUpdateEnabledResponse = PluginInstance;
 export type PluginInstanceDeleteResponse = Empty;
 
 //////////
+// source: schedule.go
+
+export interface Schedule {
+  id: string;
+  app_id: string;
+  module_id: null | string;
+  creator_user_id: string;
+  enabled: boolean;
+  description: string;
+  trigger_type: string;
+  interval_seconds: number /* int */;
+  cron_expression: string;
+  timezone: string;
+  next_run_at: null | string /* RFC3339 */;
+  last_run_at: null | string /* RFC3339 */;
+  flow_source: FlowData;
+  created_at: string /* RFC3339 */;
+  updated_at: string /* RFC3339 */;
+}
+export type ScheduleGetResponse = Schedule;
+export type ScheduleListResponse = (Schedule | undefined)[];
+export interface ScheduleCreateRequest {
+  flow_source: FlowData;
+  enabled: boolean;
+}
+export type ScheduleCreateResponse = Schedule;
+export interface SchedulesImportRequest {
+  schedules: ScheduleCreateRequest[];
+}
+export type SchedulesImportResponse = (Schedule | undefined)[];
+export interface ScheduleUpdateRequest {
+  flow_source: FlowData;
+  enabled: boolean;
+}
+export type ScheduleUpdateResponse = Schedule;
+export interface ScheduleUpdateEnabledRequest {
+  enabled: boolean;
+}
+export type ScheduleUpdateEnabledResponse = Schedule;
+export type ScheduleDeleteResponse = Empty;
+
+//////////
 // source: usage.go
 
 export interface UsageCreditsGetResponse {
@@ -665,7 +866,6 @@ export interface VariableUpdateRequest {
 export type VariableUpdateResponse = Variable;
 export type VariableDeleteResponse = Empty;
 
-
 //////////
 // source: webhook_integration.go
 
@@ -695,18 +895,3 @@ export interface WebhookIntegrationUpdateEnabledRequest {
 }
 export type WebhookIntegrationUpdateEnabledResponse = WebhookIntegration;
 export type WebhookIntegrationDeleteResponse = Empty;
-
-//////////
-// source: integration.go
-
-/**
- * Bank mirrors an entry in static_contents/banks.json (VietQR bank list).
- */
-export interface Bank {
-  name: string;
-  code: string;
-  bin: string;
-  short_name: string;
-  supported: boolean;
-}
-export type BankListResponse = (Bank | undefined)[];

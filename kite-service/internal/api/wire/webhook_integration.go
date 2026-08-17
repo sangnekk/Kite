@@ -9,12 +9,12 @@ import (
 )
 
 type WebhookIntegration struct {
-	ID         string `json:"id"`
-	AppID      string `json:"app_id"`
-	Type       string `json:"type"`
-	Secret     string `json:"secret"`
-	Enabled    bool   `json:"enabled"`
-	WebhookURL string `json:"webhook_url"`
+	ID         string    `json:"id"`
+	AppID      string    `json:"app_id"`
+	Type       string    `json:"type"`
+	Secret     string    `json:"secret"`
+	Enabled    bool      `json:"enabled"`
+	WebhookURL string    `json:"webhook_url"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
 }
@@ -25,7 +25,7 @@ type WebhookIntegrationListResponse = []*WebhookIntegration
 
 type WebhookIntegrationCreateRequest struct {
 	Type   string `json:"type"`
-	Secret string `json:"secret"`
+	Secret string `json:"secret,omitempty"`
 }
 
 func (req WebhookIntegrationCreateRequest) Validate() error {

@@ -18,6 +18,10 @@ import {
   CommandGetResponse,
   CommandListResponse,
   CustomEventListResponse,
+  CustomTableGetResponse,
+  CustomTableListResponse,
+  CustomTableRowQueryRequest,
+  CustomTableRowQueryResponse,
   EventListenerGetResponse,
   EventListenerListResponse,
   ScheduleGetResponse,
@@ -202,6 +206,47 @@ export function useCustomEventsQuery(appId: string) {
     queryFn: () =>
       apiRequest<CustomEventListResponse>(`/v1/apps/${appId}/custom-events`),
     enabled: !!appId,
+  });
+}
+
+export function useCustomTablesQuery(appId: string) {
+  return useQuery({
+    queryKey: ["apps", appId, "custom-tables"],
+    queryFn: () =>
+      apiRequest<CustomTableListResponse>(`/v1/apps/${appId}/custom-tables`),
+    enabled: !!appId,
+  });
+}
+
+export function useCustomTableQuery(appId: string, tableId: string) {
+  return useQuery({
+    queryKey: ["apps", appId, "custom-tables", tableId],
+    queryFn: () =>
+      apiRequest<CustomTableGetResponse>(
+        `/v1/apps/${appId}/custom-tables/${tableId}`
+      ),
+    enabled: !!appId && !!tableId,
+  });
+}
+
+export function useCustomTableRowsQuery(
+  appId: string,
+  tableId: string,
+  request: CustomTableRowQueryRequest,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: ["apps", appId, "custom-tables", tableId, "rows", request],
+    queryFn: () =>
+      apiRequest<CustomTableRowQueryResponse>(
+        `/v1/apps/${appId}/custom-tables/${tableId}/rows/query`,
+        {
+          method: "POST",
+          body: JSON.stringify(request),
+          headers: { "Content-Type": "application/json" },
+        }
+      ),
+    enabled: enabled && !!appId && !!tableId,
   });
 }
 

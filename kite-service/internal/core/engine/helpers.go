@@ -38,6 +38,7 @@ type Env struct {
 	CommandStore         store.CommandStore
 	EventListenerStore   store.EventListenerStore
 	CustomEventStore     store.CustomEventStore
+	CustomTableStore     store.CustomTableStore
 	ScheduleStore        store.ScheduleStore
 	PluginInstanceStore  store.PluginInstanceStore
 	PluginValueStore     store.PluginValueStore
@@ -86,6 +87,7 @@ func (s Env) flowProviders(appID string, session *state.State, links entityLinks
 			links,
 		),
 		InternalEvent: NewInternalEventProvider(appID, s.CustomEventStore, s.InternalEventDispatcher),
+		CustomTable:   NewCustomTableProvider(appID, s.CustomTableStore),
 	}
 }
 

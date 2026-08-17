@@ -191,6 +191,8 @@ type BillingPlanConfig struct {
 	FeatureMaxGuilds            int  `toml:"feature_max_guilds"`
 	FeatureMaxCommands          int  `toml:"feature_max_commands"`
 	FeatureMaxVariables         int  `toml:"feature_max_variables"`
+	FeatureMaxCustomTables      int  `toml:"feature_max_custom_tables" validate:"gte=-1"`
+	FeatureMaxCustomEvents      int  `toml:"feature_max_custom_events" validate:"gte=-1"`
 	FeatureMaxMessages          int  `toml:"feature_max_messages"`
 	FeatureMaxEventListeners    int  `toml:"feature_max_event_listeners"`
 	FeatureMaxSchedules         int  `toml:"feature_max_schedules"`

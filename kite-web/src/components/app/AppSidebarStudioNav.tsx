@@ -9,6 +9,7 @@ import {
   SparklesIcon,
   WebhookIcon,
   ClockIcon,
+  DatabaseIcon,
 } from "lucide-react";
 import { useAppFeature } from "@/lib/hooks/api";
 import { AI_FEATURES_ENABLED } from "@/lib/ai/featureFlags";
@@ -84,6 +85,12 @@ export default function AppSidebarStudioNav() {
         url: "/apps/[appId]/variables",
         icon: VariableIcon,
         active: isActive("/apps/[appId]/variables"),
+      },
+      {
+        name: "Dữ liệu",
+        url: "/apps/[appId]/data",
+        icon: DatabaseIcon,
+        active: isActive("/apps/[appId]/data"),
       },
       {
         name: "Plugin",

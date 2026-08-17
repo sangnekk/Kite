@@ -138,6 +138,77 @@ export const nodeActionEventEmitDataSchema = nodeBaseDataSchema.extend({
   temporary_name: z.string().optional(),
 });
 
+const tableFilterSchema = z.object({
+  column_id: z.string().min(1),
+  operator: z.enum([
+    "equal",
+    "not_equal",
+    "greater_than",
+    "greater_than_or_equal",
+    "less_than",
+    "less_than_or_equal",
+    "contains",
+    "starts_with",
+    "ends_with",
+    "is_null",
+    "is_not_null",
+  ]),
+  value: z.unknown().optional(),
+});
+
+const tableSortSchema = z.object({
+  column_id: z.string().min(1),
+  direction: z.enum(["asc", "desc"]),
+});
+
+const tableQueryFields = {
+  custom_table_id: z.string().min(1),
+  table_scope_id: z.string().optional(),
+  table_filter_mode: z.enum(["all", "any"]).optional(),
+  table_filters: z.array(tableFilterSchema).optional(),
+  table_sort: z.array(tableSortSchema).optional(),
+};
+
+export const nodeActionTableInsertDataSchema = nodeBaseDataSchema.extend({
+  custom_table_id: z.string().min(1),
+  table_scope_id: z.string().optional(),
+  table_fields: z.record(z.unknown()).optional(),
+  temporary_name: z.string().optional(),
+});
+
+export const nodeActionTableFindOneDataSchema = nodeBaseDataSchema.extend({
+  ...tableQueryFields,
+  temporary_name: z.string().optional(),
+});
+
+export const nodeActionTableQueryDataSchema = nodeBaseDataSchema.extend({
+  ...tableQueryFields,
+  table_limit: z.number().int().min(0).max(100).optional(),
+  table_offset: z.number().int().min(0).optional(),
+  temporary_name: z.string().optional(),
+});
+
+export const nodeActionTableUpdateDataSchema = nodeBaseDataSchema.extend({
+  ...tableQueryFields,
+  table_filters: z.array(tableFilterSchema).min(1),
+  table_updates: z
+    .array(
+      z.object({
+        column_id: z.string().min(1),
+        operation: z.enum(["set", "increment", "decrement"]),
+        value: z.unknown().optional(),
+      })
+    )
+    .min(1),
+  temporary_name: z.string().optional(),
+});
+
+export const nodeActionTableDeleteDataSchema = nodeBaseDataSchema.extend({
+  ...tableQueryFields,
+  table_filters: z.array(tableFilterSchema).min(1),
+  temporary_name: z.string().optional(),
+});
+
 export const nodeEntryScheduleDataSchema = nodeBaseDataSchema.extend({
   description: z.string().max(100).min(1),
   schedule_type: z.enum(["interval", "daily", "weekly", "cron"]),

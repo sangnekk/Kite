@@ -37,6 +37,18 @@ func (h *Handler) Get(c *handler.Context) (*wire.CustomEventGetResponse, error) 
 }
 
 func (h *Handler) Create(c *handler.Context, req wire.CustomEventCreateRequest) (*wire.CustomEventCreateResponse, error) {
+	if c.Features.MaxCustomEvents >= 0 {
+		eventCount, err := h.store.CountCustomEventsByApp(c.Context(), c.App.ID)
+		if err != nil {
+			return nil, fmt.Errorf("count custom events: %w", err)
+		}
+		if customEventLimitReached(eventCount, c.Features.MaxCustomEvents) {
+			return nil, handler.ErrBadRequest(
+				"resource_limit",
+				customEventLimitMessage(c.Features.MaxCustomEvents),
+			)
+		}
+	}
 	now := time.Now().UTC()
 	event, err := h.store.CreateCustomEvent(c.Context(), &model.CustomEvent{
 		ID: util.UniqueID(), AppID: c.App.ID, Name: req.Name, Description: req.Description,
@@ -49,6 +61,17 @@ func (h *Handler) Create(c *handler.Context, req wire.CustomEventCreateRequest) 
 		return nil, fmt.Errorf("failed to create custom event: %w", err)
 	}
 	return wire.CustomEventToWire(event), nil
+}
+
+func customEventLimitReached(current, limit int) bool {
+	return limit >= 0 && current >= limit
+}
+
+func customEventLimitMessage(limit int) string {
+	if limit == 0 {
+		return "Gói hiện tại không hỗ trợ tạo sự kiện nội bộ"
+	}
+	return fmt.Sprintf("Gói hiện tại cho phép tối đa %d sự kiện nội bộ", limit)
 }
 
 func (h *Handler) Update(c *handler.Context, req wire.CustomEventUpdateRequest) (*wire.CustomEventUpdateResponse, error) {

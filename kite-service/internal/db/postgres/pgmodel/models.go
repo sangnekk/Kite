@@ -85,6 +85,35 @@ type CustomEvent struct {
 	UpdatedAt   pgtype.Timestamp
 }
 
+type CustomTable struct {
+	ID          string
+	AppID       string
+	Name        string
+	Description string
+	Scope       string
+	Schema      []byte
+	CreatedAt   pgtype.Timestamp
+	UpdatedAt   pgtype.Timestamp
+}
+
+type CustomTableRow struct {
+	ID        pgtype.UUID
+	TableID   string
+	ScopeID   string
+	Data      []byte
+	Version   int64
+	CreatedAt pgtype.Timestamp
+	UpdatedAt pgtype.Timestamp
+}
+
+type CustomTableUniqueValue struct {
+	TableID   string
+	ScopeID   string
+	ColumnID  string
+	ValueHash string
+	RowID     pgtype.UUID
+}
+
 type Entitlement struct {
 	ID             string
 	Type           string

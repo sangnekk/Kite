@@ -15,6 +15,7 @@ import (
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/billing"
 	commandhandler "github.com/kitecloud/kite/kite-service/internal/api/handler/command"
 	customevent "github.com/kitecloud/kite/kite-service/internal/api/handler/custom_event"
+	customtable "github.com/kitecloud/kite/kite-service/internal/api/handler/custom_table"
 	eventlistener "github.com/kitecloud/kite/kite-service/internal/api/handler/event_listener"
 	flowhandler "github.com/kitecloud/kite/kite-service/internal/api/handler/flow"
 	integrationhandler "github.com/kitecloud/kite/kite-service/internal/api/handler/integration"
@@ -50,6 +51,7 @@ func (s *APIServer) RegisterRoutes(
 	messageInstanceStore store.MessageInstanceStore,
 	eventListenerStore store.EventListenerStore,
 	customEventStore store.CustomEventStore,
+	customTableStore store.CustomTableStore,
 	scheduleStore store.ScheduleStore,
 	pluginInstanceStore store.PluginInstanceStore,
 	webhookIntegrationStore store.WebhookIntegrationStore,
@@ -290,6 +292,24 @@ func (s *APIServer) RegisterRoutes(
 	customEventGroup := customEventsGroup.Group("/{customEventID}")
 	customEventGroup.Get("/", handler.Typed(customEventHandler.Get))
 	customEventGroup.Patch("/", handler.TypedWithBody(customEventHandler.Update))
+
+	// App-scoped structured data tables and their rows.
+	customTableHandler := customtable.NewHandler(customTableStore)
+	customTablesGroup := appGroup.Group("/custom-tables")
+	customTablesGroup.Get("/", handler.Typed(customTableHandler.List))
+	customTablesGroup.Post("/", handler.TypedWithBody(customTableHandler.Create))
+	customTableGroup := customTablesGroup.Group("/{tableID}")
+	customTableGroup.Get("/", handler.Typed(customTableHandler.Get))
+	customTableGroup.Patch("/", handler.TypedWithBody(customTableHandler.Update))
+	customTableGroup.Delete("/", handler.Typed(customTableHandler.Delete))
+	customTableGroup.Post("/rows", handler.TypedWithBody(customTableHandler.InsertRow))
+	customTableGroup.Post("/rows/query", handler.TypedWithBody(customTableHandler.QueryRows))
+	customTableGroup.Post("/rows/import", handler.TypedWithBody(customTableHandler.ImportRows))
+	customTableGroup.Post("/rows/export", handler.TypedWithBody(customTableHandler.ExportRows))
+	customTableGroup.Patch("/rows", handler.TypedWithBody(customTableHandler.UpdateRows))
+	customTableGroup.Delete("/rows", handler.TypedWithBody(customTableHandler.DeleteRows))
+	customTableGroup.Patch("/rows/{rowID}", handler.TypedWithBody(customTableHandler.PatchRow))
+	customTableGroup.Delete("/rows/{rowID}", handler.Typed(customTableHandler.DeleteRow))
 
 	// Schedule routes
 	scheduleHandler := schedulehandler.NewScheduleHandler(scheduleStore)

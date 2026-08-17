@@ -143,6 +143,97 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 			"mode":             string(n.Data.EventExecutionMode),
 		}))
 		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionTableInsert:
+		if ctx.CustomTable == nil {
+			return traceError(n, fmt.Errorf("custom table provider is not configured"))
+		}
+		scopeID, err := evaluateCustomTableScope(ctx, n.Data.TableScopeID)
+		if err != nil {
+			return traceError(n, err)
+		}
+		fields, err := evaluateCustomTableFields(ctx, n.Data.TableFields)
+		if err != nil {
+			return traceError(n, err)
+		}
+		result, err := ctx.CustomTable.Insert(ctx, n.Data.CustomTableID, scopeID, fields)
+		if err != nil {
+			return traceError(n, err)
+		}
+		ctx.StoreNodeResult(n, thing.FromAny(map[string]any{
+			"id":  result.Row.ID,
+			"row": result.Row.Data,
+		}))
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionTableFindOne:
+		if ctx.CustomTable == nil {
+			return traceError(n, fmt.Errorf("custom table provider is not configured"))
+		}
+		query, err := evaluateCustomTableQuery(ctx, n.Data)
+		if err != nil {
+			return traceError(n, err)
+		}
+		result, err := ctx.CustomTable.FindOne(ctx, n.Data.CustomTableID, query)
+		if err != nil {
+			return traceError(n, err)
+		}
+		var row any
+		if result.Row != nil {
+			row = result.Row.Data
+		}
+		ctx.StoreNodeResult(n, thing.FromAny(map[string]any{"found": result.Found, "row": row}))
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionTableQuery:
+		if ctx.CustomTable == nil {
+			return traceError(n, fmt.Errorf("custom table provider is not configured"))
+		}
+		query, err := evaluateCustomTableQuery(ctx, n.Data)
+		if err != nil {
+			return traceError(n, err)
+		}
+		result, err := ctx.CustomTable.Query(ctx, n.Data.CustomTableID, query)
+		if err != nil {
+			return traceError(n, err)
+		}
+		rows := make([]any, len(result.Rows))
+		for i, row := range result.Rows {
+			rows[i] = row.Data
+		}
+		ctx.StoreNodeResult(n, thing.FromAny(map[string]any{
+			"rows": rows, "count": result.Count, "total_count": result.TotalCount,
+		}))
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionTableUpdate:
+		if ctx.CustomTable == nil {
+			return traceError(n, fmt.Errorf("custom table provider is not configured"))
+		}
+		query, err := evaluateCustomTableQuery(ctx, n.Data)
+		if err != nil {
+			return traceError(n, err)
+		}
+		updates, err := evaluateCustomTableMutations(ctx, n.Data.TableUpdates)
+		if err != nil {
+			return traceError(n, err)
+		}
+		result, err := ctx.CustomTable.Update(ctx, n.Data.CustomTableID, query, updates)
+		if err != nil {
+			return traceError(n, err)
+		}
+		ctx.StoreNodeResult(n, thing.FromAny(map[string]any{"affected_rows": result.AffectedRows}))
+		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionTableDelete:
+		if ctx.CustomTable == nil {
+			return traceError(n, fmt.Errorf("custom table provider is not configured"))
+		}
+		query, err := evaluateCustomTableQuery(ctx, n.Data)
+		if err != nil {
+			return traceError(n, err)
+		}
+		result, err := ctx.CustomTable.Delete(ctx, n.Data.CustomTableID, query)
+		if err != nil {
+			return traceError(n, err)
+		}
+		ctx.StoreNodeResult(n, thing.FromAny(map[string]any{"affected_rows": result.AffectedRows}))
+		return n.ExecuteChildren(ctx)
 	case FlowNodeTypeActionResponseCreate:
 		if ctx.IsEntry() {
 			return n.resumeFromComponent(ctx)
@@ -2616,6 +2707,74 @@ func evaluateInternalEventValue(ctx *FlowContext, value any) (any, error) {
 	default:
 		return value, nil
 	}
+}
+
+func evaluateCustomTableScope(ctx *FlowContext, template string) (string, error) {
+	if strings.TrimSpace(template) != "" {
+		value, err := ctx.EvalTemplate(template)
+		if err != nil {
+			return "", fmt.Errorf("failed to evaluate table scope: %w", err)
+		}
+		return value.String(), nil
+	}
+	if ctx.Data != nil && ctx.Data.GuildID() != 0 {
+		return strconv.FormatUint(uint64(ctx.Data.GuildID()), 10), nil
+	}
+	return "", nil
+}
+
+func evaluateCustomTableFields(ctx *FlowContext, fields map[string]any) (map[string]any, error) {
+	if fields == nil {
+		return map[string]any{}, nil
+	}
+	value, err := evaluateInternalEventValue(ctx, fields)
+	if err != nil {
+		return nil, fmt.Errorf("failed to evaluate table fields: %w", err)
+	}
+	return value.(map[string]any), nil
+}
+
+func evaluateCustomTableQuery(ctx *FlowContext, data FlowNodeData) (provider.CustomTableQueryRequest, error) {
+	scopeID, err := evaluateCustomTableScope(ctx, data.TableScopeID)
+	if err != nil {
+		return provider.CustomTableQueryRequest{}, err
+	}
+	filters := make([]provider.CustomTableFilter, len(data.TableFilters))
+	for i, filter := range data.TableFilters {
+		value, err := evaluateInternalEventValue(ctx, filter.Value)
+		if err != nil {
+			return provider.CustomTableQueryRequest{}, fmt.Errorf("failed to evaluate table filter %d: %w", i+1, err)
+		}
+		filters[i] = provider.CustomTableFilter{
+			ColumnID: filter.ColumnID,
+			Operator: provider.CustomTableFilterOperator(filter.Operator),
+			Value:    value,
+		}
+	}
+	sort := make([]provider.CustomTableSort, len(data.TableSort))
+	for i, item := range data.TableSort {
+		sort[i] = provider.CustomTableSort{ColumnID: item.ColumnID, Direction: item.Direction}
+	}
+	return provider.CustomTableQueryRequest{
+		ScopeID: scopeID, FilterMode: provider.CustomTableFilterMode(data.TableFilterMode),
+		Filters: filters, Sort: sort, Limit: data.TableLimit, Offset: data.TableOffset,
+	}, nil
+}
+
+func evaluateCustomTableMutations(ctx *FlowContext, updates []FlowTableMutation) ([]provider.CustomTableMutation, error) {
+	result := make([]provider.CustomTableMutation, len(updates))
+	for i, update := range updates {
+		value, err := evaluateInternalEventValue(ctx, update.Value)
+		if err != nil {
+			return nil, fmt.Errorf("failed to evaluate table update %d: %w", i+1, err)
+		}
+		result[i] = provider.CustomTableMutation{
+			ColumnID:  update.ColumnID,
+			Operation: provider.CustomTableMutationOperation(update.Operation),
+			Value:     value,
+		}
+	}
+	return result, nil
 }
 
 func (n *CompiledFlowNode) CreditsCost() int {

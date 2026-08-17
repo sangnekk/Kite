@@ -109,6 +109,11 @@ export const nodeTypes = {
   action_random_generate: FlowNodeActionBase,
   action_log: FlowNodeActionBase,
   action_event_emit: FlowNodeActionBase,
+  action_table_insert: FlowNodeActionBase,
+  action_table_find_one: FlowNodeActionBase,
+  action_table_query: FlowNodeActionBase,
+  action_table_update: FlowNodeActionBase,
+  action_table_delete: FlowNodeActionBase,
 
   control_condition_compare: FlowNodeConditionCompare,
   control_condition_item_compare: FlowNodeConditionItem,

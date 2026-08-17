@@ -6,6 +6,8 @@ type Features struct {
 	MaxGuilds            int  `json:"max_guilds"`
 	MaxCommands          int  `json:"max_commands"`
 	MaxVariables         int  `json:"max_variables"`
+	MaxCustomTables      int  `json:"max_custom_tables"`
+	MaxCustomEvents      int  `json:"max_custom_events"`
 	MaxMessages          int  `json:"max_messages"`
 	MaxEventListeners    int  `json:"max_event_listeners"`
 	MaxSchedules         int  `json:"max_schedules"`

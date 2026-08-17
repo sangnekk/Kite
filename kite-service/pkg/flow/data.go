@@ -136,6 +136,11 @@ const (
 	FlowNodeTypeActionChannelSlowmode       FlowNodeType = "action_channel_slowmode"
 	FlowNodeTypeActionQRCreate              FlowNodeType = "action_qr_create"
 	FlowNodeTypeActionEventEmit             FlowNodeType = "action_event_emit"
+	FlowNodeTypeActionTableInsert           FlowNodeType = "action_table_insert"
+	FlowNodeTypeActionTableFindOne          FlowNodeType = "action_table_find_one"
+	FlowNodeTypeActionTableQuery            FlowNodeType = "action_table_query"
+	FlowNodeTypeActionTableUpdate           FlowNodeType = "action_table_update"
+	FlowNodeTypeActionTableDelete           FlowNodeType = "action_table_delete"
 
 	FlowNodeTypeControlConditionCompare     FlowNodeType = "control_condition_compare"
 	FlowNodeTypeControlConditionItemCompare FlowNodeType = "control_condition_item_compare"
@@ -161,6 +166,23 @@ type FlowNode struct {
 	Type     FlowNodeType     `json:"type,omitempty"`
 	Data     FlowNodeData     `json:"data" tstype:"FlowNodeData & StringIndexable"`
 	Position FlowNodePosition `json:"position"`
+}
+
+type FlowTableFilter struct {
+	ColumnID string `json:"column_id"`
+	Operator string `json:"operator"`
+	Value    any    `json:"value,omitempty"`
+}
+
+type FlowTableSort struct {
+	ColumnID  string `json:"column_id"`
+	Direction string `json:"direction"`
+}
+
+type FlowTableMutation struct {
+	ColumnID  string `json:"column_id"`
+	Operation string `json:"operation"`
+	Value     any    `json:"value,omitempty"`
 }
 
 func (n FlowNode) Validate() error {
@@ -329,6 +351,18 @@ type FlowNodeData struct {
 	EventExecutionMode provider.InternalEventExecutionMode `json:"event_execution_mode,omitempty"`
 	EventFilter        string                              `json:"event_filter,omitempty"`
 
+	// Custom structured table actions. IDs are stable registry references;
+	// values may contain templates and are evaluated immediately before access.
+	CustomTableID   string              `json:"custom_table_id,omitempty"`
+	TableScopeID    string              `json:"table_scope_id,omitempty"`
+	TableFields     map[string]any      `json:"table_fields,omitempty"`
+	TableFilterMode string              `json:"table_filter_mode,omitempty"`
+	TableFilters    []FlowTableFilter   `json:"table_filters,omitempty"`
+	TableSort       []FlowTableSort     `json:"table_sort,omitempty"`
+	TableLimit      int                 `json:"table_limit,omitempty"`
+	TableOffset     int                 `json:"table_offset,omitempty"`
+	TableUpdates    []FlowTableMutation `json:"table_updates,omitempty"`
+
 	// Schedule Entry (on the entry_schedule node). ScheduleType selects the
 	// preset; the backend normalizes it to an interval or a cron expression via
 	// CompiledFlowNode.ScheduleSpec().
@@ -432,6 +466,20 @@ func (d FlowNodeData) Validate(nodeType FlowNodeType) error {
 			validation.In(provider.InternalEventExecutionModeAsync, provider.InternalEventExecutionModeSync),
 		)),
 
+		// Structured tables
+		validation.Field(&d.CustomTableID, validation.When(isCustomTableAction(nodeType), validation.Required)),
+		validation.Field(&d.TableFilterMode, validation.When(isCustomTableQueryAction(nodeType),
+			validation.In("", string(provider.CustomTableFilterModeAll), string(provider.CustomTableFilterModeAny)),
+		)),
+		validation.Field(&d.TableLimit, validation.When(nodeType == FlowNodeTypeActionTableQuery,
+			validation.Min(0), validation.Max(provider.MaxCustomTablePageSize),
+		)),
+		validation.Field(&d.TableOffset, validation.When(nodeType == FlowNodeTypeActionTableQuery,
+			validation.Min(0),
+		)),
+		validation.Field(&d.TableUpdates, validation.When(nodeType == FlowNodeTypeActionTableUpdate, validation.Required)),
+		validation.Field(&d.TableFilters, validation.When(nodeType == FlowNodeTypeActionTableUpdate || nodeType == FlowNodeTypeActionTableDelete, validation.Required)),
+
 		// Schedule Entry
 		validation.Field(&d.Description, validation.When(nodeType == FlowNodeTypeEntrySchedule,
 			validation.Required,
@@ -462,6 +510,21 @@ func (d FlowNodeData) Validate(nodeType FlowNodeType) error {
 			validation.Required,
 		)),
 	)
+}
+
+func isCustomTableAction(nodeType FlowNodeType) bool {
+	switch nodeType {
+	case FlowNodeTypeActionTableInsert, FlowNodeTypeActionTableFindOne, FlowNodeTypeActionTableQuery,
+		FlowNodeTypeActionTableUpdate, FlowNodeTypeActionTableDelete:
+		return true
+	default:
+		return false
+	}
+}
+
+func isCustomTableQueryAction(nodeType FlowNodeType) bool {
+	return nodeType == FlowNodeTypeActionTableFindOne || nodeType == FlowNodeTypeActionTableQuery ||
+		nodeType == FlowNodeTypeActionTableUpdate || nodeType == FlowNodeTypeActionTableDelete
 }
 
 type ComparsionMode string

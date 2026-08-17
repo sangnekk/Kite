@@ -97,6 +97,58 @@
       "creditsCost": null
     },
     {
+      "type": "entry_custom_event",
+      "category": "entry",
+      "section": "Khởi đầu",
+      "contextTypes": null,
+      "title": "Khi có sự kiện nội bộ",
+      "description": "Kích hoạt flow từ một event đã đăng ký trong ứng dụng.",
+      "icon": "radio-tower",
+      "color": "#eab308",
+      "dataFields": [
+        "custom_event_id",
+        "description",
+        "event_filter"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "custom_event_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "event_filter": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "custom_event_id",
+          "description"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": null
+    },
+    {
       "type": "entry_component_button",
       "category": "entry",
       "section": "Khởi đầu",
@@ -118,6 +170,81 @@
             "pattern": "^[a-z0-9_]+$"
           }
         },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": null
+    },
+    {
+      "type": "entry_schedule",
+      "category": "entry",
+      "section": "Khởi đầu",
+      "contextTypes": null,
+      "title": "Lịch biểu",
+      "description": "Chạy luồng theo lịch định kỳ. Thả các hành động vào đây!",
+      "icon": "clock",
+      "color": "#eab308",
+      "dataFields": [
+        "description",
+        "schedule_type",
+        "schedule_interval_seconds",
+        "schedule_time",
+        "schedule_weekdays",
+        "schedule_cron_expression",
+        "schedule_timezone"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "schedule_type": {
+            "type": "string",
+            "enum": [
+              "interval",
+              "daily",
+              "weekly",
+              "cron"
+            ]
+          },
+          "schedule_interval_seconds": {
+            "type": "number"
+          },
+          "schedule_time": {
+            "type": "string"
+          },
+          "schedule_weekdays": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "schedule_cron_expression": {
+            "type": "string"
+          },
+          "schedule_timezone": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "description",
+          "schedule_type"
+        ],
         "additionalProperties": false,
         "$schema": "http://json-schema.org/draft-07/schema#"
       },
@@ -5848,6 +5975,741 @@
       "resultSchema": null,
       "producesResult": false,
       "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_event_emit",
+      "category": "data",
+      "section": "Sự kiện nội bộ",
+      "contextTypes": null,
+      "title": "Phát sự kiện nội bộ",
+      "description": "Phát một event đã đăng ký cho các flow đang lắng nghe.",
+      "icon": "send",
+      "color": "#3b82f6",
+      "dataFields": [
+        "custom_event_id",
+        "event_payload",
+        "event_execution_mode",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "custom_event_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "event_payload": {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "event_execution_mode": {
+            "type": "string",
+            "enum": [
+              "async",
+              "sync"
+            ]
+          },
+          "temporary_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "custom_event_id",
+          "event_execution_mode"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "event_id": {
+            "type": "string"
+          },
+          "event_name": {
+            "type": "string"
+          },
+          "subscriber_count": {
+            "type": "number"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "async",
+              "sync"
+            ]
+          }
+        },
+        "required": [
+          "event_id",
+          "event_name",
+          "subscriber_count",
+          "mode"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "producesResult": true,
+      "resultKind": "object",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_table_insert",
+      "category": "data",
+      "section": "Cơ sở dữ liệu",
+      "contextTypes": null,
+      "title": "Thêm dòng dữ liệu",
+      "description": "Thêm một bản ghi mới vào bảng dữ liệu.",
+      "icon": "database-zap",
+      "color": "#3b82f6",
+      "dataFields": [
+        "custom_table_id",
+        "table_scope_id",
+        "table_fields",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "custom_table_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "table_scope_id": {
+            "type": "string"
+          },
+          "table_fields": {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "temporary_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "custom_table_id"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "row": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "id",
+          "row"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "producesResult": true,
+      "resultKind": "object",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_table_find_one",
+      "category": "data",
+      "section": "Cơ sở dữ liệu",
+      "contextTypes": null,
+      "title": "Tìm một dòng",
+      "description": "Tìm bản ghi đầu tiên khớp bộ lọc.",
+      "icon": "scan-search",
+      "color": "#3b82f6",
+      "dataFields": [
+        "custom_table_id",
+        "table_scope_id",
+        "table_filters",
+        "table_sort",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "custom_table_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "table_scope_id": {
+            "type": "string"
+          },
+          "table_filter_mode": {
+            "type": "string",
+            "enum": [
+              "all",
+              "any"
+            ]
+          },
+          "table_filters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "column_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "operator": {
+                  "type": "string",
+                  "enum": [
+                    "equal",
+                    "not_equal",
+                    "greater_than",
+                    "greater_than_or_equal",
+                    "less_than",
+                    "less_than_or_equal",
+                    "contains",
+                    "starts_with",
+                    "ends_with",
+                    "is_null",
+                    "is_not_null"
+                  ]
+                },
+                "value": {}
+              },
+              "required": [
+                "column_id",
+                "operator"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "table_sort": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "column_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "direction": {
+                  "type": "string",
+                  "enum": [
+                    "asc",
+                    "desc"
+                  ]
+                }
+              },
+              "required": [
+                "column_id",
+                "direction"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "temporary_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "custom_table_id"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "found": {
+            "type": "boolean"
+          },
+          "row": {
+            "anyOf": [
+              {
+                "type": "object",
+                "additionalProperties": {}
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "found",
+          "row"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "producesResult": true,
+      "resultKind": "object",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_table_query",
+      "category": "data",
+      "section": "Cơ sở dữ liệu",
+      "contextTypes": null,
+      "title": "Truy vấn bảng",
+      "description": "Lấy danh sách bản ghi có lọc, sắp xếp và phân trang.",
+      "icon": "rows-3",
+      "color": "#3b82f6",
+      "dataFields": [
+        "custom_table_id",
+        "table_scope_id",
+        "table_filters",
+        "table_sort",
+        "table_pagination",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "custom_table_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "table_scope_id": {
+            "type": "string"
+          },
+          "table_filter_mode": {
+            "type": "string",
+            "enum": [
+              "all",
+              "any"
+            ]
+          },
+          "table_filters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "column_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "operator": {
+                  "type": "string",
+                  "enum": [
+                    "equal",
+                    "not_equal",
+                    "greater_than",
+                    "greater_than_or_equal",
+                    "less_than",
+                    "less_than_or_equal",
+                    "contains",
+                    "starts_with",
+                    "ends_with",
+                    "is_null",
+                    "is_not_null"
+                  ]
+                },
+                "value": {}
+              },
+              "required": [
+                "column_id",
+                "operator"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "table_sort": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "column_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "direction": {
+                  "type": "string",
+                  "enum": [
+                    "asc",
+                    "desc"
+                  ]
+                }
+              },
+              "required": [
+                "column_id",
+                "direction"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "table_limit": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "table_offset": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "temporary_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "custom_table_id"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": {}
+            }
+          },
+          "count": {
+            "type": "number"
+          },
+          "total_count": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "rows",
+          "count",
+          "total_count"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "producesResult": true,
+      "resultKind": "object",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_table_update",
+      "category": "data",
+      "section": "Cơ sở dữ liệu",
+      "contextTypes": null,
+      "title": "Cập nhật dòng dữ liệu",
+      "description": "Cập nhật các bản ghi khớp bộ lọc.",
+      "icon": "database-backup",
+      "color": "#3b82f6",
+      "dataFields": [
+        "custom_table_id",
+        "table_scope_id",
+        "table_filters",
+        "table_updates",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "custom_table_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "table_scope_id": {
+            "type": "string"
+          },
+          "table_filter_mode": {
+            "type": "string",
+            "enum": [
+              "all",
+              "any"
+            ]
+          },
+          "table_filters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "column_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "operator": {
+                  "type": "string",
+                  "enum": [
+                    "equal",
+                    "not_equal",
+                    "greater_than",
+                    "greater_than_or_equal",
+                    "less_than",
+                    "less_than_or_equal",
+                    "contains",
+                    "starts_with",
+                    "ends_with",
+                    "is_null",
+                    "is_not_null"
+                  ]
+                },
+                "value": {}
+              },
+              "required": [
+                "column_id",
+                "operator"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1
+          },
+          "table_sort": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "column_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "direction": {
+                  "type": "string",
+                  "enum": [
+                    "asc",
+                    "desc"
+                  ]
+                }
+              },
+              "required": [
+                "column_id",
+                "direction"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "table_updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "column_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "operation": {
+                  "type": "string",
+                  "enum": [
+                    "set",
+                    "increment",
+                    "decrement"
+                  ]
+                },
+                "value": {}
+              },
+              "required": [
+                "column_id",
+                "operation"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1
+          },
+          "temporary_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "custom_table_id",
+          "table_filters",
+          "table_updates"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "affected_rows": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "affected_rows"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "producesResult": true,
+      "resultKind": "object",
+      "ownsChildren": false,
+      "creditsCost": 1
+    },
+    {
+      "type": "action_table_delete",
+      "category": "data",
+      "section": "Cơ sở dữ liệu",
+      "contextTypes": null,
+      "title": "Xóa dòng dữ liệu",
+      "description": "Xóa các bản ghi khớp bộ lọc.",
+      "icon": "trash-2",
+      "color": "#3b82f6",
+      "dataFields": [
+        "custom_table_id",
+        "table_scope_id",
+        "table_filters",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "custom_table_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "table_scope_id": {
+            "type": "string"
+          },
+          "table_filter_mode": {
+            "type": "string",
+            "enum": [
+              "all",
+              "any"
+            ]
+          },
+          "table_filters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "column_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "operator": {
+                  "type": "string",
+                  "enum": [
+                    "equal",
+                    "not_equal",
+                    "greater_than",
+                    "greater_than_or_equal",
+                    "less_than",
+                    "less_than_or_equal",
+                    "contains",
+                    "starts_with",
+                    "ends_with",
+                    "is_null",
+                    "is_not_null"
+                  ]
+                },
+                "value": {}
+              },
+              "required": [
+                "column_id",
+                "operator"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1
+          },
+          "table_sort": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "column_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "direction": {
+                  "type": "string",
+                  "enum": [
+                    "asc",
+                    "desc"
+                  ]
+                }
+              },
+              "required": [
+                "column_id",
+                "direction"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "temporary_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "custom_table_id",
+          "table_filters"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "affected_rows": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "affected_rows"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "producesResult": true,
+      "resultKind": "object",
       "ownsChildren": false,
       "creditsCost": 1
     },

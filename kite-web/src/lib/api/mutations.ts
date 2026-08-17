@@ -32,6 +32,20 @@ import {
   CustomEventCreateResponse,
   CustomEventUpdateRequest,
   CustomEventUpdateResponse,
+  CustomTableCreateRequest,
+  CustomTableCreateResponse,
+  CustomTableDeleteResponse,
+  CustomTableExportRequest,
+  CustomTableExportResponse,
+  CustomTableImportRequest,
+  CustomTableImportResponse,
+  CustomTableRowDeleteResponse,
+  CustomTableRowInsertRequest,
+  CustomTableRowInsertResponse,
+  CustomTableRowPatchRequest,
+  CustomTableRowPatchResponse,
+  CustomTableUpdateRequest,
+  CustomTableUpdateResponse,
   EventListenerCreateRequest,
   EventListenerCreateResponse,
   EventListenerDeleteResponse,
@@ -365,6 +379,146 @@ export function useCustomEventUpdateMutation(appId: string, customEventId: strin
       ),
     onSuccess: () =>
       client.invalidateQueries({ queryKey: ["apps", appId, "custom-events"] }),
+  });
+}
+
+export function useCustomTableCreateMutation(appId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (request: CustomTableCreateRequest) =>
+      apiRequest<CustomTableCreateResponse>(`/v1/apps/${appId}/custom-tables`, {
+        method: "POST",
+        body: JSON.stringify(request),
+        headers: { "Content-Type": "application/json" },
+      }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["apps", appId, "custom-tables"] }),
+  });
+}
+
+export function useCustomTableUpdateMutation(appId: string, tableId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (request: CustomTableUpdateRequest) =>
+      apiRequest<CustomTableUpdateResponse>(
+        `/v1/apps/${appId}/custom-tables/${tableId}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(request),
+          headers: { "Content-Type": "application/json" },
+        }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["apps", appId, "custom-tables"] });
+      queryClient.invalidateQueries({ queryKey: ["apps", appId, "custom-tables", tableId] });
+    },
+  });
+}
+
+export function useCustomTableDeleteMutation(appId: string, tableId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      apiRequest<CustomTableDeleteResponse>(
+        `/v1/apps/${appId}/custom-tables/${tableId}`,
+        { method: "DELETE" }
+      ),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["apps", appId, "custom-tables"] }),
+  });
+}
+
+export function useCustomTableImportMutation(appId: string, tableId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (request: CustomTableImportRequest) =>
+      apiRequest<CustomTableImportResponse>(
+        `/v1/apps/${appId}/custom-tables/${tableId}/rows/import`,
+        {
+          method: "POST",
+          body: JSON.stringify(request),
+          headers: { "Content-Type": "application/json" },
+        }
+      ),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ["apps", appId, "custom-tables", tableId, "rows"],
+      }),
+  });
+}
+
+export function useCustomTableExportMutation(appId: string, tableId: string) {
+  return useMutation({
+    mutationFn: (request: CustomTableExportRequest) =>
+      apiRequest<CustomTableExportResponse>(
+        `/v1/apps/${appId}/custom-tables/${tableId}/rows/export`,
+        {
+          method: "POST",
+          body: JSON.stringify(request),
+          headers: { "Content-Type": "application/json" },
+        }
+      ),
+  });
+}
+
+export function useCustomTableRowInsertMutation(appId: string, tableId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (request: CustomTableRowInsertRequest) =>
+      apiRequest<CustomTableRowInsertResponse>(
+        `/v1/apps/${appId}/custom-tables/${tableId}/rows`,
+        {
+          method: "POST",
+          body: JSON.stringify(request),
+          headers: { "Content-Type": "application/json" },
+        }
+      ),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ["apps", appId, "custom-tables", tableId, "rows"],
+      }),
+  });
+}
+
+export function useCustomTableRowPatchMutation(
+  appId: string,
+  tableId: string,
+  rowId: string
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (request: CustomTableRowPatchRequest) =>
+      apiRequest<CustomTableRowPatchResponse>(
+        `/v1/apps/${appId}/custom-tables/${tableId}/rows/${rowId}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(request),
+          headers: { "Content-Type": "application/json" },
+        }
+      ),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ["apps", appId, "custom-tables", tableId, "rows"],
+      }),
+  });
+}
+
+export function useCustomTableRowDeleteMutation(
+  appId: string,
+  tableId: string,
+  rowId: string
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      apiRequest<CustomTableRowDeleteResponse>(
+        `/v1/apps/${appId}/custom-tables/${tableId}/rows/${rowId}`,
+        { method: "DELETE" }
+      ),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ["apps", appId, "custom-tables", tableId, "rows"],
+      }),
   });
 }
 

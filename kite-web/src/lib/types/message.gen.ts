@@ -8,23 +8,80 @@
  * 9-17 are the new Components V2 layout/content components.
  */
 export const ComponentTypeActionRow = 1;
+/**
+ * Discord component types. Types 1-8 are the classic ("V1") components, types
+ * 9-17 are the new Components V2 layout/content components.
+ */
 export const ComponentTypeButton = 2;
+/**
+ * Discord component types. Types 1-8 are the classic ("V1") components, types
+ * 9-17 are the new Components V2 layout/content components.
+ */
 export const ComponentTypeStringSelect = 3;
+/**
+ * Discord component types. Types 1-8 are the classic ("V1") components, types
+ * 9-17 are the new Components V2 layout/content components.
+ */
 export const ComponentTypeTextInput = 4;
+/**
+ * Discord component types. Types 1-8 are the classic ("V1") components, types
+ * 9-17 are the new Components V2 layout/content components.
+ */
 export const ComponentTypeUserSelect = 5;
+/**
+ * Discord component types. Types 1-8 are the classic ("V1") components, types
+ * 9-17 are the new Components V2 layout/content components.
+ */
 export const ComponentTypeRoleSelect = 6;
+/**
+ * Discord component types. Types 1-8 are the classic ("V1") components, types
+ * 9-17 are the new Components V2 layout/content components.
+ */
 export const ComponentTypeMentionableSelect = 7;
+/**
+ * Discord component types. Types 1-8 are the classic ("V1") components, types
+ * 9-17 are the new Components V2 layout/content components.
+ */
 export const ComponentTypeChannelSelect = 8;
+/**
+ * Components V2
+ */
 export const ComponentTypeSection = 9;
+/**
+ * Discord component types. Types 1-8 are the classic ("V1") components, types
+ * 9-17 are the new Components V2 layout/content components.
+ */
 export const ComponentTypeTextDisplay = 10;
+/**
+ * Discord component types. Types 1-8 are the classic ("V1") components, types
+ * 9-17 are the new Components V2 layout/content components.
+ */
 export const ComponentTypeThumbnail = 11;
+/**
+ * Discord component types. Types 1-8 are the classic ("V1") components, types
+ * 9-17 are the new Components V2 layout/content components.
+ */
 export const ComponentTypeMediaGallery = 12;
+/**
+ * Discord component types. Types 1-8 are the classic ("V1") components, types
+ * 9-17 are the new Components V2 layout/content components.
+ */
 export const ComponentTypeFile = 13;
+/**
+ * Discord component types. Types 1-8 are the classic ("V1") components, types
+ * 9-17 are the new Components V2 layout/content components.
+ */
 export const ComponentTypeSeparator = 14;
+/**
+ * Discord component types. Types 1-8 are the classic ("V1") components, types
+ * 9-17 are the new Components V2 layout/content components.
+ */
 export const ComponentTypeContainer = 17;
 /**
  * MessageFlagsComponentsV2 (IS_COMPONENTS_V2) enables Components V2 for a
- * message. When set, the content and embeds fields are not allowed.
+ * message. When set, the content and embeds fields are not allowed and
+ * everything has to be expressed through components instead. Once a message has
+ * been sent with this flag it can no longer be removed.
  */
 export const MessageFlagsComponentsV2 = 1 << 15; // 32768
 export interface MessageData {
@@ -72,6 +129,13 @@ export interface EmbedFieldData {
   value?: string;
   inline?: boolean;
 }
+/**
+ * ComponentData is a single Discord message component. It is a recursive,
+ * "union-like" structure: depending on Type only a subset of the fields is
+ * relevant. It represents both the classic components (action rows, buttons,
+ * select menus) and the Components V2 layout/content components (containers,
+ * sections, text displays, thumbnails, media galleries, files, separators).
+ */
 export interface ComponentData {
   id?: number /* int */;
   type?: number /* int */;
@@ -123,10 +187,18 @@ export interface ComponentData {
   accessory?: ComponentData;
   flow_source_id?: string;
 }
+/**
+ * UnfurledMediaItemData references media for Components V2 (thumbnails, files,
+ * media gallery items). It is either an external URL or an uploaded asset that
+ * is referenced through attachment://<filename> on the wire.
+ */
 export interface UnfurledMediaItemData {
   url?: string;
   asset_id?: string;
 }
+/**
+ * MediaGalleryItemData is a single item of a Media Gallery (12) component.
+ */
 export interface MediaGalleryItemData {
   media?: UnfurledMediaItemData;
   description?: string;

@@ -45,7 +45,7 @@ type BillingWebhookResponse struct{}
 
 type BillingCheckoutRequest struct {
 	PlanID                string `json:"plan_id"`
-	LemonSqueezyVariantID string `json:"lemonsqueezy_variant_id"`
+	LemonSqueezyVariantID string `json:"lemonsqueezy_variant_id,omitempty"`
 }
 
 type BillingCheckoutField struct {
@@ -176,6 +176,8 @@ type BillingPlan struct {
 	FeatureMaxGuilds            int  `json:"feature_max_guilds"`
 	FeatureMaxCommands          int  `json:"feature_max_commands"`
 	FeatureMaxVariables         int  `json:"feature_max_variables"`
+	FeatureMaxCustomTables      int  `json:"feature_max_custom_tables"`
+	FeatureMaxCustomEvents      int  `json:"feature_max_custom_events"`
 	FeatureMaxMessages          int  `json:"feature_max_messages"`
 	FeatureMaxEventListeners    int  `json:"feature_max_event_listeners"`
 	FeatureMaxSchedules         int  `json:"feature_max_schedules"`

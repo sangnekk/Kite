@@ -8,6 +8,7 @@ import {
   useBanks,
   useCommands,
   useCustomEvents,
+  useCustomTables,
   useMessages,
   useVariables,
 } from "@/lib/hooks/api";
@@ -19,7 +20,11 @@ import {
   HTTPRequestData,
   ModalComponentData,
   PermissionOverwriteData,
+  FlowTableFilter,
+  FlowTableMutation,
+  FlowTableSort,
 } from "@/lib/types/flow.gen";
+import { CustomTable, CustomTableColumn } from "@/lib/types/wire.gen";
 import { Node, useNodes, useReactFlow, useStoreApi } from "@xyflow/react";
 import {
   ChevronDownIcon,
@@ -74,6 +79,7 @@ import { Input } from "../ui/input";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectSeparator,
   SelectTrigger,
@@ -134,6 +140,13 @@ const intputs: Record<string, any> = {
   event_payload: EventPayloadInput,
   event_execution_mode: EventExecutionModeInput,
   event_filter: EventFilterInput,
+  custom_table_id: CustomTableIDInput,
+  table_scope_id: TableScopeInput,
+  table_fields: TableFieldsInput,
+  table_filters: TableFiltersInput,
+  table_sort: TableSortInput,
+  table_pagination: TablePaginationInput,
+  table_updates: TableUpdatesInput,
   message_data: MessageDataInput,
   message_template_id: MessageTemplateInput,
   message_target: MessageTargetInput,
@@ -1033,68 +1046,736 @@ function CustomEventIDInput({ data, updateData, errors }: InputProps) {
   );
 }
 
-function EventPayloadInput({ data, updateData }: InputProps) {
-  const [advanced, setAdvanced] = useState(false);
-  const payload = data.event_payload || {};
+function useSelectedCustomTable(data: NodeData) {
+  const tables = (useCustomTables() ?? []).filter(
+    (table): table is CustomTable => Boolean(table)
+  );
+  return {
+    tables,
+    table: tables.find((table) => table.id === data.custom_table_id),
+  };
+}
 
-  function updatePayload(next: Record<string, unknown>) {
-    updateData({ event_payload: next });
+function CustomTableIDInput({ data, updateData, errors }: InputProps) {
+  const appId = useAppId();
+  const { tables, table } = useSelectedCustomTable(data);
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div>
+      <div className="font-medium text-foreground">Bảng dữ liệu</div>
+      <div className="mt-1 text-sm text-muted-foreground">
+        Chọn bảng đã tạo trong tab Dữ liệu. Flow lưu ID nên đổi tên bảng không
+        làm hỏng node.
+      </div>
+      <Popover open={open} onOpenChange={setOpen} modal>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="mt-2 min-h-11 w-full justify-between font-normal"
+          >
+            <span className="truncate font-mono">
+              {table?.name ?? "Chọn bảng dữ liệu..."}
+            </span>
+            <ChevronsUpDownIcon data-icon="inline-end" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="start"
+          className="w-[var(--radix-popover-trigger-width)] p-0"
+        >
+          <Command>
+            <CommandInput placeholder="Tìm bảng..." />
+            <CommandList>
+              <CommandEmpty>Không tìm thấy bảng dữ liệu.</CommandEmpty>
+              <CommandGroup>
+                {tables.map((item) => (
+                  <CommandItem
+                    key={item.id}
+                    value={item.name}
+                    onSelect={() => {
+                      updateData({
+                        custom_table_id: item.id,
+                        table_fields: {},
+                        table_filters: [],
+                        table_sort: [],
+                        table_updates: [],
+                      });
+                      setOpen(false);
+                    }}
+                    className="min-h-11"
+                  >
+                    <CheckIcon
+                      className={cn(
+                        item.id === data.custom_table_id
+                          ? "opacity-100"
+                          : "opacity-0"
+                      )}
+                    />
+                    <span className="truncate font-mono">{item.name}</span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+      {errors.custom_table_id && (
+        <div className="flex gap-1 pt-2 text-sm text-destructive">
+          <CircleAlertIcon />
+          <div>{errors.custom_table_id}</div>
+        </div>
+      )}
+      <Link
+        href={`/apps/${appId}/data`}
+        className="mt-1 inline-block text-xs text-primary hover:underline"
+      >
+        Quản lý bảng trong tab Dữ liệu
+      </Link>
+    </div>
+  );
+}
+
+function TableScopeInput({ data, updateData, errors }: InputProps) {
+  const { table } = useSelectedCustomTable(data);
+  if (!table || table.scope !== "guild") {
+    return null;
+  }
+  return (
+    <BaseInput
+      field="table_scope_id"
+      title="Máy chủ dữ liệu"
+      description="Để trống để tự dùng máy chủ đang chạy flow; nhập ID hoặc template khi flow không có guild context."
+      placeholder="{{ guild.id }}"
+      value={data.table_scope_id || ""}
+      updateValue={(value) => updateData({ table_scope_id: value || undefined })}
+      errors={errors}
+    />
+  );
+}
+
+function parseTableValue(value: string): unknown {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+}
+
+function formatTableValue(value: unknown): string {
+  if (value === undefined) return "";
+  return typeof value === "string" ? value : JSON.stringify(value) ?? "";
+}
+
+function TableValueInput({
+  column,
+  value,
+  onChange,
+  placeholder,
+}: {
+  column?: CustomTableColumn;
+  value: unknown;
+  onChange: (value: unknown) => void;
+  placeholder?: string;
+}) {
+  if (column?.type === "json") {
+    return <TableJSONValueInput value={value} onChange={onChange} />;
   }
 
-  function renameField(previousKey: string, nextKey: string) {
-    if (
-      nextKey !== previousKey &&
-      Object.prototype.hasOwnProperty.call(payload, nextKey)
-    ) {
-      return;
-    }
-    const next: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(payload)) {
-      next[key === previousKey ? nextKey : key] = value;
-    }
-    updatePayload(next);
+  const text = formatTableValue(value);
+  return (
+    <div className="relative">
+      <FlowPlaceholderInput
+        value={text}
+        onChange={(next) => onChange(parseTableValue(next))}
+        placeholder={placeholder ?? "Giá trị hoặc {{ template }}"}
+      />
+      <FlowPlaceholderExplorer
+        onSelect={(selected) => onChange(`${text}{{${selected}}}`)}
+      />
+    </div>
+  );
+}
+
+function TableJSONValueInput({
+  value,
+  onChange,
+}: {
+  value: unknown;
+  onChange: (value: unknown) => void;
+}) {
+  const isObject =
+    value === undefined ||
+    (value !== null && typeof value === "object" && !Array.isArray(value));
+
+  if (isObject) {
+    return (
+      <JSONObjectKeyValueInput
+        value={(value || {}) as Record<string, unknown>}
+        onChange={onChange}
+        emptyText="JSON đang trống. Thêm trường để tạo dữ liệu."
+        addLabel="Thêm trường JSON"
+      />
+    );
   }
 
-  function updateField(key: string, rawValue: string) {
-    let value: unknown = rawValue;
-    try {
-      value = JSON.parse(rawValue);
-    } catch {
-      // Templates and ordinary text remain strings.
-    }
-    updatePayload({ ...payload, [key]: value });
+  if (Array.isArray(value)) {
+    return (
+      <div className="flex flex-col gap-2">
+        <JsonEditor src={value} onChange={onChange} />
+        <Button type="button" variant="ghost" size="sm" onClick={() => onChange({})}>
+          Dùng trình nhập key/value
+        </Button>
+      </div>
+    );
   }
 
-  function removeField(key: string) {
-    const next = { ...payload };
-    delete next[key];
-    updatePayload(next);
+  const text = formatTableValue(value);
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="relative">
+        <FlowPlaceholderInput
+          value={text}
+          onChange={(next) => onChange(parseTableValue(next))}
+          placeholder="{{ result.row }}"
+        />
+        <FlowPlaceholderExplorer
+          onSelect={(selected) => onChange(`${text}{{${selected}}}`)}
+        />
+      </div>
+      <Button type="button" variant="ghost" size="sm" onClick={() => onChange({})}>
+        Dùng trình nhập key/value
+      </Button>
+    </div>
+  );
+}
+
+function TableFieldsInput({ data, updateData }: InputProps) {
+  const { table } = useSelectedCustomTable(data);
+  const fields = data.table_fields || {};
+
+  if (!table) {
+    return <TableSelectionHint />;
   }
 
-  function addField() {
-    let index = Object.keys(payload).length + 1;
-    let key = `field_${index}`;
-    while (Object.prototype.hasOwnProperty.call(payload, key)) {
-      key = `field_${++index}`;
-    }
-    updatePayload({ ...payload, [key]: "" });
+  function updateField(columnId: string, value: unknown) {
+    updateData({ table_fields: { ...fields, [columnId]: value } });
+  }
+
+  function clearField(columnId: string) {
+    const next = { ...fields };
+    delete next[columnId];
+    updateData({ table_fields: next });
   }
 
   return (
     <div>
-      <div className="font-medium text-foreground mb-1">Payload</div>
-      <div className="text-muted-foreground text-sm mb-2">
-        Object JSON gửi cho flow nhận. Giá trị chuỗi hỗ trợ biến template.
+      <div className="font-medium text-foreground">Dữ liệu dòng mới</div>
+      <div className="mt-1 text-sm text-muted-foreground">
+        Giá trị được kiểm tra theo kiểu cột. Bỏ trống cột để dùng default.
       </div>
+      <div className="mt-3 flex flex-col gap-3">
+        {table.schema.columns.map((column) => {
+          const included = Object.prototype.hasOwnProperty.call(fields, column.id);
+          return (
+            <Card key={column.id} className="p-3">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="truncate font-mono text-sm font-medium">
+                    {column.name}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {column.type}
+                    {column.required ? " · bắt buộc" : ""}
+                    {column.unique ? " · unique" : ""}
+                  </div>
+                </div>
+                {included && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Bỏ giá trị ${column.name}`}
+                    onClick={() => clearField(column.id)}
+                  >
+                    <XIcon />
+                  </Button>
+                )}
+              </div>
+              <TableValueInput
+                column={column}
+                value={fields[column.id]}
+                onChange={(value) => updateField(column.id, value)}
+                placeholder={column.has_default ? "Để trống để dùng default" : undefined}
+              />
+            </Card>
+          );
+        })}
+        {table.schema.columns.length === 0 && (
+          <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
+            Bảng chưa có cột. Hãy mở tab Dữ liệu để thiết kế schema.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const tableFilterOperators = [
+  ["equal", "Bằng"],
+  ["not_equal", "Khác"],
+  ["greater_than", "Lớn hơn"],
+  ["greater_than_or_equal", "Lớn hơn hoặc bằng"],
+  ["less_than", "Nhỏ hơn"],
+  ["less_than_or_equal", "Nhỏ hơn hoặc bằng"],
+  ["contains", "Chứa"],
+  ["starts_with", "Bắt đầu bằng"],
+  ["ends_with", "Kết thúc bằng"],
+  ["is_null", "Đang trống"],
+  ["is_not_null", "Không trống"],
+] as const;
+
+function TableColumnSelect({
+  columns,
+  value,
+  onChange,
+}: {
+  columns: CustomTableColumn[];
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger className="min-h-11">
+        <SelectValue placeholder="Chọn cột" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectGroup>
+          {columns.map((column) => (
+            <SelectItem key={column.id} value={column.id}>
+              {column.name}
+            </SelectItem>
+          ))}
+        </SelectGroup>
+      </SelectContent>
+    </Select>
+  );
+}
+
+function TableFiltersInput({ data, updateData, errors }: InputProps) {
+  const { table } = useSelectedCustomTable(data);
+  const filters = (data.table_filters || []) as FlowTableFilter[];
+  if (!table) return <TableSelectionHint />;
+
+  function updateFilter(index: number, next: Partial<FlowTableFilter>) {
+    updateData({
+      table_filters: filters.map((filter, i) =>
+        i === index ? { ...filter, ...next } : filter
+      ),
+    });
+  }
+
+  return (
+    <div>
+      <div className="font-medium text-foreground">Bộ lọc</div>
+      <div className="mt-1 text-sm text-muted-foreground">
+        Điều kiện được gửi dưới dạng có cấu trúc, không phải câu SQL tự do.
+      </div>
+      {filters.length > 1 && (
+        <div className="mt-3">
+          <BaseInput
+            type="select"
+            field="table_filter_mode"
+            title="Khớp điều kiện"
+            options={[
+              { value: "all", label: "Tất cả điều kiện (AND)" },
+              { value: "any", label: "Bất kỳ điều kiện (OR)" },
+            ]}
+            value={data.table_filter_mode || "all"}
+            updateValue={(value) => updateData({ table_filter_mode: value })}
+            errors={errors}
+          />
+        </div>
+      )}
+      <div className="mt-3 flex flex-col gap-3">
+        {filters.map((filter, index) => {
+          const noValue = filter.operator === "is_null" || filter.operator === "is_not_null";
+          const column = table.schema.columns.find(
+            (item) => item.id === filter.column_id
+          );
+          return (
+            <Card key={index} className="p-3">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <TableColumnSelect
+                  columns={table.schema.columns}
+                  value={filter.column_id}
+                  onChange={(column_id) => updateFilter(index, { column_id })}
+                />
+                <Select
+                  value={filter.operator}
+                  onValueChange={(operator) => updateFilter(index, { operator })}
+                >
+                  <SelectTrigger className="min-h-11">
+                    <SelectValue placeholder="Toán tử" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {tableFilterOperators.map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+              {!noValue && (
+                <div className="mt-2">
+                  <TableValueInput
+                    column={column}
+                    value={filter.value}
+                    onChange={(value) => updateFilter(index, { value })}
+                  />
+                </div>
+              )}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="mt-2"
+                onClick={() =>
+                  updateData({ table_filters: filters.filter((_, i) => i !== index) })
+                }
+              >
+                <TrashIcon data-icon="inline-start" />
+                Xóa điều kiện
+              </Button>
+            </Card>
+          );
+        })}
+        {filters.length === 0 && (
+          <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
+            Chưa có điều kiện. Query sẽ lấy mọi dòng trong scope hiện tại.
+          </div>
+        )}
+        <Button
+          type="button"
+          variant="outline"
+          className="min-h-11 w-full"
+          disabled={table.schema.columns.length === 0}
+          onClick={() =>
+            updateData({
+              table_filters: [
+                ...filters,
+                {
+                  column_id: table.schema.columns[0]?.id || "",
+                  operator: "equal",
+                  value: "",
+                },
+              ],
+            })
+          }
+        >
+          <PlusIcon data-icon="inline-start" />
+          Thêm điều kiện
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function TableSortInput({ data, updateData }: InputProps) {
+  const { table } = useSelectedCustomTable(data);
+  const sorts = (data.table_sort || []) as FlowTableSort[];
+  if (!table) return <TableSelectionHint />;
+  return (
+    <div>
+      <div className="font-medium text-foreground">Sắp xếp</div>
+      <div className="mt-3 flex flex-col gap-2">
+        {sorts.map((sort, index) => (
+          <div key={index} className="grid grid-cols-[1fr_8rem_auto] gap-2">
+            <TableColumnSelect
+              columns={table.schema.columns}
+              value={sort.column_id}
+              onChange={(column_id) =>
+                updateData({
+                  table_sort: sorts.map((item, i) =>
+                    i === index ? { ...item, column_id } : item
+                  ),
+                })
+              }
+            />
+            <Select
+              value={sort.direction}
+              onValueChange={(direction) =>
+                updateData({
+                  table_sort: sorts.map((item, i) =>
+                    i === index ? { ...item, direction } : item
+                  ),
+                })
+              }
+            >
+              <SelectTrigger className="min-h-11">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="asc">Tăng dần</SelectItem>
+                  <SelectItem value="desc">Giảm dần</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="Xóa sắp xếp"
+              onClick={() =>
+                updateData({ table_sort: sorts.filter((_, i) => i !== index) })
+              }
+            >
+              <TrashIcon />
+            </Button>
+          </div>
+        ))}
+        <Button
+          type="button"
+          variant="outline"
+          className="min-h-11 w-full"
+          disabled={table.schema.columns.length === 0}
+          onClick={() =>
+            updateData({
+              table_sort: [
+                ...sorts,
+                { column_id: table.schema.columns[0]?.id || "", direction: "asc" },
+              ],
+            })
+          }
+        >
+          <PlusIcon data-icon="inline-start" />
+          Thêm sắp xếp
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function TablePaginationInput({ data, updateData }: InputProps) {
+  return (
+    <div>
+      <div className="font-medium text-foreground">Phân trang</div>
+      <div className="mt-2 grid grid-cols-2 gap-3">
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-muted-foreground">Giới hạn</span>
+          <Input
+            type="number"
+            min={1}
+            max={100}
+            value={data.table_limit || 10}
+            onChange={(event) => updateData({ table_limit: Number(event.target.value) })}
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-muted-foreground">Bỏ qua</span>
+          <Input
+            type="number"
+            min={0}
+            value={data.table_offset || 0}
+            onChange={(event) => updateData({ table_offset: Number(event.target.value) })}
+          />
+        </label>
+      </div>
+    </div>
+  );
+}
+
+function TableUpdatesInput({ data, updateData }: InputProps) {
+  const { table } = useSelectedCustomTable(data);
+  const updates = (data.table_updates || []) as FlowTableMutation[];
+  if (!table) return <TableSelectionHint />;
+  return (
+    <div>
+      <div className="font-medium text-foreground">Giá trị cập nhật</div>
+      <div className="mt-1 text-sm text-muted-foreground">
+        Increment/decrement được thực thi trong transaction và chỉ dùng cho cột số.
+      </div>
+      <div className="mt-3 flex flex-col gap-3">
+        {updates.map((update, index) => {
+          const column = table.schema.columns.find((item) => item.id === update.column_id);
+          return (
+            <Card key={index} className="p-3">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <TableColumnSelect
+                  columns={table.schema.columns}
+                  value={update.column_id}
+                  onChange={(column_id) =>
+                    updateData({
+                      table_updates: updates.map((item, i) =>
+                        i === index ? { ...item, column_id, operation: "set" } : item
+                      ),
+                    })
+                  }
+                />
+                <Select
+                  value={update.operation}
+                  onValueChange={(operation) =>
+                    updateData({
+                      table_updates: updates.map((item, i) =>
+                        i === index ? { ...item, operation } : item
+                      ),
+                    })
+                  }
+                >
+                  <SelectTrigger className="min-h-11">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectItem value="set">Gán giá trị</SelectItem>
+                      {column?.type === "number" && (
+                        <>
+                          <SelectItem value="increment">Cộng</SelectItem>
+                          <SelectItem value="decrement">Trừ</SelectItem>
+                        </>
+                      )}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="mt-2">
+                <TableValueInput
+                  column={column}
+                  value={update.value}
+                  onChange={(value) =>
+                    updateData({
+                      table_updates: updates.map((item, i) =>
+                        i === index ? { ...item, value } : item
+                      ),
+                    })
+                  }
+                />
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="mt-2"
+                onClick={() =>
+                  updateData({ table_updates: updates.filter((_, i) => i !== index) })
+                }
+              >
+                <TrashIcon data-icon="inline-start" />
+                Xóa cập nhật
+              </Button>
+            </Card>
+          );
+        })}
+        <Button
+          type="button"
+          variant="outline"
+          className="min-h-11 w-full"
+          disabled={table.schema.columns.length === 0}
+          onClick={() =>
+            updateData({
+              table_updates: [
+                ...updates,
+                {
+                  column_id: table.schema.columns[0]?.id || "",
+                  operation: "set",
+                  value: "",
+                },
+              ],
+            })
+          }
+        >
+          <PlusIcon data-icon="inline-start" />
+          Thêm cập nhật
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function TableSelectionHint() {
+  return (
+    <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+      Chọn bảng dữ liệu trước để cấu hình cột.
+    </div>
+  );
+}
+
+function JSONObjectKeyValueInput({
+  value,
+  onChange,
+  emptyText,
+  addLabel,
+}: {
+  value: Record<string, unknown>;
+  onChange: (value: Record<string, unknown>) => void;
+  emptyText: string;
+  addLabel: string;
+}) {
+  const [advanced, setAdvanced] = useState(false);
+
+  function renameField(previousKey: string, nextKey: string) {
+    if (
+      nextKey !== previousKey &&
+      Object.prototype.hasOwnProperty.call(value, nextKey)
+    ) {
+      return;
+    }
+    const next: Record<string, unknown> = {};
+    for (const [key, fieldValue] of Object.entries(value)) {
+      next[key === previousKey ? nextKey : key] = fieldValue;
+    }
+    onChange(next);
+  }
+
+  function updateField(key: string, rawValue: string) {
+    let parsedValue: unknown = rawValue;
+    try {
+      parsedValue = JSON.parse(rawValue);
+    } catch {
+      // Templates and ordinary text remain strings.
+    }
+    onChange({ ...value, [key]: parsedValue });
+  }
+
+  function removeField(key: string) {
+    const next = { ...value };
+    delete next[key];
+    onChange(next);
+  }
+
+  function addField() {
+    let index = Object.keys(value).length + 1;
+    let key = `field_${index}`;
+    while (Object.prototype.hasOwnProperty.call(value, key)) {
+      key = `field_${++index}`;
+    }
+    onChange({ ...value, [key]: "" });
+  }
+
+  return (
+    <div>
       {advanced ? (
-        <JsonEditor src={payload} onChange={updatePayload} />
+        <JsonEditor src={value} onChange={onChange} />
       ) : (
-        <div className="space-y-3">
-          {Object.entries(payload).map(([key, value], index) => {
+        <div className="flex flex-col gap-3">
+          {Object.entries(value).map(([key, fieldValue], index) => {
             const textValue =
-              typeof value === "string" ? value : JSON.stringify(value) ?? "";
+              typeof fieldValue === "string"
+                ? fieldValue
+                : JSON.stringify(fieldValue) ?? "";
             return (
-              <div key={index} className="relative space-y-2 rounded-lg border p-3">
+              <div
+                key={index}
+                className="relative flex flex-col gap-2 rounded-lg border p-3"
+              >
                 <Button
                   type="button"
                   variant="ghost"
@@ -1103,7 +1784,7 @@ function EventPayloadInput({ data, updateData }: InputProps) {
                   onClick={() => removeField(key)}
                   aria-label={`Xóa trường ${key}`}
                 >
-                  <TrashIcon className="h-4 w-4" />
+                  <TrashIcon />
                 </Button>
                 <div className="pr-10">
                   <div className="mb-1 text-xs font-medium text-muted-foreground">
@@ -1135,9 +1816,9 @@ function EventPayloadInput({ data, updateData }: InputProps) {
               </div>
             );
           })}
-          {Object.keys(payload).length === 0 && (
+          {Object.keys(value).length === 0 && (
             <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
-              Payload đang trống. Thêm trường nếu flow nhận cần dữ liệu.
+              {emptyText}
             </div>
           )}
           <Button
@@ -1146,8 +1827,8 @@ function EventPayloadInput({ data, updateData }: InputProps) {
             className="min-h-11 w-full gap-2"
             onClick={addField}
           >
-            <PlusIcon className="h-4 w-4" />
-            Thêm trường payload
+            <PlusIcon data-icon="inline-start" />
+            {addLabel}
           </Button>
         </div>
       )}
@@ -1160,6 +1841,25 @@ function EventPayloadInput({ data, updateData }: InputProps) {
       >
         {advanced ? "Dùng trình nhập key/value" : "Chỉnh JSON nâng cao"}
       </Button>
+    </div>
+  );
+}
+
+function EventPayloadInput({ data, updateData }: InputProps) {
+  const payload = data.event_payload || {};
+
+  return (
+    <div>
+      <div className="mb-1 font-medium text-foreground">Payload</div>
+      <div className="mb-2 text-sm text-muted-foreground">
+        Object JSON gửi cho flow nhận. Giá trị chuỗi hỗ trợ biến template.
+      </div>
+      <JSONObjectKeyValueInput
+        value={payload}
+        onChange={(next) => updateData({ event_payload: next })}
+        emptyText="Payload đang trống. Thêm trường nếu flow nhận cần dữ liệu."
+        addLabel="Thêm trường payload"
+      />
     </div>
   );
 }

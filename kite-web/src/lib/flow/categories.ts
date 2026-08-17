@@ -129,6 +129,17 @@ export const nodeCategories = {
   ],
   data: [
     {
+      title: "Cơ sở dữ liệu",
+      nodeTypes: [
+        "action_table_insert",
+        "action_table_find_one",
+        "action_table_query",
+        "action_table_update",
+        "action_table_delete",
+      ],
+      contextTypes: null,
+    },
+    {
       title: "Biến lưu trữ",
       nodeTypes: [
         "action_variable_set",

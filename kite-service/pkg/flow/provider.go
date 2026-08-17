@@ -17,6 +17,7 @@ type FlowProviders struct {
 	MessageTemplate provider.MessageTemplateProvider
 	ResumePoint     ResumePointProvider
 	InternalEvent   provider.InternalEventProvider
+	CustomTable     provider.CustomTableProvider
 }
 
 type ResumePointProvider interface {

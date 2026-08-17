@@ -5,6 +5,12 @@ type StringIndexable = Record<string, unknown>;
 //////////
 // source: data.go
 
+export const MaxInternalEventPayloadBytes = 64 * 1024;
+/**
+ * The minimum interval (in seconds) allowed for an interval schedule. This caps
+ * how fast a schedule can burn credits — see the billing rationale in the plan.
+ */
+export const ScheduleMinIntervalSeconds = 60;
 export interface FlowData {
   nodes: FlowNode[];
   edges: FlowEdge[];
@@ -12,8 +18,9 @@ export interface FlowData {
 export type FlowNodeType = string;
 export const FlowNodeTypeEntryCommand: FlowNodeType = "entry_command";
 export const FlowNodeTypeEntryEvent: FlowNodeType = "entry_event";
-export const FlowNodeTypeEntryCustomEvent: FlowNodeType = "entry_custom_event";
 export const FlowNodeTypeEntryComponentButton: FlowNodeType = "entry_component_button";
+export const FlowNodeTypeEntrySchedule: FlowNodeType = "entry_schedule";
+export const FlowNodeTypeEntryCustomEvent: FlowNodeType = "entry_custom_event";
 export const FlowNodeTypeOptionCommandArgument: FlowNodeType = "option_command_argument";
 export const FlowNodeTypeOptionCommandPermissions: FlowNodeType = "option_command_permissions";
 export const FlowNodeTypeOptionCommandBotPermissions: FlowNodeType = "option_command_bot_permissions";
@@ -92,6 +99,11 @@ export const FlowNodeTypeActionMessagePurge: FlowNodeType = "action_message_purg
 export const FlowNodeTypeActionChannelSlowmode: FlowNodeType = "action_channel_slowmode";
 export const FlowNodeTypeActionQRCreate: FlowNodeType = "action_qr_create";
 export const FlowNodeTypeActionEventEmit: FlowNodeType = "action_event_emit";
+export const FlowNodeTypeActionTableInsert: FlowNodeType = "action_table_insert";
+export const FlowNodeTypeActionTableFindOne: FlowNodeType = "action_table_find_one";
+export const FlowNodeTypeActionTableQuery: FlowNodeType = "action_table_query";
+export const FlowNodeTypeActionTableUpdate: FlowNodeType = "action_table_update";
+export const FlowNodeTypeActionTableDelete: FlowNodeType = "action_table_delete";
 export const FlowNodeTypeControlConditionCompare: FlowNodeType = "control_condition_compare";
 export const FlowNodeTypeControlConditionItemCompare: FlowNodeType = "control_condition_item_compare";
 export const FlowNodeTypeControlConditionUser: FlowNodeType = "control_condition_user";
@@ -113,6 +125,20 @@ export interface FlowNode {
   type?: FlowNodeType;
   data: FlowNodeData & StringIndexable;
   position: FlowNodePosition;
+}
+export interface FlowTableFilter {
+  column_id: string;
+  operator: string;
+  value?: any;
+}
+export interface FlowTableSort {
+  column_id: string;
+  direction: string;
+}
+export interface FlowTableMutation {
+  column_id: string;
+  operation: string;
+  value?: any;
 }
 export interface FlowNodeData {
   /**
@@ -298,9 +324,22 @@ export interface FlowNodeData {
    * Custom internal event subscriber/publisher configuration.
    */
   custom_event_id?: string;
-  event_payload?: { [key: string]: any };
-  event_execution_mode?: "async" | "sync";
+  event_payload?: { [key: string]: any};
+  event_execution_mode?: any /* provider.InternalEventExecutionMode */;
   event_filter?: string;
+  /**
+   * Custom structured table actions. IDs are stable registry references;
+   * values may contain templates and are evaluated immediately before access.
+   */
+  custom_table_id?: string;
+  table_scope_id?: string;
+  table_fields?: { [key: string]: any};
+  table_filter_mode?: string;
+  table_filters?: FlowTableFilter[];
+  table_sort?: FlowTableSort[];
+  table_limit?: number /* int */;
+  table_offset?: number /* int */;
+  table_updates?: FlowTableMutation[];
   /**
    * Schedule Entry (on the entry_schedule node). ScheduleType selects the
    * preset; the backend normalizes it to an interval or a cron expression via
