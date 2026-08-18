@@ -195,7 +195,7 @@ type BillingPlanConfig struct {
 	FeatureMaxCustomEvents      int  `toml:"feature_max_custom_events" validate:"gte=-1"`
 	FeatureMaxMessages          int  `toml:"feature_max_messages"`
 	FeatureMaxEventListeners    int  `toml:"feature_max_event_listeners"`
-	FeatureMaxSchedules         int  `toml:"feature_max_schedules"`
+	FeatureMaxSchedules         int  `toml:"feature_max_schedules" validate:"gte=-1"`
 	FeaturePrioritySupport      bool `toml:"feature_priority_support"`
 	FeatureCustomBotStatus      bool `toml:"feature_custom_bot_status"`
 	FeatureAIIncluded           bool `toml:"feature_ai_included"`

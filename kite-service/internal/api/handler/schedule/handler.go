@@ -44,15 +44,8 @@ func (h *ScheduleHandler) HandleScheduleGet(c *handler.Context) (*wire.ScheduleG
 }
 
 func (h *ScheduleHandler) HandleScheduleCreate(c *handler.Context, req wire.ScheduleCreateRequest) (*wire.ScheduleCreateResponse, error) {
-	if c.Features.MaxSchedules != 0 {
-		scheduleCount, err := h.scheduleStore.CountSchedulesByApp(c.Context(), c.App.ID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to count schedules: %w", err)
-		}
-
-		if scheduleCount >= c.Features.MaxSchedules {
-			return nil, handler.ErrBadRequest("resource_limit", fmt.Sprintf("maximum number of schedules (%d) reached", c.Features.MaxSchedules))
-		}
+	if err := h.ensureScheduleCapacity(c, 1); err != nil {
+		return nil, err
 	}
 
 	schedule, err := buildScheduleFromFlow(req.FlowSource)
@@ -67,8 +60,11 @@ func (h *ScheduleHandler) HandleScheduleCreate(c *handler.Context, req wire.Sche
 	schedule.CreatedAt = time.Now().UTC()
 	schedule.UpdatedAt = time.Now().UTC()
 
-	created, err := h.scheduleStore.CreateSchedule(c.Context(), schedule)
+	created, err := h.scheduleStore.CreateSchedule(c.Context(), schedule, c.Features.MaxSchedules)
 	if err != nil {
+		if errors.Is(err, store.ErrResourceLimit) {
+			return nil, scheduleLimitError(c.Features.MaxSchedules)
+		}
 		return nil, fmt.Errorf("failed to create schedule: %w", err)
 	}
 
@@ -76,15 +72,8 @@ func (h *ScheduleHandler) HandleScheduleCreate(c *handler.Context, req wire.Sche
 }
 
 func (h *ScheduleHandler) HandleSchedulesImport(c *handler.Context, req wire.SchedulesImportRequest) (*wire.SchedulesImportResponse, error) {
-	if c.Features.MaxSchedules != 0 {
-		scheduleCount, err := h.scheduleStore.CountSchedulesByApp(c.Context(), c.App.ID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to count schedules: %w", err)
-		}
-
-		if scheduleCount+len(req.Schedules) > c.Features.MaxSchedules {
-			return nil, handler.ErrBadRequest("resource_limit", fmt.Sprintf("maximum number of schedules (%d) reached", c.Features.MaxSchedules))
-		}
+	if err := h.ensureScheduleCapacity(c, len(req.Schedules)); err != nil {
+		return nil, err
 	}
 
 	res := make([]*wire.Schedule, len(req.Schedules))
@@ -101,8 +90,11 @@ func (h *ScheduleHandler) HandleSchedulesImport(c *handler.Context, req wire.Sch
 		schedule.CreatedAt = time.Now().UTC()
 		schedule.UpdatedAt = time.Now().UTC()
 
-		created, err := h.scheduleStore.CreateSchedule(c.Context(), schedule)
+		created, err := h.scheduleStore.CreateSchedule(c.Context(), schedule, c.Features.MaxSchedules)
 		if err != nil {
+			if errors.Is(err, store.ErrResourceLimit) {
+				return nil, scheduleLimitError(c.Features.MaxSchedules)
+			}
 			return nil, fmt.Errorf("failed to create schedule: %w", err)
 		}
 
@@ -113,6 +105,10 @@ func (h *ScheduleHandler) HandleSchedulesImport(c *handler.Context, req wire.Sch
 }
 
 func (h *ScheduleHandler) HandleScheduleUpdate(c *handler.Context, req wire.ScheduleUpdateRequest) (*wire.ScheduleUpdateResponse, error) {
+	if req.Enabled && c.Features.MaxSchedules == 0 {
+		return nil, scheduleLimitError(0)
+	}
+
 	schedule, err := buildScheduleFromFlow(req.FlowSource)
 	if err != nil {
 		return nil, err
@@ -134,6 +130,10 @@ func (h *ScheduleHandler) HandleScheduleUpdate(c *handler.Context, req wire.Sche
 }
 
 func (h *ScheduleHandler) HandleScheduleUpdateEnabled(c *handler.Context, req wire.ScheduleUpdateEnabledRequest) (*wire.ScheduleUpdateEnabledResponse, error) {
+	if req.Enabled && c.Features.MaxSchedules == 0 {
+		return nil, scheduleLimitError(0)
+	}
+
 	schedule := &model.Schedule{
 		ID:              c.Schedule.ID,
 		Enabled:         req.Enabled,
@@ -172,6 +172,42 @@ func (h *ScheduleHandler) HandleScheduleUpdateEnabled(c *handler.Context, req wi
 	}
 
 	return wire.ScheduleToWire(updated), nil
+}
+
+func (h *ScheduleHandler) ensureScheduleCapacity(c *handler.Context, additional int) error {
+	limit := c.Features.MaxSchedules
+	if limit < 0 || additional == 0 {
+		return nil
+	}
+
+	scheduleCount, err := h.scheduleStore.CountSchedulesByApp(c.Context(), c.App.ID)
+	if err != nil {
+		return fmt.Errorf("failed to count schedules: %w", err)
+	}
+
+	if scheduleLimitReached(scheduleCount, additional, limit) {
+		return scheduleLimitError(limit)
+	}
+
+	return nil
+}
+
+func scheduleLimitReached(current, additional, limit int) bool {
+	return limit >= 0 && current+additional > limit
+}
+
+func scheduleLimitError(limit int) error {
+	if limit == 0 {
+		return handler.ErrBadRequest(
+			"resource_limit",
+			"Gói hiện tại không hỗ trợ lịch biểu tự động. Hãy nâng cấp để sử dụng tính năng này",
+		)
+	}
+
+	return handler.ErrBadRequest(
+		"resource_limit",
+		fmt.Sprintf("Gói hiện tại cho phép tối đa %d lịch biểu tự động", limit),
+	)
 }
 
 func (h *ScheduleHandler) HandleScheduleDelete(c *handler.Context) (*wire.ScheduleDeleteResponse, error) {

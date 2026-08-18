@@ -51,9 +51,22 @@ func (e *Engine) dispatchDueSchedules(ctx context.Context) error {
 		return fmt.Errorf("failed to get due schedules: %w", err)
 	}
 
+	scheduleLimits := make(map[string]int)
 	for _, schedule := range due {
 		if util.CluserForKey(schedule.AppID, e.env.Config.ClusterCount) != e.env.Config.ClusterIndex {
 			continue
+		}
+
+		if e.env.FeatureLookup != nil {
+			limit, ok := scheduleLimits[schedule.AppID]
+			if !ok {
+				limit = e.env.FeatureLookup.AppFeatures(ctx, schedule.AppID).MaxSchedules
+				scheduleLimits[schedule.AppID] = limit
+			}
+			if !scheduleLimitAllowsExecution(limit) {
+				e.disableScheduleForPlan(ctx, schedule, now)
+				continue
+			}
 		}
 
 		e.fireSchedule(ctx, schedule, now)
@@ -110,4 +123,30 @@ func (e *Engine) fireSchedule(ctx context.Context, schedule *model.Schedule, now
 	go e.env.executeScheduledFlow(ctx, schedule.AppID, compiled, entityLinks{
 		ScheduleID: null.StringFrom(schedule.ID),
 	})
+}
+
+func scheduleLimitAllowsExecution(limit int) bool {
+	return limit != 0
+}
+
+func (e *Engine) disableScheduleForPlan(ctx context.Context, schedule *model.Schedule, now time.Time) {
+	disabled := *schedule
+	disabled.Enabled = false
+	disabled.UpdatedAt = now
+
+	if _, err := e.env.ScheduleStore.UpdateSchedule(ctx, &disabled); err != nil {
+		slog.Error(
+			"Failed to disable schedule blocked by plan",
+			slog.String("app_id", schedule.AppID),
+			slog.String("schedule_id", schedule.ID),
+			slog.String("error", err.Error()),
+		)
+		return
+	}
+
+	slog.Info(
+		"Disabled schedule because the app plan does not include schedules",
+		slog.String("app_id", schedule.AppID),
+		slog.String("schedule_id", schedule.ID),
+	)
 }

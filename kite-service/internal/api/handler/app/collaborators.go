@@ -42,15 +42,14 @@ func (h *AppHandler) HandleAppCollaboratorCreate(c *handler.Context, req wire.Ap
 		return nil, handler.ErrForbidden("missing_permissions", "You don't have permissions to add collaborators to this app")
 	}
 
-	if c.Features.MaxCollaborators != 0 {
+	if c.Features.MaxCollaborators >= 0 {
 		collaboratorCount, err := h.appStore.CountCollaboratorsByApp(c.Context(), c.App.ID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to count collaborators: %w", err)
 		}
 
-		// We count the owner as a collaborator
-		if (collaboratorCount + 1) >= c.Features.MaxCollaborators {
-			return nil, handler.ErrBadRequest("resource_limit", fmt.Sprintf("maximum number of collaborators (%d) reached", c.Features.MaxCollaborators))
+		if collaboratorLimitReached(collaboratorCount, c.Features.MaxCollaborators) {
+			return nil, collaboratorLimitError(c.Features.MaxCollaborators)
 		}
 	}
 
@@ -72,12 +71,33 @@ func (h *AppHandler) HandleAppCollaboratorCreate(c *handler.Context, req wire.Ap
 		Role:      model.AppCollaboratorRole(req.Role),
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
-	})
+	}, c.Features.MaxCollaborators)
 	if err != nil {
+		if errors.Is(err, store.ErrResourceLimit) {
+			return nil, collaboratorLimitError(c.Features.MaxCollaborators)
+		}
 		return nil, err
 	}
 
 	return wire.CollaboratorToWire(collaborator), nil
+}
+
+func collaboratorLimitReached(current, limit int) bool {
+	return limit >= 0 && current >= limit
+}
+
+func collaboratorLimitError(limit int) error {
+	if limit == 0 {
+		return handler.ErrBadRequest(
+			"resource_limit",
+			"Gói hiện tại không hỗ trợ mời thêm cộng tác viên",
+		)
+	}
+
+	return handler.ErrBadRequest(
+		"resource_limit",
+		fmt.Sprintf("Gói hiện tại cho phép mời tối đa %d cộng tác viên, không tính chủ sở hữu", limit),
+	)
 }
 
 func (h *AppHandler) HandleAppCollaboratorDelete(c *handler.Context) (*wire.AppCollaboratorDeleteResponse, error) {

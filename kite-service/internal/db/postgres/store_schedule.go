@@ -54,13 +54,13 @@ func (c *Client) Schedule(ctx context.Context, id string) (*model.Schedule, erro
 	return rowToSchedule(row)
 }
 
-func (c *Client) CreateSchedule(ctx context.Context, schedule *model.Schedule) (*model.Schedule, error) {
+func (c *Client) CreateSchedule(ctx context.Context, schedule *model.Schedule, limit int) (*model.Schedule, error) {
 	flowSource, err := json.Marshal(schedule.FlowSource)
 	if err != nil {
 		return nil, err
 	}
 
-	row, err := c.Q.CreateSchedule(ctx, pgmodel.CreateScheduleParams{
+	params := pgmodel.CreateScheduleParams{
 		ID:    schedule.ID,
 		AppID: schedule.AppID,
 		ModuleID: pgtype.Text{
@@ -79,8 +79,42 @@ func (c *Client) CreateSchedule(ctx context.Context, schedule *model.Schedule) (
 		FlowSource:      flowSource,
 		CreatedAt:       pgtype.Timestamp{Time: schedule.CreatedAt.UTC(), Valid: true},
 		UpdatedAt:       pgtype.Timestamp{Time: schedule.UpdatedAt.UTC(), Valid: true},
-	})
+	}
+
+	if limit < 0 {
+		row, err := c.Q.CreateSchedule(ctx, params)
+		if err != nil {
+			return nil, err
+		}
+		return rowToSchedule(row)
+	}
+
+	// Serialize quota checks per app. A plain COUNT followed by INSERT can be
+	// raced by concurrent requests and exceed the plan limit.
+	tx, err := c.DB.Begin(ctx)
 	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck -- safe after Commit
+
+	if _, err := tx.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", schedule.AppID); err != nil {
+		return nil, err
+	}
+
+	queries := c.Q.WithTx(tx)
+	count, err := queries.CountSchedulesByApp(ctx, schedule.AppID)
+	if err != nil {
+		return nil, err
+	}
+	if int(count) >= limit {
+		return nil, store.ErrResourceLimit
+	}
+
+	row, err := queries.CreateSchedule(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
 

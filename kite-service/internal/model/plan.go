@@ -79,7 +79,7 @@ func (f Features) Merge(other Features) Features {
 		MaxCustomEvents:      mergeSignedFeatureLimit(f.MaxCustomEvents, other.MaxCustomEvents),
 		MaxMessages:          max(f.MaxMessages, other.MaxMessages),
 		MaxEventListeners:    max(f.MaxEventListeners, other.MaxEventListeners),
-		MaxSchedules:         max(f.MaxSchedules, other.MaxSchedules),
+		MaxSchedules:         mergeSignedFeatureLimit(f.MaxSchedules, other.MaxSchedules),
 		PrioritySupport:      f.PrioritySupport || other.PrioritySupport,
 		CustomBotStatus:      f.CustomBotStatus || other.CustomBotStatus,
 		AIIncluded:           f.AIIncluded || other.AIIncluded,

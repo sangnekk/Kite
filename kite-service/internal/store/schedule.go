@@ -11,7 +11,9 @@ type ScheduleStore interface {
 	SchedulesByApp(ctx context.Context, appID string) ([]*model.Schedule, error)
 	CountSchedulesByApp(ctx context.Context, appID string) (int, error)
 	Schedule(ctx context.Context, id string) (*model.Schedule, error)
-	CreateSchedule(ctx context.Context, schedule *model.Schedule) (*model.Schedule, error)
+	// CreateSchedule inserts a schedule only while the app remains below limit.
+	// A negative limit is unlimited; zero disables schedule creation.
+	CreateSchedule(ctx context.Context, schedule *model.Schedule, limit int) (*model.Schedule, error)
 	UpdateSchedule(ctx context.Context, schedule *model.Schedule) (*model.Schedule, error)
 	DeleteSchedule(ctx context.Context, id string) error
 

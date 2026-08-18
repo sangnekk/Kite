@@ -25,9 +25,14 @@ type SessionLookup interface {
 	SessionForApp(appID string) *state.State
 }
 
+type FeatureLookup interface {
+	AppFeatures(ctx context.Context, appID string) model.Features
+}
+
 type Env struct {
 	Config               EngineConfig
 	SessionLookup        SessionLookup
+	FeatureLookup        FeatureLookup
 	AppStore             store.AppStore
 	AppSettingsStore     store.AppSettingsStore
 	AssetStore           store.AssetStore

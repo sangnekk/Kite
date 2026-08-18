@@ -48,15 +48,48 @@ func (c *Client) CountCollaboratorsByApp(ctx context.Context, appID string) (int
 	return int(row), nil
 }
 
-func (c *Client) CreateCollaborator(ctx context.Context, collaborator *model.AppCollaborator) (*model.AppCollaborator, error) {
-	row, err := c.Q.CreateCollaborator(ctx, pgmodel.CreateCollaboratorParams{
+func (c *Client) CreateCollaborator(ctx context.Context, collaborator *model.AppCollaborator, limit int) (*model.AppCollaborator, error) {
+	params := pgmodel.CreateCollaboratorParams{
 		AppID:     collaborator.AppID,
 		UserID:    collaborator.UserID,
 		Role:      string(collaborator.Role),
 		CreatedAt: pgtype.Timestamp{Time: collaborator.CreatedAt, Valid: true},
 		UpdatedAt: pgtype.Timestamp{Time: collaborator.UpdatedAt, Valid: true},
-	})
+	}
+
+	if limit < 0 {
+		row, err := c.Q.CreateCollaborator(ctx, params)
+		if err != nil {
+			return nil, err
+		}
+		return rowToCollaborator(row, nil), nil
+	}
+
+	// Serialize per app so concurrent invitations cannot exceed the plan quota.
+	tx, err := c.DB.Begin(ctx)
 	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck -- safe after Commit
+
+	if _, err := tx.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", "collaborators:"+collaborator.AppID); err != nil {
+		return nil, err
+	}
+
+	queries := c.Q.WithTx(tx)
+	count, err := queries.CountCollaboratorsByApp(ctx, collaborator.AppID)
+	if err != nil {
+		return nil, err
+	}
+	if int(count) >= limit {
+		return nil, store.ErrResourceLimit
+	}
+
+	row, err := queries.CreateCollaborator(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
 

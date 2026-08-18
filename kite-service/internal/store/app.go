@@ -40,7 +40,9 @@ type AppStore interface {
 	Collaborator(ctx context.Context, appID string, userID string) (*model.AppCollaborator, error)
 	CollaboratorsByApp(ctx context.Context, appID string) ([]*model.AppCollaborator, error)
 	CountCollaboratorsByApp(ctx context.Context, appID string) (int, error)
-	CreateCollaborator(ctx context.Context, collaborator *model.AppCollaborator) (*model.AppCollaborator, error)
+	// CreateCollaborator inserts an invited collaborator while the app remains
+	// below limit. The app owner is not stored in this table and does not count.
+	CreateCollaborator(ctx context.Context, collaborator *model.AppCollaborator, limit int) (*model.AppCollaborator, error)
 	UpdateCollaborator(ctx context.Context, collaborator *model.AppCollaborator) (*model.AppCollaborator, error)
 	DeleteCollaborator(ctx context.Context, appID string, userID string) error
 

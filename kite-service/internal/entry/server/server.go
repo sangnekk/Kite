@@ -118,6 +118,7 @@ func StartServer(c context.Context, cfg *config.Config) error {
 	gatewayMgr.Run(ctx)
 
 	eng.SetSessionLookup(gatewayMgr)
+	eng.SetFeatureLookup(planManager)
 
 	// The scheduler runs on every cluster (sharded by app id like the engine), not
 	// just the primary one: a scheduled flow must execute on the cluster that owns

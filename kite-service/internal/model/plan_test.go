@@ -35,3 +35,15 @@ func TestFeaturesMergeTreatsNegativeOneCustomEventLimitAsUnlimited(t *testing.T)
 
 	assert.Equal(t, -1, features.MaxCustomEvents)
 }
+
+func TestPlanFeaturesIncludesScheduleLimit(t *testing.T) {
+	features := (Plan{FeatureMaxSchedules: 5}).Features()
+
+	assert.Equal(t, 5, features.MaxSchedules)
+}
+
+func TestFeaturesMergeTreatsNegativeOneScheduleLimitAsUnlimited(t *testing.T) {
+	features := (Features{MaxSchedules: 5}).Merge(Features{MaxSchedules: -1})
+
+	assert.Equal(t, -1, features.MaxSchedules)
+}

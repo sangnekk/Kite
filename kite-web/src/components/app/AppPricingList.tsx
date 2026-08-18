@@ -2,6 +2,7 @@ import {
   ArrowRightIcon,
   BotIcon,
   CheckIcon,
+  ClockIcon,
   CopyIcon,
   DatabaseIcon,
   HeadphonesIcon,
@@ -223,7 +224,7 @@ function PricingCard({
           <PlanMetric
             icon={UsersIcon}
             value={formatMetric(pricing.feature_max_collaborators)}
-            label="Cộng tác viên"
+            label="Có thể mời thêm"
           />
           <PlanMetric
             icon={WorkflowIcon}
@@ -257,6 +258,13 @@ function PricingCard({
             {...formatLimitFeature(
               pricing.feature_max_event_listeners,
               "bộ lắng nghe sự kiện",
+            )}
+          />
+          <PlanFeature
+            icon={ClockIcon}
+            {...formatLimitFeature(
+              pricing.feature_max_schedules,
+              "lịch biểu tự động",
             )}
           />
           <PlanFeature

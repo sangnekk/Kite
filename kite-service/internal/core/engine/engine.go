@@ -267,6 +267,10 @@ func (e *Engine) SetSessionLookup(sl SessionLookup) {
 	e.env.SessionLookup = sl
 }
 
+func (e *Engine) SetFeatureLookup(fl FeatureLookup) {
+	e.env.FeatureLookup = fl
+}
+
 func (e *Engine) HandleWebhookEvent(appID string, source model.WebhookIntegrationType, payload json.RawMessage) {
 	e.RLock()
 	app := e.apps[appID]

@@ -5,12 +5,7 @@ import {
 import { useAppId } from "@/lib/hooks/params";
 import { Schedule } from "@/lib/types/wire.gen";
 import { formatDateTime } from "@/lib/utils";
-import {
-  CheckIcon,
-  ClockIcon,
-  EllipsisIcon,
-  Trash2Icon,
-} from "lucide-react";
+import { CheckIcon, ClockIcon, EllipsisIcon, Trash2Icon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useCallback, useState } from "react";
@@ -52,8 +47,10 @@ function describeTrigger(schedule: Schedule): string {
 
 export default function ScheduleListEntry({
   schedule,
+  locked = false,
 }: {
   schedule: Schedule;
+  locked?: boolean;
 }) {
   const router = useRouter();
   const appId = useAppId();
@@ -61,7 +58,7 @@ export default function ScheduleListEntry({
   const deleteMutation = useScheduleDeleteMutation(appId, schedule.id);
   const updateEnabledMutation = useScheduleUpdateEnabledMutation(
     appId,
-    schedule.id
+    schedule.id,
   );
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -73,7 +70,7 @@ export default function ScheduleListEntry({
           toast.success("Đã xóa lịch biểu!");
         } else {
           toast.error(
-            `Xóa lịch biểu thất bại: ${res.error.message} (${res.error.code})`
+            `Xóa lịch biểu thất bại: ${res.error.message} (${res.error.code})`,
           );
         }
       },
@@ -81,7 +78,16 @@ export default function ScheduleListEntry({
   }, [deleteMutation]);
 
   const toggleEnabled = useCallback(() => {
-    updateEnabledMutation.mutate({ enabled: !schedule.enabled });
+    updateEnabledMutation.mutate(
+      { enabled: !schedule.enabled },
+      {
+        onSuccess(res) {
+          if (!res.success) {
+            toast.error(res.error.message);
+          }
+        },
+      },
+    );
   }, [updateEnabledMutation, schedule.enabled]);
 
   return (
@@ -103,7 +109,15 @@ export default function ScheduleListEntry({
           </div>
         </div>
         <div className="flex justify-end">
-          <Switch checked={schedule.enabled} onCheckedChange={toggleEnabled} />
+          <Switch
+            checked={schedule.enabled}
+            disabled={locked || updateEnabledMutation.isPending}
+            onCheckedChange={toggleEnabled}
+            aria-label={schedule.enabled ? "Tắt lịch biểu" : "Bật lịch biểu"}
+            title={
+              locked ? "Gói hiện tại không hỗ trợ lịch biểu tự động" : undefined
+            }
+          />
         </div>
       </div>
       <CardHeader>

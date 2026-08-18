@@ -27,7 +27,11 @@ export default function AppSettingsCollaborators() {
   const collaborators = useAppCollaborators();
 
   const maxCollaborators = useAppFeature((f) => f.max_collaborators) || 0;
-  const currentCollaborators = collaborators?.length || 0;
+  const invitedCollaborators =
+    collaborators?.filter((collaborator) => collaborator?.role !== "owner")
+      .length || 0;
+  const collaboratorLimitReached =
+    maxCollaborators >= 0 && invitedCollaborators >= maxCollaborators;
 
   const deleteMutation = useAppCollaboratorDeleteMutation(appId);
 
@@ -37,11 +41,14 @@ export default function AppSettingsCollaborators() {
         <div className="flex gap-3">
           <CardTitle>Cộng tác viên</CardTitle>
           <div className="text-muted-foreground">
-            {currentCollaborators} / {maxCollaborators}
+            {maxCollaborators === -1
+              ? `${invitedCollaborators} / không giới hạn`
+              : `${invitedCollaborators} / ${maxCollaborators}`}
           </div>
         </div>
         <CardDescription>
-          Thêm hoặc xóa người dùng khác có thể quản lý ứng dụng này.
+          Thêm hoặc xóa người dùng khác có thể quản lý ứng dụng này. Chủ sở hữu
+          không chiếm quota cộng tác viên.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -72,7 +79,7 @@ export default function AppSettingsCollaborators() {
                           onSuccess: (res) => {
                             if (!res.success) {
                               toast.error(
-                                `Xóa cộng tác viên thất bại: ${res.error.message} (${res.error.code})`
+                                `Xóa cộng tác viên thất bại: ${res.error.message} (${res.error.code})`,
                               );
                             }
                           },
@@ -91,10 +98,7 @@ export default function AppSettingsCollaborators() {
         </Table>
 
         <AppCollaboratorAddDialog>
-          <Button
-            variant="outline"
-            disabled={currentCollaborators >= maxCollaborators}
-          >
+          <Button variant="outline" disabled={collaboratorLimitReached}>
             Thêm cộng tác viên
           </Button>
         </AppCollaboratorAddDialog>
