@@ -57,7 +57,10 @@ type DiscordProvider interface {
 	DeleteRole(ctx context.Context, guildID discord.GuildID, roleID discord.RoleID) error
 
 	HasCreatedInteractionResponse(ctx context.Context, interactionID discord.InteractionID) (bool, error)
-	AutoDeferInteraction(ctx context.Context, interactionID discord.InteractionID, interactionToken string, flags discord.MessageFlags)
+	// AutoDeferInteraction defers the interaction with the given response type
+	// (a deferred reply or a deferred message update) if no response has been
+	// created shortly after it was called.
+	AutoDeferInteraction(ctx context.Context, interactionID discord.InteractionID, interactionToken string, responseType api.InteractionResponseType, flags discord.MessageFlags)
 
 	// ResolveAsset returns the content and metadata of an uploaded asset. It is
 	// used to turn asset references in Components V2 media into multipart
@@ -258,5 +261,5 @@ func (p *MockDiscordProvider) HasCreatedInteractionResponse(ctx context.Context,
 	return false, nil
 }
 
-func (p *MockDiscordProvider) AutoDeferInteraction(ctx context.Context, interactionID discord.InteractionID, interactionToken string, flags discord.MessageFlags) {
+func (p *MockDiscordProvider) AutoDeferInteraction(ctx context.Context, interactionID discord.InteractionID, interactionToken string, responseType api.InteractionResponseType, flags discord.MessageFlags) {
 }

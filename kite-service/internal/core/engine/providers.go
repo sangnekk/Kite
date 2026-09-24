@@ -510,6 +510,7 @@ func (p *DiscordProvider) AutoDeferInteraction(
 	ctx context.Context,
 	interactionID discord.InteractionID,
 	interactionToken string,
+	responseType api.InteractionResponseType,
 	flags discord.MessageFlags,
 ) {
 	select {
@@ -522,12 +523,14 @@ func (p *DiscordProvider) AutoDeferInteraction(
 		}
 
 		if !hasCreatedResponse {
-			_, err := p.CreateInteractionResponse(ctx, interactionID, interactionToken, api.InteractionResponse{
-				Type: api.DeferredMessageInteractionWithSource,
-				Data: &api.InteractionResponseData{
+			resp := api.InteractionResponse{Type: responseType}
+			if responseType == api.DeferredMessageInteractionWithSource {
+				resp.Data = &api.InteractionResponseData{
 					Flags: flags,
-				},
-			})
+				}
+			}
+
+			_, err := p.CreateInteractionResponse(ctx, interactionID, interactionToken, resp)
 			if err != nil {
 				slog.Error(
 					"Failed to auto-defer interaction",

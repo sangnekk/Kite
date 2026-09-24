@@ -56,7 +56,10 @@ func (h *AppHandler) HandleAppCollaboratorCreate(c *handler.Context, req wire.Ap
 	user, err := h.userStore.UserByDiscordID(c.Context(), req.DiscordUserID)
 	if err != nil {
 		if errors.Is(err, store.ErrNotFound) {
-			return nil, handler.ErrNotFound("unknown_user", "User not found")
+			return nil, handler.ErrNotFound(
+				"unknown_user",
+				"Không tìm thấy người dùng. Hãy kiểm tra lại ID Discord hoặc yêu cầu người này đăng nhập Kite ít nhất một lần",
+			)
 		}
 		return nil, err
 	}

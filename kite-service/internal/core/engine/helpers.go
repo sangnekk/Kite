@@ -232,6 +232,19 @@ func (s Env) executeFlowEvent(
 		)
 	}
 
+	// Stop a pending auto-defer before acknowledging the interaction ourselves,
+	// so both don't respond to it.
+	fCtx.Cancel()
+	ackCtx, ackCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	if err := flow.AcknowledgeComponentInteraction(ackCtx, fCtx); err != nil {
+		slog.Warn(
+			"Failed to acknowledge component interaction",
+			slog.String("app_id", appID),
+			slog.String("error", err.Error()),
+		)
+	}
+	ackCancel()
+
 	s.createUsageRecord(
 		appID,
 		model.UsageRecordTypeCommandFlowExecution,

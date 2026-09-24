@@ -3,7 +3,6 @@ package engine
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"log/slog"
 	"sync"
 	"time"
@@ -12,9 +11,6 @@ import (
 	"github.com/diamondburned/arikawa/v3/gateway"
 	"github.com/diamondburned/arikawa/v3/state"
 	"github.com/kitecloud/kite/kite-service/internal/model"
-	"github.com/kitecloud/kite/kite-service/internal/store"
-	"github.com/kitecloud/kite/kite-service/pkg/message"
-	"gopkg.in/guregu/null.v4"
 )
 
 type App struct {
@@ -27,6 +23,7 @@ type App struct {
 	pluginInstances map[string]*pluginInstance
 	commands        map[string]*Command
 	listeners       map[string]*EventListener
+	interactions    *interactionDeduper
 	// TODO?: Cache messages (LRUCache<*MessageInstance>)
 
 	settingsCache   *model.AppSettings
@@ -42,6 +39,7 @@ func NewApp(
 		env:             stores,
 		commands:        make(map[string]*Command),
 		listeners:       make(map[string]*EventListener),
+		interactions:    newInteractionDeduper(interactionDedupeTTL),
 		pluginInstances: make(map[string]*pluginInstance),
 	}
 }
@@ -196,6 +194,15 @@ func (a *App) HandleEvent(appID string, session *state.State, event gateway.Even
 			)
 		}
 
+		if !a.interactions.FirstSeen(e.ID) {
+			slog.Debug(
+				"Ignoring duplicate interaction",
+				slog.String("app_id", appID),
+				slog.String("interaction_id", e.ID.String()),
+			)
+			return
+		}
+
 		switch d := e.Data.(type) {
 		case *discord.CommandInteraction:
 			fullName := getFullCommandName(d)
@@ -218,202 +225,11 @@ func (a *App) HandleEvent(appID string, session *state.State, event gateway.Even
 					break
 				}
 			}
-		case *discord.ButtonInteraction:
-			customID := string(d.CustomID)
-			resumePointID, _, isResume := message.DecodeCustomIDMessageComponentResumePoint(customID)
-			if isResume {
-				resumePoint, err := a.env.ResumePointStore.ResumePoint(context.TODO(), resumePointID)
-				if err != nil {
-					if errors.Is(err, store.ErrNotFound) {
-						return
-					}
-
-					slog.Error(
-						"Failed to get resume point",
-						slog.String("resume_point_id", resumePointID),
-						slog.String("error", err.Error()),
-					)
-					return
-				}
-
-				if resumePoint.CommandID.Valid {
-					a.RLock()
-					defer a.RUnlock()
-
-					command, ok := a.commands[resumePoint.CommandID.String]
-					if !ok {
-						return
-					}
-
-					node := command.flow.FindChildWithID(resumePoint.FlowNodeID, true)
-					if node == nil {
-						slog.Error(
-							"Failed to find node in flow",
-							slog.String("resume_point_id", resumePointID),
-							slog.String("command_id", resumePoint.CommandID.String),
-						)
-						return
-					}
-
-					go a.env.executeFlowEvent(
-						context.Background(),
-						a.id,
-						node,
-						session,
-						event,
-						entityLinks{
-							CommandID: null.NewString(command.cmd.ID, true),
-						},
-						&resumePoint.FlowState,
-					)
-				}
-				return
-			}
-
-			messageID := e.Message.ID.String()
-			messageInstnace, err := a.env.MessageInstanceStore.MessageInstanceByDiscordMessageID(context.TODO(), messageID)
-			if err != nil {
-				if errors.Is(err, store.ErrNotFound) {
-					return
-				}
-
-				slog.With("error", err).Error("failed to get message instance by discord message ID")
-				return
-			}
-
-			instance, err := NewMessageInstance(
-				a.id,
-				messageInstnace,
-				a.env,
-			)
-			if err != nil {
-				slog.With("error", err).Error("failed to create message instance")
-				return
-			}
-
-			go instance.HandleEvent(appID, session, event)
 		case *discord.ModalInteraction:
-			customID := string(d.CustomID)
-			resumePointID, ok := message.DecodeCustomIDModalResumePoint(customID)
-			if !ok {
-				return
-			}
-
-			resumePoint, err := a.env.ResumePointStore.ResumePoint(context.TODO(), resumePointID)
-			if err != nil {
-				if errors.Is(err, store.ErrNotFound) {
-					return
-				}
-
-				slog.Error(
-					"Failed to get resume point",
-					slog.String("resume_point_id", resumePointID),
-					slog.String("error", err.Error()),
-				)
-				return
-			}
-
-			if resumePoint.CommandID.Valid {
-				a.RLock()
-				defer a.RUnlock()
-
-				command, ok := a.commands[resumePoint.CommandID.String]
-				if !ok {
-					return
-				}
-
-				node := command.flow.FindChildWithID(resumePoint.FlowNodeID, true)
-				if node == nil {
-					slog.Error(
-						"Failed to find node in flow",
-						slog.String("resume_point_id", resumePointID),
-						slog.String("command_id", resumePoint.CommandID.String),
-					)
-					return
-				}
-
-				go a.env.executeFlowEvent(
-					context.Background(),
-					a.id,
-					node,
-					session,
-					event,
-					entityLinks{
-						CommandID: null.NewString(command.cmd.ID, true),
-					},
-					&resumePoint.FlowState,
-				)
-			}
-
-			if resumePoint.MessageInstanceID.Valid {
-				messageInstance, err := a.env.MessageInstanceStore.MessageInstance(
-					context.TODO(),
-					resumePoint.MessageID.String,
-					uint64(resumePoint.MessageInstanceID.Int64),
-				)
-				if err != nil {
-					if !errors.Is(err, store.ErrNotFound) {
-						slog.Error(
-							"Failed to get message instance from resume point",
-							slog.String("resume_point_id", resumePointID),
-							slog.String("message_id", resumePoint.MessageID.String),
-							slog.Int64("message_instance_id", resumePoint.MessageInstanceID.Int64),
-							slog.String("error", err.Error()),
-						)
-					}
-					return
-				}
-
-				instance, err := NewMessageInstance(
-					a.id,
-					messageInstance,
-					a.env,
-				)
-				if err != nil {
-					slog.Error(
-						"Failed to create message instance",
-						slog.String("resume_point_id", resumePointID),
-						slog.String("message_id", resumePoint.MessageID.String),
-						slog.Int64("message_instance_id", resumePoint.MessageInstanceID.Int64),
-						slog.String("error", err.Error()),
-					)
-					return
-				}
-
-				targetFlow, ok := instance.flows[resumePoint.FlowSourceID.String]
-				if !ok {
-					slog.Error(
-						"Failed to get target flow from resume point",
-						slog.String("resume_point_id", resumePointID),
-						slog.String("message_id", resumePoint.MessageID.String),
-						slog.Int64("message_instance_id", resumePoint.MessageInstanceID.Int64),
-						slog.String("flow_source_id", resumePoint.FlowSourceID.String),
-					)
-					return
-				}
-
-				node := targetFlow.FindChildWithID(resumePoint.FlowNodeID, true)
-				if node == nil {
-					slog.Error(
-						"Failed to find node in flow",
-						slog.String("resume_point_id", resumePointID),
-						slog.String("message_id", resumePoint.MessageID.String),
-						slog.Int64("message_instance_id", resumePoint.MessageInstanceID.Int64),
-						slog.String("flow_source_id", resumePoint.FlowSourceID.String),
-					)
-					return
-				}
-
-				go a.env.executeFlowEvent(
-					context.Background(),
-					a.id,
-					node,
-					session,
-					event,
-					entityLinks{},
-					&resumePoint.FlowState,
-				)
-			}
+			a.handleModalInteraction(session, e, d)
+		case discord.ComponentInteraction:
+			// Buttons and all select menu types.
+			a.handleComponentInteraction(session, e, d)
 		}
 	default:
 		// Prefix/mention text commands are triggered by message create events,

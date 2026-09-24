@@ -2837,6 +2837,13 @@ func (n *CompiledFlowNode) ExecuteChildren(ctx *FlowContext) error {
 }
 
 func (n *CompiledFlowNode) autoDeferInteraction(ctx *FlowContext) error {
+	return autoDeferInteraction(ctx, n.Children.Default)
+}
+
+// autoDeferInteraction defers the interaction if the flow doesn't respond in
+// time. next are the nodes that run next; the first response node among them is
+// used to predict the flow's response so the defer matches it.
+func autoDeferInteraction(ctx *FlowContext, next []*CompiledFlowNode) error {
 	interaction := ctx.Data.Interaction()
 	if interaction == nil {
 		// Text/prefix commands have no interaction to defer; just skip.
@@ -2849,14 +2856,60 @@ func (n *CompiledFlowNode) autoDeferInteraction(ctx *FlowContext) error {
 		}
 	}
 
-	// We check if the next response will be ephemeral and adjust the defer flags accordingly
-	var responseFlags discord.MessageFlags
-	respondeNode := n.FindChildWithType(FlowNodeTypeActionResponseCreate, FlowNodeTypeActionResponseEdit, FlowNodeTypeActionResponseDefer)
-	if respondeNode != nil && respondeNode.Data.MessageEphemeral {
-		responseFlags |= discord.EphemeralMessage
+	responseNode := findNodeWithType(next, FlowNodeTypeActionResponseCreate, FlowNodeTypeActionResponseEdit, FlowNodeTypeActionResponseDefer)
+	responseType, responseFlags := deferredResponse(interaction, responseNode)
+
+	go ctx.Discord.AutoDeferInteraction(ctx, interaction.ID, interaction.Token, responseType, responseFlags)
+	return nil
+}
+
+// deferredResponse picks how an interaction is deferred, based on the first
+// response node the flow is going to run. Component interactions (buttons,
+// select menus) are deferred as a message update when the flow edits the
+// message the component is attached to or doesn't respond at all: that leaves
+// no "thinking..." reply behind and makes a later @original edit target the
+// component's message. Everything else gets a deferred reply, which is
+// ephemeral if the upcoming response is.
+func deferredResponse(interaction *discord.InteractionEvent, responseNode *CompiledFlowNode) (api.InteractionResponseType, discord.MessageFlags) {
+	if _, isComponent := interaction.Data.(discord.ComponentInteraction); isComponent {
+		if responseNode == nil ||
+			(responseNode.Type == FlowNodeTypeActionResponseEdit && responseNode.editsOriginalResponse()) {
+			return api.DeferredMessageUpdate, 0
+		}
 	}
 
-	go ctx.Discord.AutoDeferInteraction(ctx, interaction.ID, interaction.Token, responseFlags)
+	var flags discord.MessageFlags
+	if responseNode != nil && responseNode.Data.MessageEphemeral {
+		flags |= discord.EphemeralMessage
+	}
+	return api.DeferredMessageInteractionWithSource, flags
+}
+
+// editsOriginalResponse reports whether an action_response_edit node edits the
+// original interaction response (rather than a specific followup message).
+func (n *CompiledFlowNode) editsOriginalResponse() bool {
+	return n.Data.MessageTarget == "" || n.Data.MessageTarget == "@original"
+}
+
+// findNodeWithType returns the first node of one of the given types among nodes
+// or, if there is none, among their descendants.
+func findNodeWithType(nodes []*CompiledFlowNode, types ...FlowNodeType) *CompiledFlowNode {
+	for _, node := range nodes {
+		if slices.Contains(types, node.Type) {
+			return node
+		}
+	}
+
+	visited := make(map[string]bool)
+	for _, node := range nodes {
+		if visited[node.ID] {
+			continue
+		}
+		if child := node.findChildWithType(visited, types...); child != nil {
+			return child
+		}
+	}
+
 	return nil
 }
 
@@ -2869,13 +2922,15 @@ func (n *CompiledFlowNode) resumeFromComponent(ctx *FlowContext) error {
 		}
 	}
 
-	err := n.autoDeferInteraction(ctx)
-	if err != nil {
-		return traceError(n, err)
+	data, ok := interaction.Data.(discord.ComponentInteraction)
+	if !ok {
+		return &FlowError{
+			Code:    FlowNodeErrorUnknown,
+			Message: "interaction is not a component interaction",
+		}
 	}
 
-	data := interaction.Data.(*discord.ButtonInteraction)
-	_, compID, ok := message.DecodeCustomIDMessageComponentResumePoint(string(data.CustomID))
+	_, compID, ok := message.DecodeCustomIDMessageComponentResumePoint(string(data.ID()))
 	if !ok {
 		return &FlowError{
 			Code:    FlowNodeErrorUnknown,
@@ -2883,7 +2938,15 @@ func (n *CompiledFlowNode) resumeFromComponent(ctx *FlowContext) error {
 		}
 	}
 
-	err = n.ExecuteChildrenByHandle(ctx, fmt.Sprintf("component_%d", compID))
+	// NOTE: The handle format has to match with FlowNodeActionMessage in kite-web.
+	handle := fmt.Sprintf("component_%d", compID)
+
+	err := autoDeferInteraction(ctx, n.Children.Handles[handle])
+	if err != nil {
+		return traceError(n, err)
+	}
+
+	err = n.ExecuteChildrenByHandle(ctx, handle)
 	if err != nil {
 		createDefaultErrorResponse(ctx, err)
 		return traceError(n, err)
@@ -3058,6 +3121,38 @@ func createDefaultErrorResponse(fCtx *FlowContext, err error) {
 			Data: &respData,
 		})
 	}
+}
+
+// AcknowledgeComponentInteraction makes sure a component interaction (button,
+// select menu) has been responded to once its flow has finished. A flow may
+// legitimately not respond at all (e.g. it only adds a role); without an
+// acknowledgement Discord would show "This interaction failed". The interaction
+// is acknowledged as a deferred message update, which leaves the message as is.
+func AcknowledgeComponentInteraction(ctx context.Context, fCtx *FlowContext) error {
+	interaction := fCtx.Data.Interaction()
+	if interaction == nil {
+		return nil
+	}
+	if _, ok := interaction.Data.(discord.ComponentInteraction); !ok {
+		return nil
+	}
+
+	responded, err := fCtx.Discord.HasCreatedInteractionResponse(ctx, interaction.ID)
+	if err != nil {
+		return fmt.Errorf("failed to check interaction response: %w", err)
+	}
+	if responded {
+		return nil
+	}
+
+	_, err = fCtx.Discord.CreateInteractionResponse(ctx, interaction.ID, interaction.Token, api.InteractionResponse{
+		Type: api.DeferredMessageUpdate,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to acknowledge component interaction: %w", err)
+	}
+
+	return nil
 }
 
 // checkRequiredBotPermissions enforces an optional option_command_bot_permissions

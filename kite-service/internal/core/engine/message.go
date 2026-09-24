@@ -4,7 +4,6 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/diamondburned/arikawa/v3/discord"
 	"github.com/diamondburned/arikawa/v3/gateway"
 	"github.com/diamondburned/arikawa/v3/state"
 	"github.com/kitecloud/kite/kite-service/internal/model"
@@ -49,37 +48,31 @@ func NewMessageInstance(
 	}, nil
 }
 
-func (m *MessageInstance) HandleEvent(appID string, session *state.State, event gateway.Event) {
-	i, ok := event.(*gateway.InteractionCreateEvent)
-	if !ok {
-		return
-	}
+// Flow returns the compiled flow of the component with the given flow source ID,
+// which is also the component's custom ID on Discord.
+func (m *MessageInstance) Flow(flowSourceID string) (*flow.CompiledFlowNode, bool) {
+	f, ok := m.flows[flowSourceID]
+	return f, ok
+}
 
-	d, ok := i.InteractionEvent.Data.(*discord.ButtonInteraction)
-	if !ok {
-		return
-	}
-
-	flowSourceID := string(d.CustomID)
-
-	links := entityLinks{
+func (m *MessageInstance) links(flowSourceID string) entityLinks {
+	return entityLinks{
 		MessageID:         null.NewString(m.msg.MessageID, true),
 		MessageInstanceID: null.NewInt(int64(m.msg.ID), true),
 		FlowSourceID:      null.NewString(flowSourceID, true),
 	}
+}
 
-	targetFlow, ok := m.flows[flowSourceID]
-	if !ok {
-		return
-	}
-
+// HandleComponent executes the flow of the component (button or select menu)
+// that was interacted with.
+func (m *MessageInstance) HandleComponent(session *state.State, event gateway.Event, flowSourceID string, targetFlow *flow.CompiledFlowNode) {
 	m.env.executeFlowEvent(
 		context.Background(),
 		m.appID,
 		targetFlow,
 		session,
 		event,
-		links,
+		m.links(flowSourceID),
 		nil,
 	)
 }
