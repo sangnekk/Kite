@@ -25,6 +25,10 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import MediaInput from "./MessageMediaInput";
+import MessageComponentSelectMenu from "./MessageComponentSelectMenu";
+import MessageComponentAccess from "./MessageComponentAccess";
+import { isSelectType, SELECT_TYPE_STRING } from "@/lib/message/schema";
+import { newSelectRow, selectTypeLabel } from "@/lib/message/select";
 
 const initialButtonFlow = {
   nodes: [
@@ -45,6 +49,7 @@ const ADDABLE: { label: string; type: number }[] = [
   { label: "Thư viện ảnh/video", type: 12 },
   { label: "Đường phân cách", type: 14 },
   { label: "Hàng nút", type: 1 },
+  { label: "Menu chọn", type: SELECT_TYPE_STRING },
 ];
 
 const TOP_LEVEL_ADDABLE = [{ label: "Khung chứa", type: 17 }, ...ADDABLE];
@@ -75,6 +80,9 @@ function newComponent(type: number): any {
       };
     case 1:
       return { id, type: 1, components: [] };
+    case SELECT_TYPE_STRING:
+      // A select menu lives alone in its own action row.
+      return newSelectRow();
     case 17:
     default:
       return { id, type: 17, components: [] };
@@ -156,6 +164,7 @@ function ComponentHeader({
       s.deleteComponentAtPath,
     ])
   );
+  const cloneFlows = useCurrentFlow((s) => s.cloneFlows);
   const index = path[path.length - 1];
 
   return (
@@ -178,7 +187,7 @@ function ComponentHeader({
         <CopyIcon
           className="h-4 w-4"
           role="button"
-          onClick={() => duplicate(path)}
+          onClick={() => cloneFlows(duplicate(path))}
         />
         <TrashIcon
           className="h-4 w-4"
@@ -605,6 +614,22 @@ function ActionRowEditor({
     (c: any) => c.id
   );
 
+  const first = component.components?.[0];
+  if (first && isSelectType(first.type)) {
+    return (
+      <Card className="p-3">
+        <ComponentHeader
+          path={path}
+          title={`Menu chọn (${selectTypeLabel(first.type)})`}
+        />
+        <MessageComponentSelectMenu
+          path={[...path, 0]}
+          disableFlowEditor={disableFlowEditor}
+        />
+      </Card>
+    );
+  }
+
   return (
     <Card className="p-3">
       <ComponentHeader path={path} title="Hàng nút" />
@@ -777,6 +802,14 @@ function ButtonEditor({
             <FlowPreview className="h-48 p-10 w-full" onClick={() => {}} />
           </FlowDialog>
         )
+      )}
+      {button.style !== 5 && (
+        <MessageComponentAccess
+          access={button.access}
+          onChange={(access) => patch({ access })}
+          validationPath={`${validationPathFor(path)}.access`}
+          sentByFlow={disableFlowEditor}
+        />
       )}
     </Card>
   );

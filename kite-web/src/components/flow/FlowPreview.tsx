@@ -5,22 +5,26 @@ import { useHookedTheme } from "@/lib/hooks/theme";
 import "@xyflow/react/dist/base.css";
 import { forwardRef } from "react";
 
-const initialNodes = [
-  {
-    id: "1",
-    position: { x: 0, y: 0 },
-    data: {},
-    type: "entry_component_button",
-  },
-];
+function previewNodes(entryType: string) {
+  return [
+    {
+      id: "1",
+      position: { x: 0, y: 0 },
+      data: {},
+      type: entryType,
+    },
+  ];
+}
 
 const FlowPreview = forwardRef<
   HTMLDivElement,
   {
     className?: string;
+    // The entry node shown in the preview.
+    entryType?: string;
     onClick: () => void;
   }
->(({ className, onClick }, ref) => {
+>(({ className, entryType = "entry_component_button", onClick }, ref) => {
   const { theme } = useHookedTheme();
 
   return (
@@ -31,7 +35,7 @@ const FlowPreview = forwardRef<
       ref={ref}
     >
       <ReactFlow
-        nodes={initialNodes}
+        nodes={previewNodes(entryType)}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         elementsSelectable={false}

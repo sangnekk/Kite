@@ -104,11 +104,21 @@ export interface AppSettings {
    * content intent. Without it only @mention commands work.
    */
   message_content_intent: boolean;
+  /**
+   * LogComponentInteractions logs every button / select menu interaction to
+   * the app logs.
+   */
+  log_component_interactions: boolean;
 }
 export type AppSettingsGetResponse = AppSettings;
 export interface AppSettingsUpdateRequest {
   enable_prefix_commands: boolean;
   command_prefix: string;
+  /**
+   * LogComponentInteractions is optional so clients that don't know about it
+   * don't reset it; nil keeps the current value.
+   */
+  log_component_interactions?: boolean;
 }
 export type AppSettingsUpdateResponse = AppSettings;
 export interface AppCreateRequest {

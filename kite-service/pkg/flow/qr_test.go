@@ -50,8 +50,14 @@ func TestFlowExecuteQRCreate(t *testing.T) {
 	require.NoError(t, node.Execute(c))
 
 	// url.Values.Encode() sorts keys alphabetically.
-	want := "https://vietqr.app/img?acc=0123456789&amount=50000&bank=VCB&des=thanh+toan&fullacc=true&showinfo=false&template=compact"
+	want := "https://vietqr.app/img?acc=0123456789&amount=50000&bank=VCB&des=thanh+toan&showinfo=false&template=compact"
 	assert.Equal(t, want, c.GetNodeResult("qr").String())
+
+	// Hiding account info takes precedence over showing the full account number.
+	// Without that restriction, the full account flag is preserved.
+	node.Data.QRHideInfo = false
+	require.NoError(t, node.Execute(c))
+	assert.Equal(t, "https://vietqr.app/img?acc=0123456789&amount=50000&bank=VCB&des=thanh+toan&fullacc=true&template=compact", c.GetNodeResult("qr").String())
 
 	// Building a URL costs nothing.
 	assert.Equal(t, 0, node.CreditsCost())

@@ -53,7 +53,16 @@ func (req MessageCreateRequest) Validate() error {
 	return validation.ValidateStruct(&req,
 		validation.Field(&req.Name, validation.Required, validation.Length(1, 100)),
 		validation.Field(&req.Description, validation.Length(0, 255)),
+		validation.Field(&req.Data, validation.By(validateMessageComponents)),
 	)
+}
+
+func validateMessageComponents(value any) error {
+	data, ok := value.(message.MessageData)
+	if !ok {
+		return nil
+	}
+	return data.ValidateComponents()
 }
 
 type MessageCreateResponse = Message
@@ -102,6 +111,7 @@ func (req MessageUpdateRequest) Validate() error {
 	return validation.ValidateStruct(&req,
 		validation.Field(&req.Name, validation.Required, validation.Length(1, 100)),
 		validation.Field(&req.Description, validation.Length(0, 255)),
+		validation.Field(&req.Data, validation.By(validateMessageComponents)),
 	)
 }
 

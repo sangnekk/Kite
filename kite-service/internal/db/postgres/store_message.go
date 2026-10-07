@@ -215,6 +215,11 @@ func (c *Client) CreateMessageInstance(ctx context.Context, instance *model.Mess
 		return nil, err
 	}
 
+	messageData, err := marshalMessageSnapshot(instance.MessageData)
+	if err != nil {
+		return nil, err
+	}
+
 	res, err := c.Q.CreateMessageInstance(ctx, pgmodel.CreateMessageInstanceParams{
 		MessageID:        instance.MessageID,
 		DiscordGuildID:   instance.DiscordGuildID,
@@ -225,6 +230,7 @@ func (c *Client) CreateMessageInstance(ctx context.Context, instance *model.Mess
 		FlowSources:      flowSources,
 		CreatedAt:        pgtype.Timestamp{Time: instance.CreatedAt.UTC(), Valid: true},
 		UpdatedAt:        pgtype.Timestamp{Time: instance.UpdatedAt.UTC(), Valid: true},
+		MessageData:      messageData,
 	})
 	if err != nil {
 		return nil, err
@@ -239,11 +245,17 @@ func (c *Client) UpdateMessageInstance(ctx context.Context, instance *model.Mess
 		return nil, err
 	}
 
+	messageData, err := marshalMessageSnapshot(instance.MessageData)
+	if err != nil {
+		return nil, err
+	}
+
 	res, err := c.Q.UpdateMessageInstance(ctx, pgmodel.UpdateMessageInstanceParams{
 		ID:          int64(instance.ID),
 		MessageID:   instance.MessageID,
 		FlowSources: flowSources,
 		UpdatedAt:   pgtype.Timestamp{Time: instance.UpdatedAt.UTC(), Valid: true},
+		MessageData: messageData,
 	})
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -282,10 +294,27 @@ func (c *Client) DeleteMessageInstanceByDiscordMessageID(ctx context.Context, di
 	return nil
 }
 
+// marshalMessageSnapshot encodes the message data snapshot of an instance; a nil
+// snapshot is stored as NULL.
+func marshalMessageSnapshot(data *message.MessageData) ([]byte, error) {
+	if data == nil {
+		return nil, nil
+	}
+	return json.Marshal(data)
+}
+
 func rowToMessageInstance(row pgmodel.MessageInstance) (*model.MessageInstance, error) {
 	var flowSources map[string]flow.FlowData
 	if err := json.Unmarshal(row.FlowSources, &flowSources); err != nil {
 		return nil, err
+	}
+
+	var messageData *message.MessageData
+	if len(row.MessageData) > 0 && string(row.MessageData) != "null" {
+		messageData = &message.MessageData{}
+		if err := json.Unmarshal(row.MessageData, messageData); err != nil {
+			return nil, err
+		}
 	}
 
 	return &model.MessageInstance{
@@ -297,6 +326,7 @@ func rowToMessageInstance(row pgmodel.MessageInstance) (*model.MessageInstance, 
 		Ephemeral:        row.Ephemeral,
 		Hidden:           row.Hidden,
 		FlowSources:      flowSources,
+		MessageData:      messageData,
 		CreatedAt:        row.CreatedAt.Time,
 		UpdatedAt:        row.UpdatedAt.Time,
 	}, nil

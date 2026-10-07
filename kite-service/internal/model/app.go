@@ -33,7 +33,9 @@ type AppSettings struct {
 	AppID                string
 	EnablePrefixCommands bool
 	CommandPrefix        string
-	UpdatedAt            time.Time
+	// LogComponentInteractions logs every button / select menu interaction.
+	LogComponentInteractions bool
+	UpdatedAt                time.Time
 }
 
 type AppDiscordStatus struct {

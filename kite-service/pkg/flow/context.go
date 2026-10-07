@@ -8,6 +8,7 @@ import (
 	"github.com/diamondburned/arikawa/v3/discord"
 	"github.com/diamondburned/arikawa/v3/utils/ws"
 	"github.com/kitecloud/kite/kite-service/pkg/eval"
+	"github.com/kitecloud/kite/kite-service/pkg/message"
 )
 
 type FlowContext struct {
@@ -19,6 +20,13 @@ type FlowContext struct {
 	Data    FlowContextData
 	EvalCtx eval.Context
 	Cancel  context.CancelFunc
+
+	// Component is the configuration of the button or select menu whose
+	// interaction triggered the flow, if known (see BindComponent).
+	Component *message.ComponentData
+	// componentMessageEdited is set when the flow edited the message the
+	// component is attached to.
+	componentMessageEdited bool
 }
 
 func NewContext(
@@ -34,6 +42,10 @@ func NewContext(
 
 	if state == nil {
 		state = NewFlowContextState()
+		// A new (not resumed) flow: remember who triggered it.
+		if userID := data.UserID(); userID.IsValid() {
+			state.InvokerUserID = userID.String()
+		}
 	}
 
 	nodeEvalEnv := &nodeEvalEnv{

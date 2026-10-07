@@ -21,6 +21,21 @@ func CompileComponentButton(data FlowData) (*CompiledFlowNode, error) {
 	return compile(data, FlowNodeTypeEntryComponentButton)
 }
 
+func CompileComponentSelect(data FlowData) (*CompiledFlowNode, error) {
+	return compile(data, FlowNodeTypeEntryComponentSelect)
+}
+
+// CompileComponent compiles the flow of a message component, which starts with
+// either a button or a select menu entry.
+func CompileComponent(data FlowData) (*CompiledFlowNode, error) {
+	for _, node := range data.Nodes {
+		if node.Type == FlowNodeTypeEntryComponentSelect {
+			return CompileComponentSelect(data)
+		}
+	}
+	return CompileComponentButton(data)
+}
+
 func CompileEventListener(data FlowData) (*CompiledFlowNode, error) {
 	return compile(data, FlowNodeTypeEntryEvent)
 }
@@ -114,6 +129,7 @@ type ConnectedFlowNodes struct {
 func (n *CompiledFlowNode) IsEntry() bool {
 	return n.Type == FlowNodeTypeEntryCommand ||
 		n.Type == FlowNodeTypeEntryComponentButton ||
+		n.Type == FlowNodeTypeEntryComponentSelect ||
 		n.Type == FlowNodeTypeEntryEvent ||
 		n.Type == FlowNodeTypeEntrySchedule ||
 		n.Type == FlowNodeTypeEntryCustomEvent
@@ -125,6 +141,16 @@ func (n *CompiledFlowNode) IsScheduleEntry() bool {
 
 func (n *CompiledFlowNode) IsComponentButtonEntry() bool {
 	return n.Type == FlowNodeTypeEntryComponentButton
+}
+
+func (n *CompiledFlowNode) IsComponentSelectEntry() bool {
+	return n.Type == FlowNodeTypeEntryComponentSelect
+}
+
+// IsComponentEntry reports whether the node is the entry of a message
+// component (button or select menu) flow.
+func (n *CompiledFlowNode) IsComponentEntry() bool {
+	return n.IsComponentButtonEntry() || n.IsComponentSelectEntry()
 }
 
 func (n *CompiledFlowNode) IsEventListenerEntry() bool {

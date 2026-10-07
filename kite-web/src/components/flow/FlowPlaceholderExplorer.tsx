@@ -5,6 +5,41 @@ import { Edge, getIncomers, Node, useEdges, useNodes } from "@xyflow/react";
 import { VariableIcon } from "lucide-react";
 import { useMemo } from "react";
 import PlaceholderExplorer from "../common/PlaceholderExplorer";
+import { isSelectType } from "@/lib/message/schema";
+
+// Placeholders of a select menu interaction ({{select}}), see
+// kite-service/pkg/eval/select.go.
+const selectPlaceholders: FlowPlaceholderGroup[] = [
+  {
+    label: "Menu chọn",
+    placeholders: [
+      { label: "Giá trị đã chọn (đầu tiên)", value: "select.value" },
+      { label: "Tất cả giá trị đã chọn", value: "select.values" },
+      { label: "Nhãn đã chọn", value: "select.labels" },
+      { label: "Số mục đã chọn", value: "select.count" },
+      { label: "Người dùng đã chọn", value: "select.users" },
+      { label: "Vai trò đã chọn", value: "select.roles" },
+      { label: "Kênh đã chọn", value: "select.channels" },
+      { label: "Người dùng & vai trò đã chọn", value: "select.mentionables" },
+      { label: "Custom ID của thành phần", value: "interaction.component.custom_id" },
+    ],
+  },
+  {
+    label: "Lựa chọn (trong nhánh của lựa chọn)",
+    placeholders: [
+      { label: "Giá trị", value: "option.value" },
+      { label: "Nhãn", value: "option.label" },
+      { label: "Mô tả", value: "option.description" },
+      { label: "Vị trí", value: "option.index" },
+    ],
+  },
+];
+
+function messageHasSelect(components: any[] | undefined): boolean {
+  return (components ?? []).some(
+    (c) => isSelectType(c?.type) || messageHasSelect(c?.components)
+  );
+}
 
 export interface FlowPlaceholderGroup {
   label: string;
@@ -53,7 +88,8 @@ export default function FlowPlaceholderExplorer({
 function useGlobalPlaceholders() {
   const contextType = useFlowContext((c) => c.type);
 
-  const res = [
+  const res: FlowPlaceholderGroup[] = [
+    ...(contextType === "component_select" ? selectPlaceholders : []),
     {
       label: "User",
       placeholders: [
@@ -220,6 +256,8 @@ function useNodePlaceholders() {
     const nodeItems: { label: string; value: string }[] = [];
     const resultKeyItems: { label: string; value: string }[] = [];
     const componentItems: { label: string; value: string }[] = [];
+    let hasSelectParent = false;
+    let hasLoopParent = false;
 
     const seenResultKeys = new Set<string>();
 
@@ -249,6 +287,13 @@ function useNodePlaceholders() {
         });
       }
 
+      if (messageHasSelect((parent.data.message_data as any)?.components)) {
+        hasSelectParent = true;
+      }
+      if (parent.type === "control_loop" && parent.data.loop_items !== undefined) {
+        hasLoopParent = true;
+      }
+
       if (parent?.type === "suspend_response_modal") {
         if (!parent.data.modal_data?.components) {
           continue;
@@ -269,7 +314,21 @@ function useNodePlaceholders() {
       }
     }
 
-    const res = [];
+    const res: FlowPlaceholderGroup[] = [];
+
+    if (hasSelectParent) {
+      res.push(...selectPlaceholders);
+    }
+
+    if (hasLoopParent) {
+      res.push({
+        label: "Vòng lặp",
+        placeholders: [
+          { label: "Phần tử hiện tại", value: "item" },
+          { label: "Vị trí (từ 0)", value: "index" },
+        ],
+      });
+    }
 
     if (componentItems.length > 0) {
       res.push({

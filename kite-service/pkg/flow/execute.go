@@ -40,7 +40,7 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 	defer ctx.endOperation()
 
 	switch n.Type {
-	case FlowNodeTypeEntryCommand, FlowNodeTypeEntryComponentButton:
+	case FlowNodeTypeEntryCommand, FlowNodeTypeEntryComponentButton, FlowNodeTypeEntryComponentSelect:
 		if !ctx.IsEntry() {
 			return fmt.Errorf("command entry isn't the entry node")
 		}
@@ -57,12 +57,27 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 			return nil
 		}
 
-		err = n.autoDeferInteraction(ctx)
+		if n.IsComponentEntry() {
+			allowed, err := checkComponentAccess(ctx, ctx.Component)
+			if err != nil {
+				return traceError(n, err)
+			}
+			if !allowed {
+				return nil
+			}
+		}
+
+		err = autoDeferInteraction(ctx, n.componentBranches(n.Children.Default, ctx.Component, entrySelectOptionHandle))
 		if err != nil {
 			return traceError(n, err)
 		}
 
+		// The default branch ("any selection" for select menus) runs first, then
+		// the branches of the options.
 		err = n.ExecuteChildren(ctx)
+		if err == nil && n.IsComponentSelectEntry() {
+			err = n.executeSelectOptionBranches(ctx, ctx.Component, entrySelectOptionHandle)
+		}
 		if err != nil {
 			createDefaultErrorResponse(ctx, err)
 			// ExecuteChildren already wraps the error with this node; don't double-wrap.
@@ -331,7 +346,11 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 		}
 
 		var msg *discord.Message
-		if n.Data.MessageTarget == "" || n.Data.MessageTarget == "@original" {
+		if n.editsOriginalResponse() {
+			// For component interactions this is the message the component is
+			// attached to (see deferredResponse).
+			ctx.componentMessageEdited = true
+
 			hasCreatedResponse, err := ctx.Discord.HasCreatedInteractionResponse(ctx, interaction.ID)
 			if err != nil {
 				return traceError(n, err)
@@ -459,7 +478,11 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 			Data: &api.InteractionResponseData{},
 		}
 
-		if n.Data.MessageEphemeral {
+		if _, isComponent := interaction.Data.(discord.ComponentInteraction); isComponent && n.Data.MessageDeferUpdate {
+			// Acknowledge without a reply; a later "edit response" edits the
+			// message the component is attached to.
+			resp = api.InteractionResponse{Type: api.DeferredMessageUpdate}
+		} else if n.Data.MessageEphemeral {
 			resp.Data.Flags |= discord.EphemeralMessage
 		}
 
@@ -2580,23 +2603,41 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 
 		return nil
 	case FlowNodeTypeControlLoop:
-		loopCount, err := ctx.EvalTemplate(n.Data.LoopCount)
-		if err != nil {
-			return traceError(n, err)
-		}
-
 		eachNode := n.FindDirectChildWithType(FlowNodeTypeControlLoopEach)
 		endNode := n.FindDirectChildWithType(FlowNodeTypeControlLoopEnd)
 
 		nodeState := ctx.GetNodeState(n.ID)
 
-		for i := 0; i < int(loopCount.Int()); i++ {
-			if nodeState.LoopExited {
-				break
+		if strings.TrimSpace(n.Data.LoopItems) != "" {
+			// "For each" mode: run once per list item with {{item}} and
+			// {{index}} bound (e.g. the users picked in a select menu).
+			list, err := ctx.EvalTemplate(n.Data.LoopItems)
+			if err != nil {
+				return traceError(n, err)
 			}
 
-			if err := eachNode.Execute(ctx); err != nil {
+			if err := forEachItem(ctx, list.AsList(), func() error {
+				if nodeState.LoopExited {
+					return errLoopExited
+				}
+				return eachNode.Execute(ctx)
+			}); err != nil {
 				return traceError(n, err)
+			}
+		} else {
+			loopCount, err := ctx.EvalTemplate(n.Data.LoopCount)
+			if err != nil {
+				return traceError(n, err)
+			}
+
+			for i := 0; i < int(loopCount.Int()); i++ {
+				if nodeState.LoopExited {
+					break
+				}
+
+				if err := eachNode.Execute(ctx); err != nil {
+					return traceError(n, err)
+				}
 			}
 		}
 
@@ -2938,15 +2979,34 @@ func (n *CompiledFlowNode) resumeFromComponent(ctx *FlowContext) error {
 		}
 	}
 
-	// NOTE: The handle format has to match with FlowNodeActionMessage in kite-web.
-	handle := fmt.Sprintf("component_%d", compID)
+	handle := messageComponentHandle(compID)
+	optionHandle := messageSelectOptionHandle(compID)
 
-	err := autoDeferInteraction(ctx, n.Children.Handles[handle])
+	// The component as currently configured on this node. It is nil if the
+	// component was removed from the message since it was sent.
+	comp := n.Data.MessageData.ComponentByID(compID)
+	if comp == nil && len(n.Children.Handles[handle]) == 0 {
+		return respondComponentUnavailable(ctx, interaction)
+	}
+	ctx.BindComponent(comp)
+
+	allowed, err := checkComponentAccess(ctx, comp)
+	if err != nil {
+		return traceError(n, err)
+	}
+	if !allowed {
+		return nil
+	}
+
+	err = autoDeferInteraction(ctx, n.componentBranches(n.Children.Handles[handle], comp, optionHandle))
 	if err != nil {
 		return traceError(n, err)
 	}
 
 	err = n.ExecuteChildrenByHandle(ctx, handle)
+	if err == nil {
+		err = n.executeSelectOptionBranches(ctx, comp, optionHandle)
+	}
 	if err != nil {
 		createDefaultErrorResponse(ctx, err)
 		return traceError(n, err)
@@ -2985,6 +3045,10 @@ func (n *CompiledFlowNode) prepareMessageData(ctx *FlowContext) (message.Message
 		return nil
 	})
 	if err != nil {
+		return message.MessageData{}, err
+	}
+
+	if err := expandOptionSources(ctx, &data); err != nil {
 		return message.MessageData{}, err
 	}
 
@@ -3141,6 +3205,18 @@ func AcknowledgeComponentInteraction(ctx context.Context, fCtx *FlowContext) err
 	if err != nil {
 		return fmt.Errorf("failed to check interaction response: %w", err)
 	}
+
+	comp := fCtx.Component
+	if comp != nil && comp.IsSelect() && comp.ResetOnSelect && !fCtx.componentMessageEdited && interaction.Message != nil {
+		// Use a fresh context: the flow's context may already be cancelled.
+		resetCtx := *fCtx
+		resetCtx.Context = ctx
+		if err := resetComponentSelection(&resetCtx, interaction, responded); err != nil {
+			return fmt.Errorf("failed to reset select menu: %w", err)
+		}
+		return nil
+	}
+
 	if responded {
 		return nil
 	}

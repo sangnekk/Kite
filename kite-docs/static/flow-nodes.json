@@ -180,6 +180,37 @@
       "creditsCost": null
     },
     {
+      "type": "entry_component_select",
+      "category": "entry",
+      "section": "Khởi đầu",
+      "contextTypes": null,
+      "title": "Menu chọn",
+      "description": "Kích hoạt khi người dùng chọn trong menu. Nối hành động vào nhánh chung hoặc vào từng lựa chọn!",
+      "icon": "list",
+      "color": "#eab308",
+      "dataFields": [],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": null,
+      "producesResult": false,
+      "resultKind": null,
+      "ownsChildren": false,
+      "creditsCost": null
+    },
+    {
       "type": "entry_schedule",
       "category": "entry",
       "section": "Khởi đầu",
@@ -260,7 +291,8 @@
       "section": "Phản hồi",
       "contextTypes": [
         "command",
-        "component_button"
+        "component_button",
+        "component_select"
       ],
       "title": "Tạo tin nhắn phản hồi",
       "description": "Bot trả lời tương tác bằng tin nhắn",
@@ -433,7 +465,8 @@
       "section": "Phản hồi",
       "contextTypes": [
         "command",
-        "component_button"
+        "component_button",
+        "component_select"
       ],
       "title": "Sửa tin nhắn phản hồi",
       "description": "Bot chỉnh sửa tin nhắn phản hồi tương tác hiện có",
@@ -626,7 +659,8 @@
       "section": "Phản hồi",
       "contextTypes": [
         "command",
-        "component_button"
+        "component_button",
+        "component_select"
       ],
       "title": "Xóa tin nhắn phản hồi",
       "description": "Bot xóa tin nhắn phản hồi tương tác hiện có",
@@ -690,7 +724,8 @@
       "section": "Phản hồi",
       "contextTypes": [
         "command",
-        "component_button"
+        "component_button",
+        "component_select"
       ],
       "title": "Trì hoãn phản hồi",
       "description": "Bot trì hoãn phản hồi tương tác để có thêm thời gian xử lý",
@@ -698,6 +733,7 @@
       "color": "#3b82f6",
       "dataFields": [
         "message_ephemeral",
+        "message_defer_update",
         "custom_label"
       ],
       "dataSchema": {
@@ -712,6 +748,9 @@
             "pattern": "^[a-z0-9_]+$"
           },
           "message_ephemeral": {
+            "type": "boolean"
+          },
+          "message_defer_update": {
             "type": "boolean"
           }
         },
@@ -7501,11 +7540,11 @@
                 "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
               }
             ]
+          },
+          "loop_items": {
+            "type": "string"
           }
         },
-        "required": [
-          "loop_count"
-        ],
         "additionalProperties": false,
         "$schema": "http://json-schema.org/draft-07/schema#"
       },
@@ -8069,7 +8108,8 @@
       "section": "Phản hồi",
       "contextTypes": [
         "command",
-        "component_button"
+        "component_button",
+        "component_select"
       ],
       "title": "Hiển thị Modal",
       "description": "Hiển thị modal cho người dùng và tạm dừng luồng cho đến khi người dùng gửi modal.",

@@ -1042,6 +1042,7 @@ func (p *MessageTemplateProvider) LinkMessageTemplateInstance(ctx context.Contex
 		return fmt.Errorf("failed to get message: %w", err)
 	}
 
+	snapshot := message.Data.Copy()
 	_, err = p.messageInstanceStore.CreateMessageInstance(ctx, &model.MessageInstance{
 		MessageID:        message.ID,
 		DiscordMessageID: instance.MessageID.String(),
@@ -1050,6 +1051,7 @@ func (p *MessageTemplateProvider) LinkMessageTemplateInstance(ctx context.Contex
 		Ephemeral:        instance.Ephemeral,
 		Hidden:           true,
 		FlowSources:      message.FlowSources,
+		MessageData:      &snapshot,
 		CreatedAt:        time.Now().UTC(),
 		UpdatedAt:        time.Now().UTC(),
 	})
@@ -1063,19 +1065,22 @@ func (p *MessageTemplateProvider) LinkMessageTemplateInstance(ctx context.Contex
 type ResumePointProvider struct {
 	resumePointStore store.ResumePointStore
 
-	appID string
-	links entityLinks
+	appID        string
+	links        entityLinks
+	componentTTL time.Duration
 }
 
 func NewResumePointProvider(
 	resumePointStore store.ResumePointStore,
 	appID string,
 	links entityLinks,
+	componentTTL time.Duration,
 ) *ResumePointProvider {
 	return &ResumePointProvider{
 		resumePointStore: resumePointStore,
 		appID:            appID,
 		links:            links,
+		componentTTL:     componentTTL,
 	}
 }
 
@@ -1085,12 +1090,12 @@ func (p *ResumePointProvider) CreateResumePoint(ctx context.Context, s flow.Resu
 	}
 
 	var expiresAt null.Time
-	if s.Type == flow.ResumePointTypeModal {
+	switch {
+	case s.Type == flow.ResumePointTypeModal:
 		expiresAt = null.NewTime(time.Now().UTC().Add(time.Hour*1), true)
+	case s.Type == flow.ResumePointTypeMessageComponents && p.componentTTL > 0:
+		expiresAt = null.NewTime(time.Now().UTC().Add(p.componentTTL), true)
 	}
-
-	// TODO: Implement some kind of expiration for other resume point types
-	// Maybe based on last usage?
 
 	err := p.resumePointStore.CreateResumePoint(ctx, &model.ResumePoint{
 		ID:                s.ID,
@@ -1098,6 +1103,7 @@ func (p *ResumePointProvider) CreateResumePoint(ctx context.Context, s flow.Resu
 		AppID:             p.appID,
 		CommandID:         p.links.CommandID,
 		EventListenerID:   p.links.EventListenerID,
+		ScheduleID:        p.links.ScheduleID,
 		MessageID:         p.links.MessageID,
 		MessageInstanceID: p.links.MessageInstanceID,
 		FlowSourceID:      p.links.FlowSourceID,

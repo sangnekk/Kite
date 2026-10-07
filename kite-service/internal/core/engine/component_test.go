@@ -5,6 +5,9 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/diamondburned/arikawa/v3/discord"
+	"github.com/kitecloud/kite/kite-service/pkg/message"
+
 	"github.com/kitecloud/kite/kite-service/internal/model"
 	"github.com/kitecloud/kite/kite-service/internal/store"
 	"github.com/kitecloud/kite/kite-service/pkg/flow"
@@ -153,4 +156,95 @@ func TestResolveResumePointStoreError(t *testing.T) {
 	})
 	assert.ErrorIs(t, err, storeErr)
 	assert.NotErrorIs(t, err, errResumeTargetNotFound, "transient errors must not be reported as unavailable")
+}
+
+type fakeScheduleStore struct {
+	store.ScheduleStore
+	schedule *model.Schedule
+}
+
+func (s *fakeScheduleStore) Schedule(ctx context.Context, id string) (*model.Schedule, error) {
+	if s.schedule == nil || s.schedule.ID != id {
+		return nil, store.ErrNotFound
+	}
+	return s.schedule, nil
+}
+
+func TestResolveResumePointSchedule(t *testing.T) {
+	app := newResumeTestApp(t, &fakeMessageInstanceStore{})
+	app.env.ScheduleStore = &fakeScheduleStore{schedule: &model.Schedule{
+		ID:         "sched",
+		FlowSource: testFlowWithMessageNode(flow.FlowNodeTypeEntrySchedule),
+	}}
+
+	node, links, err := app.resolveResumePoint(context.Background(), &model.ResumePoint{
+		ScheduleID: null.StringFrom("sched"),
+		FlowNodeID: "msg",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "msg", node.ID)
+	assert.Equal(t, entityLinks{ScheduleID: null.StringFrom("sched")}, links)
+
+	_, _, err = app.resolveResumePoint(context.Background(), &model.ResumePoint{
+		ScheduleID: null.StringFrom("deleted"),
+		FlowNodeID: "msg",
+	})
+	assert.ErrorIs(t, err, errResumeTargetNotFound)
+}
+
+func TestDescribeComponentInteraction(t *testing.T) {
+	user := &discord.User{ID: 1, Username: "alex"}
+	comp := &message.ComponentData{
+		Placeholder: "Chọn sản phẩm",
+		Options:     []message.ComponentSelectOptionData{{Label: "VPS", Value: "buy_vps"}},
+	}
+
+	got := describeComponentInteraction(&discord.InteractionEvent{
+		User: user,
+		Data: &discord.StringSelectInteraction{CustomID: "x", Values: []string{"buy_vps", "other"}},
+	}, comp)
+	assert.Equal(t, `alex (1) đã chọn VPS (buy_vps), other trong menu "Chọn sản phẩm"`, got)
+
+	got = describeComponentInteraction(&discord.InteractionEvent{
+		User: user,
+		Data: &discord.ButtonInteraction{CustomID: "x"},
+	}, &message.ComponentData{Label: "Mua"})
+	assert.Equal(t, `alex (1) đã bấm nút "Mua"`, got)
+
+	got = describeComponentInteraction(&discord.InteractionEvent{
+		User: user,
+		Data: &discord.RoleSelectInteraction{CustomID: "roles"},
+	}, nil)
+	assert.Equal(t, `alex (1) đã bỏ chọn tất cả trong menu "roles"`, got)
+}
+
+func TestUsageTypeForLinks(t *testing.T) {
+	assert.Equal(t, model.UsageRecordTypeMessageFlowExecution, usageTypeForLinks(entityLinks{MessageID: null.StringFrom("m")}))
+	assert.Equal(t, model.UsageRecordTypeEventListenerFlowExecution, usageTypeForLinks(entityLinks{EventListenerID: null.StringFrom("l")}))
+	assert.Equal(t, model.UsageRecordTypeScheduledFlowExecution, usageTypeForLinks(entityLinks{ScheduleID: null.StringFrom("s")}))
+	assert.Equal(t, model.UsageRecordTypeCommandFlowExecution, usageTypeForLinks(entityLinks{CommandID: null.StringFrom("c")}))
+}
+
+func TestMessageInstanceComponentUsesSnapshot(t *testing.T) {
+	instance, err := NewMessageInstance("app", &model.MessageInstance{
+		MessageID: "message",
+		FlowSources: map[string]flow.FlowData{
+			"sel": {
+				Nodes: []flow.FlowNode{{ID: "entry", Type: flow.FlowNodeTypeEntryComponentSelect}},
+			},
+		},
+		MessageData: &message.MessageData{Components: []message.ComponentData{{
+			Type:       message.ComponentTypeActionRow,
+			Components: []message.ComponentData{{ID: 4, Type: message.ComponentTypeStringSelect, FlowSourceID: "sel"}},
+		}}},
+	}, Env{})
+	require.NoError(t, err)
+
+	f, ok := instance.Flow("sel")
+	require.True(t, ok)
+	assert.True(t, f.IsComponentSelectEntry(), "select flows compile with their own entry")
+
+	comp := instance.Component(context.Background(), "sel")
+	require.NotNil(t, comp)
+	assert.Equal(t, 4, comp.ID)
 }

@@ -205,6 +205,12 @@ func NewGuessType(v any) (Thing, error) {
 		return NewString(string(v)), nil
 	case []Thing:
 		return NewArray(v), nil
+	case []string:
+		arr := make([]Thing, len(v))
+		for i, s := range v {
+			arr[i] = NewString(s)
+		}
+		return NewArray(arr), nil
 	case discord.Message:
 		return NewDiscordMessage(v), nil
 	case discord.User:
@@ -693,8 +699,20 @@ func (w Thing) LessThanOrEqual(other *Thing) bool {
 	return w.Float() <= other.Float()
 }
 
+// Contains reports whether an array has an element equal to other, or whether
+// the string representation of any other value contains other's.
 func (w Thing) Contains(other *Thing) bool {
-	// TODO: handle arrays and objects?
+	if w.Type == TypeArray {
+		for _, item := range w.Array() {
+			// Compare the string forms as well: values typed in the editor are
+			// strings, while list items may be numbers (e.g. IDs).
+			if item.Equals(other) || item.String() == other.String() {
+				return true
+			}
+		}
+		return false
+	}
+
 	return strings.Contains(w.String(), other.String())
 }
 

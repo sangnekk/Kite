@@ -236,6 +236,13 @@ export const emojiSchema = z.object({
 
 export type Emoji = z.infer<typeof emojiSchema>;
 
+const componentAccessRestoreSchema = z.object({
+  mode: z.enum(["everyone", "roles", "permissions", "invoker"]),
+  role_ids: z.optional(z.array(z.string())),
+  permissions: z.optional(z.string()),
+  deny_message: z.optional(z.string()),
+});
+
 export const buttonStyleSchema = z
   .literal(1)
   .or(z.literal(2))
@@ -253,6 +260,7 @@ export const buttonSchema = z
     label: z.preprocess((d) => d ?? undefined, z.string().default("")),
     emoji: z.preprocess((d) => d ?? undefined, z.optional(emojiSchema)),
     disabled: z.preprocess((d) => d ?? undefined, z.optional(z.boolean())),
+    access: z.preprocess((d) => d ?? undefined, z.optional(componentAccessRestoreSchema)),
     flow_source_id: z.preprocess(
       (d) => d ?? undefined,
       z.string().default(() => getUniqueId().toString())
@@ -276,23 +284,46 @@ export type MessageComponentButton = z.infer<typeof buttonSchema>;
 export const selectMenuOptionSchema = z.object({
   id: uniqueIdSchema,
   label: z.preprocess((d) => d ?? undefined, z.string().default("")),
+  value: z.preprocess((d) => d ?? undefined, z.string().default("")),
   description: z.preprocess((d) => d || undefined, z.optional(z.string())),
   emoji: z.preprocess((d) => d ?? undefined, z.optional(emojiSchema)),
+  default: z.preprocess((d) => d || undefined, z.optional(z.boolean())),
 });
 
 export type MessageComponentSelectMenuOption = z.infer<
   typeof selectMenuOptionSchema
 >;
 
+const optionalField = <T extends z.ZodTypeAny>(schema: T) =>
+  z.preprocess((d) => d ?? undefined, z.optional(schema));
+
+// Restoring is lenient: every select type and field is kept as is (the editor
+// validates it), so no configuration is lost when a message is loaded.
 export const selectMenuSchema = z.object({
   id: uniqueIdSchema,
-  type: z.literal(3),
-  placeholder: z.preprocess((d) => d ?? undefined, z.optional(z.string())),
-  disabled: z.preprocess((d) => d ?? undefined, z.optional(z.boolean())),
+  type: z.literal(3).or(z.literal(5)).or(z.literal(6)).or(z.literal(7)).or(z.literal(8)),
+  placeholder: optionalField(z.string()),
+  min_values: optionalField(z.number()),
+  max_values: optionalField(z.number()),
+  disabled: optionalField(z.boolean()),
+  reset_on_select: optionalField(z.boolean()),
   options: z.preprocess(
     (d) => d ?? undefined,
     z.array(selectMenuOptionSchema).default([])
   ),
+  options_source: optionalField(
+    z.object({
+      items: z.string().default(""),
+      label: z.string().default(""),
+      value: z.string().default(""),
+      description: z.optional(z.string()),
+    })
+  ),
+  default_values: optionalField(
+    z.array(z.object({ id: z.string(), type: z.enum(["user", "role", "channel"]) }))
+  ),
+  channel_types: optionalField(z.array(z.number())),
+  access: optionalField(componentAccessRestoreSchema),
   flow_source_id: z.string().default(() => getUniqueId().toString()),
 });
 

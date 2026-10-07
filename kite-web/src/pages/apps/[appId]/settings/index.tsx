@@ -6,6 +6,7 @@ import AppSettingsCredentials from "@/components/app/AppSettingsCredentials";
 import AppSettingsDelete from "@/components/app/AppSettingsDelete";
 import AppSettingsPresence from "@/components/app/AppSettingsPresence";
 import AppSettingsPrefixCommands from "@/components/app/AppSettingsPrefixCommands";
+import AppSettingsComponentLogs from "@/components/app/AppSettingsComponentLogs";
 import { Separator } from "@/components/ui/separator";
 
 const breadcrumbs = [
@@ -34,6 +35,7 @@ export default function AppSettingsPage() {
         <AppSettingsAppearance />
         <AppSettingsPresence />
         <AppSettingsPrefixCommands />
+        <AppSettingsComponentLogs />
         <AppSettingsCredentials />
         <AppSettingsCollaborators />
         <AppSettingsDelete />

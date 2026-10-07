@@ -156,12 +156,26 @@ func (c *ComponentData) eachString(replace func(s *string) error) error {
 		return err
 	}
 
+	// Option values are intentionally not templated: the bot maps the values it
+	// receives back to the configured options.
 	for o := range c.Options {
 		if err := replace(&c.Options[o].Label); err != nil {
 			return err
 		}
 
 		if err := replace(&c.Options[o].Description); err != nil {
+			return err
+		}
+	}
+
+	for d := range c.DefaultValues {
+		if err := replace(&c.DefaultValues[d].ID); err != nil {
+			return err
+		}
+	}
+
+	if c.Access != nil {
+		if err := replace(&c.Access.DenyMessage); err != nil {
 			return err
 		}
 	}
@@ -291,11 +305,30 @@ type ComponentData struct {
 	Emoji *ComponentEmojiData `json:"emoji,omitempty"`
 	URL   string              `json:"url,omitempty"`
 
-	// Select Menu
-	Placeholder string                      `json:"placeholder,omitempty"`
-	MinValues   int                         `json:"min_values,omitempty"`
-	MaxValues   int                         `json:"max_values,omitempty"`
-	Options     []ComponentSelectOptionData `json:"options,omitempty"`
+	// Select Menus: String (3), User (5), Role (6), Mentionable (7), Channel (8).
+	// MinValues/MaxValues are pointers because 0 is a valid minimum; nil means
+	// Discord's default of 1.
+	Placeholder string `json:"placeholder,omitempty"`
+	MinValues   *int   `json:"min_values,omitempty"`
+	MaxValues   *int   `json:"max_values,omitempty"`
+	// Options are the static choices of a String Select.
+	Options []ComponentSelectOptionData `json:"options,omitempty"`
+	// OptionsSource generates the choices of a String Select from a list when the
+	// message is sent. Only supported for messages sent by flows.
+	OptionsSource *ComponentOptionsSourceData `json:"options_source,omitempty"`
+	// ChannelTypes restricts which channels a Channel Select offers.
+	ChannelTypes []int `json:"channel_types,omitempty"`
+	// DefaultValues are pre-selected entities of User/Role/Mentionable/Channel
+	// Selects. IDs may contain placeholders.
+	DefaultValues []ComponentDefaultValueData `json:"default_values,omitempty"`
+	// ResetOnSelect resets the menu to its placeholder after every selection by
+	// re-sending the message's components, unless the flow edits the message
+	// itself. Without it Discord keeps showing the last selection, and selecting
+	// the same option again doesn't trigger a new interaction.
+	ResetOnSelect bool `json:"reset_on_select,omitempty"`
+
+	// Access restricts who can use an interactive component (button, select).
+	Access *ComponentAccessData `json:"access,omitempty"`
 
 	// Text Display (10)
 	Content string `json:"content,omitempty"`
@@ -340,14 +373,145 @@ type MediaGalleryItemData struct {
 }
 
 type ComponentSelectOptionData struct {
+	// ID identifies the option internally. Flow branches of an option are bound
+	// to it (not to the value), so renaming or reordering keeps the binding.
 	ID int `json:"id,omitempty"`
 
-	Label       string              `json:"label,omitempty"`
+	// Label is what the Discord user sees.
+	Label string `json:"label,omitempty"`
+	// Value is what the bot receives when the option is selected. It is unique
+	// within a select and never templated, so it can always be mapped back to
+	// the option.
+	Value       string              `json:"value,omitempty"`
 	Description string              `json:"description,omitempty"`
 	Emoji       *ComponentEmojiData `json:"emoji,omitempty"`
 	Default     bool                `json:"default,omitempty"`
 
+	// Deprecated: options used to have their own flow. Selects now have a
+	// single flow with one branch per option; kept so old JSON still parses.
 	FlowSourceID string `json:"flow_source_id,omitempty"`
+}
+
+// ComponentOptionsSourceData generates String Select options from a list. The
+// templates are evaluated once per list item with {{item}} and {{index}} bound.
+type ComponentOptionsSourceData struct {
+	Items       string `json:"items"`
+	Label       string `json:"label"`
+	Value       string `json:"value"`
+	Description string `json:"description,omitempty"`
+}
+
+// ComponentDefaultValueData is a pre-selected entity of an entity select.
+type ComponentDefaultValueData struct {
+	ID   string `json:"id"`
+	Type string `json:"type"` // "user" | "role" | "channel"
+}
+
+const (
+	DefaultValueTypeUser    = "user"
+	DefaultValueTypeRole    = "role"
+	DefaultValueTypeChannel = "channel"
+)
+
+// ComponentAccessData restricts who can use a component.
+type ComponentAccessData struct {
+	Mode ComponentAccessMode `json:"mode"`
+	// RoleIDs are allowed roles for ComponentAccessModeRoles (any of them).
+	RoleIDs []string `json:"role_ids,omitempty"`
+	// Permissions is a permission bitfield the user must have entirely for
+	// ComponentAccessModePermissions.
+	Permissions string `json:"permissions,omitempty"`
+	// DenyMessage is shown (ephemerally) to users who aren't allowed.
+	DenyMessage string `json:"deny_message,omitempty"`
+}
+
+type ComponentAccessMode string
+
+const (
+	ComponentAccessModeEveryone    ComponentAccessMode = "everyone"
+	ComponentAccessModeRoles       ComponentAccessMode = "roles"
+	ComponentAccessModePermissions ComponentAccessMode = "permissions"
+	// ComponentAccessModeInvoker only allows the user who triggered the flow
+	// that sent the message. Only applies to messages sent by flows.
+	ComponentAccessModeInvoker ComponentAccessMode = "invoker"
+)
+
+// IsSelect reports whether the component is any kind of select menu.
+func (c *ComponentData) IsSelect() bool {
+	return c.IsStringSelect() || c.IsEntitySelect()
+}
+
+// IsStringSelect reports whether the component is a select with static (or
+// generated) options.
+func (c *ComponentData) IsStringSelect() bool {
+	return c.Type == ComponentTypeStringSelect
+}
+
+// IsEntitySelect reports whether the component is a select whose choices are
+// provided by Discord (users, roles, mentionables or channels).
+func (c *ComponentData) IsEntitySelect() bool {
+	switch c.Type {
+	case ComponentTypeUserSelect, ComponentTypeRoleSelect, ComponentTypeMentionableSelect, ComponentTypeChannelSelect:
+		return true
+	}
+	return false
+}
+
+// IsInteractive reports whether users can interact with the component.
+func (c *ComponentData) IsInteractive() bool {
+	return c.Type == ComponentTypeButton || c.IsSelect()
+}
+
+// ValueLimits returns the effective minimum and maximum number of values of a
+// select, applying Discord's defaults (1, 1).
+func (c *ComponentData) ValueLimits() (min int, max int) {
+	min, max = 1, 1
+	if c.MinValues != nil {
+		min = *c.MinValues
+	}
+	if c.MaxValues != nil {
+		max = *c.MaxValues
+	}
+	return min, max
+}
+
+// OptionByValue returns the static option with the given value.
+func (c *ComponentData) OptionByValue(value string) (*ComponentSelectOptionData, bool) {
+	for i := range c.Options {
+		if c.Options[i].Value == value {
+			return &c.Options[i], true
+		}
+	}
+	return nil, false
+}
+
+// FindComponent returns the first component in the message (at any nesting
+// level) that matches fn.
+func (m *MessageData) FindComponent(fn func(c *ComponentData) bool) *ComponentData {
+	if m == nil {
+		return nil
+	}
+
+	var found *ComponentData
+	m.WalkComponents(func(c *ComponentData) {
+		if found == nil && fn(c) {
+			found = c
+		}
+	})
+	return found
+}
+
+// ComponentByID returns the component with the given internal ID.
+func (m *MessageData) ComponentByID(id int) *ComponentData {
+	return m.FindComponent(func(c *ComponentData) bool { return c.ID == id })
+}
+
+// ComponentByFlowSourceID returns the component whose flow has the given ID.
+func (m *MessageData) ComponentByFlowSourceID(flowSourceID string) *ComponentData {
+	if flowSourceID == "" {
+		return nil
+	}
+	return m.FindComponent(func(c *ComponentData) bool { return c.FlowSourceID == flowSourceID })
 }
 
 type ComponentEmojiData struct {

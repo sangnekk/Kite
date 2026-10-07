@@ -820,7 +820,7 @@ type UserSelectComponent struct {
 	// chosen. The default is [1, 1] if ValueLimits is a zero-value.
 	ValueLimits [2]int `json:"-"`
 	// Required dictates whether or not the user must fill out the component
-	Required bool `json:"required"`
+	Required bool `json:"required,omitempty"`
 	// Disabled disables the select if true.
 	Disabled bool `json:"disabled,omitempty"`
 	// IDs of the selected users
@@ -893,7 +893,7 @@ type RoleSelectComponent struct {
 	// chosen. The default is [1, 1] if ValueLimits is a zero-value.
 	ValueLimits [2]int `json:"-"`
 	// Required dictates whether or not the user must fill out the component
-	Required bool `json:"required"`
+	Required bool `json:"required,omitempty"`
 	// Disabled disables the select if true.
 	Disabled bool `json:"disabled,omitempty"`
 	// IDs of the selected roles
@@ -988,7 +988,7 @@ type MentionableSelectComponent struct {
 	// chosen. The default is [1, 1] if ValueLimits is a zero-value.
 	ValueLimits [2]int `json:"-"`
 	// Required dictates whether or not the user must fill out the component
-	Required bool `json:"required"`
+	Required bool `json:"required,omitempty"`
 	// Disabled disables the select if true.
 	Disabled bool `json:"disabled,omitempty"`
 	// IDs of the selected mentionables
@@ -1070,7 +1070,7 @@ type ChannelSelectComponent struct {
 	// chosen. The default is [1, 1] if ValueLimits is a zero-value.
 	ValueLimits [2]int `json:"-"`
 	// Required dictates whether or not the user must fill out the component
-	Required bool `json:"required"`
+	Required bool `json:"required,omitempty"`
 	// Disabled disables the select if true.
 	Disabled bool `json:"disabled,omitempty"`
 	// IDs of the selected channels

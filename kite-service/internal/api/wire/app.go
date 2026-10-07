@@ -43,6 +43,9 @@ type AppSettings struct {
 	// MessageContentIntent reports whether the bot has the privileged message
 	// content intent. Without it only @mention commands work.
 	MessageContentIntent bool `json:"message_content_intent"`
+	// LogComponentInteractions logs every button / select menu interaction to
+	// the app logs.
+	LogComponentInteractions bool `json:"log_component_interactions"`
 }
 
 type AppSettingsGetResponse = AppSettings
@@ -50,6 +53,9 @@ type AppSettingsGetResponse = AppSettings
 type AppSettingsUpdateRequest struct {
 	EnablePrefixCommands bool   `json:"enable_prefix_commands"`
 	CommandPrefix        string `json:"command_prefix"`
+	// LogComponentInteractions is optional so clients that don't know about it
+	// don't reset it; nil keeps the current value.
+	LogComponentInteractions *bool `json:"log_component_interactions,omitempty"`
 }
 
 func (req AppSettingsUpdateRequest) Validate() error {

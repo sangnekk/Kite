@@ -16,6 +16,7 @@ import FlowDialog from "../flow/FlowDialog";
 import { FlowData } from "@/lib/flow/dataSchema";
 import { getUniqueId } from "@/lib/utils";
 import { MessageComponentActionRow } from "@/lib/message/schema";
+import MessageComponentAccess from "./MessageComponentAccess";
 
 export const buttonColors = {
   1: "#5865F2",
@@ -95,6 +96,14 @@ export default function MessageComponentButton({
     ])
   );
 
+  const cloneFlows = useCurrentFlow((s) => s.cloneFlows);
+  const [access, updateAtPath] = useCurrentMessage(
+    useShallow((state) => [
+      (state.getButton(rowIndex, compIndex) as any)?.access,
+      state.updateComponentAtPath,
+    ])
+  );
+
   const color = useMemo(
     () => (style ? buttonColors[style] : buttonColors[1]),
     [style]
@@ -155,7 +164,7 @@ export default function MessageComponentButton({
             {buttonCount < 5 && (
               <CopyIcon
                 className="h-4 w-4"
-                onClick={() => duplicate(rowIndex, compIndex)}
+                onClick={() => cloneFlows(duplicate(rowIndex, compIndex))}
                 role="button"
               />
             )}
@@ -232,6 +241,12 @@ export default function MessageComponentButton({
                 <FlowPreview className="h-64 p-16 w-full" onClick={() => {}} />
               </FlowDialog>
             )}
+            <MessageComponentAccess
+              access={access}
+              onChange={(a) => updateAtPath([rowIndex, compIndex], { access: a })}
+              validationPath={`components.${rowIndex}.components.${compIndex}.access`}
+              sentByFlow={disableFlowEditor}
+            />
           </>
         )}
       </MessageCollapsibleSection>

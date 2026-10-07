@@ -287,4 +287,7 @@ type EngineConfig struct {
 	MaxCredits    int
 	ClusterCount  int
 	ClusterIndex  int
+	// ComponentResumePointTTL expires components of messages sent by flows after
+	// this duration. 0 means they never expire.
+	ComponentResumePointTTL time.Duration
 }

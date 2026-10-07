@@ -45,14 +45,23 @@ function resolveNodeAtPath(root: any[], path: number[]): any | null {
   return parent?.[path[path.length - 1]] ?? null;
 }
 
+// FlowSourceMapping maps the flow_source_id of a duplicated component to the
+// flow_source_id of its copy, so the caller can copy the flows as well.
+export type FlowSourceMapping = Record<string, string>;
+
 // regenerateComponentIds deep-clones a component subtree, assigning fresh ids
-// and flow_source_ids so duplicated buttons don't share a flow.
-function regenerateComponentIds(node: any): any {
+// and flow_source_ids so duplicated buttons and select menus don't share a
+// flow. The old -> new flow_source_ids are recorded in mapping.
+function regenerateComponentIds(node: any, mapping: FlowSourceMapping = {}): any {
   const clone = JSON.parse(JSON.stringify(node));
   const walk = (n: any) => {
     if (!n || typeof n !== "object") return;
     if ("id" in n) n.id = getUniqueId();
-    if ("flow_source_id" in n) n.flow_source_id = getUniqueId().toString();
+    if ("flow_source_id" in n) {
+      const newId = getUniqueId().toString();
+      if (n.flow_source_id) mapping[n.flow_source_id] = newId;
+      n.flow_source_id = newId;
+    }
     if (Array.isArray(n.components)) n.components.forEach(walk);
     if (n.accessory) walk(n.accessory);
     if (Array.isArray(n.items)) n.items.forEach(walk);
@@ -107,13 +116,13 @@ export interface MessageStore extends Message {
   clearComponentRows: () => void;
   moveComponentRowUp: (i: number) => void;
   moveComponentRowDown: (i: number) => void;
-  duplicateComponentRow: (i: number) => void;
+  duplicateComponentRow: (i: number) => FlowSourceMapping;
   deleteComponentRow: (i: number) => void;
   addButton: (i: number, button: MessageComponentButton) => void;
   clearButtons: (i: number) => void;
   moveButtonDown: (i: number, j: number) => void;
   moveButtonUp: (i: number, j: number) => void;
-  duplicateButton: (i: number, j: number) => void;
+  duplicateButton: (i: number, j: number) => FlowSourceMapping;
   deleteButton: (i: number, j: number) => void;
   setButtonStyle: (
     i: number,
@@ -176,7 +185,7 @@ export interface MessageStore extends Message {
   addComponentAtPath: (parentPath: number[], component: any) => void;
   deleteComponentAtPath: (path: number[]) => void;
   moveComponentAtPath: (path: number[], dir: -1 | 1) => void;
-  duplicateComponentAtPath: (path: number[]) => void;
+  duplicateComponentAtPath: (path: number[]) => FlowSourceMapping;
   updateComponentAtPath: (path: number[], patch: Record<string, any>) => void;
   getComponentAtPath: (path: number[]) => any | null;
   setSectionAccessory: (
@@ -605,26 +614,22 @@ export const createMessageStore = (initial?: Message) => {
               state.components.splice(i, 1);
               state.components.splice(i + 1, 0, row);
             }),
-          duplicateComponentRow: (i: number) =>
+          duplicateComponentRow: (i: number) => {
+            const mapping: FlowSourceMapping = {};
             set((state) => {
               const row = state.components && state.components[i];
               if (!row || row.type !== 1) {
                 return;
               }
 
-              // This is a bit complex because we can't allow duplicated action set ids
-              const newRow: MessageComponentActionRow = {
-                id: getUniqueId(),
-                type: 1,
-                components: row.components.map((comp) => {
-                  const flowSourceId = getUniqueId().toString();
-                  return { ...comp, flow_source_id: flowSourceId };
-                }),
-              };
-
-              // TODO: change action set ids
-              state.components.splice(i + 1, 0, newRow);
-            }),
+              state.components.splice(
+                i + 1,
+                0,
+                regenerateComponentIds(row, mapping)
+              );
+            });
+            return mapping;
+          },
           deleteComponentRow: (i: number) =>
             set((state) => {
               state.components.splice(i, 1);
@@ -686,7 +691,8 @@ export const createMessageStore = (initial?: Message) => {
               row.components.splice(j, 1);
               row.components.splice(j + 1, 0, button);
             }),
-          duplicateButton: (i: number, j: number) =>
+          duplicateButton: (i: number, j: number) => {
+            const mapping: FlowSourceMapping = {};
             set((state) => {
               const row = state.components && state.components[i];
               if (!row || row.type !== 1) {
@@ -697,14 +703,14 @@ export const createMessageStore = (initial?: Message) => {
                 return;
               }
 
-              const actionId = getUniqueId().toString();
-
-              row.components.splice(j + 1, 0, {
-                ...button,
-                id: getUniqueId(),
-                flow_source_id: actionId,
-              });
-            }),
+              row.components.splice(
+                j + 1,
+                0,
+                regenerateComponentIds(button, mapping)
+              );
+            });
+            return mapping;
+          },
           setButtonStyle: (
             i: number,
             j: number,
@@ -1048,7 +1054,8 @@ export const createMessageStore = (initial?: Message) => {
               const [node] = parent.splice(i, 1);
               parent.splice(j, 0, node);
             }),
-          duplicateComponentAtPath: (path: number[]) =>
+          duplicateComponentAtPath: (path: number[]) => {
+            const mapping: FlowSourceMapping = {};
             set((state) => {
               if (path.length === 0) return;
               const parent = resolveChildArray(
@@ -1059,8 +1066,10 @@ export const createMessageStore = (initial?: Message) => {
               const i = path[path.length - 1];
               const node = parent[i];
               if (!node) return;
-              parent.splice(i + 1, 0, regenerateComponentIds(node));
-            }),
+              parent.splice(i + 1, 0, regenerateComponentIds(node, mapping));
+            });
+            return mapping;
+          },
           updateComponentAtPath: (path: number[], patch: Record<string, any>) =>
             set((state) => {
               const node = resolveNodeAtPath(state.components as any[], path);

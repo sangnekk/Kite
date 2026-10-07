@@ -19,6 +19,7 @@ export type FlowNodeType = string;
 export const FlowNodeTypeEntryCommand: FlowNodeType = "entry_command";
 export const FlowNodeTypeEntryEvent: FlowNodeType = "entry_event";
 export const FlowNodeTypeEntryComponentButton: FlowNodeType = "entry_component_button";
+export const FlowNodeTypeEntryComponentSelect: FlowNodeType = "entry_component_select";
 export const FlowNodeTypeEntrySchedule: FlowNodeType = "entry_schedule";
 export const FlowNodeTypeEntryCustomEvent: FlowNodeType = "entry_custom_event";
 export const FlowNodeTypeOptionCommandArgument: FlowNodeType = "option_command_argument";
@@ -200,6 +201,11 @@ export interface FlowNodeData {
   message_template_id?: string;
   message_ephemeral?: boolean;
   /**
+   * MessageDeferUpdate makes action_response_defer acknowledge a component
+   * interaction as a message update instead of a "thinking..." reply.
+   */
+  message_defer_update?: boolean;
+  /**
    * Message Reaction Create, Delete
    */
   emoji_data?: EmojiData;
@@ -377,6 +383,10 @@ export interface FlowNodeData {
    * Loop
    */
   loop_count?: string;
+  /**
+   * LoopItems switches the loop to "for each" mode.
+   */
+  loop_items?: string;
   /**
    * Sleep
    */

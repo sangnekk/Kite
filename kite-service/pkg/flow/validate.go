@@ -89,6 +89,9 @@ func compileForEntry(data FlowData) error {
 		case FlowNodeTypeEntryComponentButton:
 			_, err := CompileComponentButton(data)
 			return err
+		case FlowNodeTypeEntryComponentSelect:
+			_, err := CompileComponentSelect(data)
+			return err
 		case FlowNodeTypeEntrySchedule:
 			_, err := CompileSchedule(data)
 			return err

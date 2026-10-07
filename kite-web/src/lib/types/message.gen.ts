@@ -154,6 +154,14 @@ export interface ComponentData {
   min_values?: number /* int */;
   max_values?: number /* int */;
   options?: ComponentSelectOptionData[];
+  options_source?: ComponentOptionsSourceData;
+  channel_types?: number /* int */[];
+  default_values?: ComponentDefaultValueData[];
+  reset_on_select?: boolean;
+  /**
+   * Access restricts who can use an interactive component (button, select).
+   */
+  access?: ComponentAccessData;
   /**
    * Text Display (10)
    */
@@ -207,10 +215,31 @@ export interface MediaGalleryItemData {
 export interface ComponentSelectOptionData {
   id?: number /* int */;
   label?: string;
+  value?: string;
   description?: string;
   emoji?: ComponentEmojiData;
   default?: boolean;
+  /**
+   * Deprecated: options used to have their own flow.
+   */
   flow_source_id?: string;
+}
+export interface ComponentOptionsSourceData {
+  items: string;
+  label: string;
+  value: string;
+  description?: string;
+}
+export interface ComponentDefaultValueData {
+  id: string;
+  type: string;
+}
+export type ComponentAccessMode = string;
+export interface ComponentAccessData {
+  mode: ComponentAccessMode;
+  role_ids?: string[];
+  permissions?: string;
+  deny_message?: string;
 }
 export interface ComponentEmojiData {
   name?: string;

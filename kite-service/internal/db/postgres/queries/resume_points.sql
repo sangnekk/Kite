@@ -10,10 +10,11 @@ INSERT INTO resume_points (
     flow_source_id, 
     flow_node_id, 
     flow_state, 
-    created_at, 
-    expires_at
+    created_at,
+    expires_at,
+    schedule_id
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);
 
 -- name: DeleteResumePoint :exec
 DELETE FROM resume_points WHERE id = $1;

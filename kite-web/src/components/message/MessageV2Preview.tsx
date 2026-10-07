@@ -5,6 +5,8 @@ import { useResponseData } from "@/lib/hooks/api";
 import { colorIntToHex } from "@/tools/common/utils/color";
 import { cn } from "@/lib/utils";
 import MessageMarkdown from "./MessageMarkdown";
+import MessagePreviewSelectMenu from "./MessagePreviewSelectMenu";
+import { isSelectType } from "@/lib/message/schema";
 import type {
   MessageComponent,
   MessageComponentMediaItem,
@@ -105,11 +107,15 @@ function V2Component({ component }: { component: any }) {
       );
     case 13: // File
       return <FilePreview media={component.media} spoiler={component.spoiler} />;
-    case 1: // Action Row (buttons)
+    case 1: // Action Row (buttons or a single select menu)
       return (
         <div className="flex flex-wrap gap-2">
           {(component.components ?? []).map((c: any) =>
-            c.type === 2 ? <V2Button key={c.id} button={c} /> : null
+            c.type === 2 ? (
+              <V2Button key={c.id} button={c} />
+            ) : isSelectType(c.type) ? (
+              <MessagePreviewSelectMenu key={c.id} select={c} />
+            ) : null
           )}
         </div>
       );

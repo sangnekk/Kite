@@ -329,10 +329,26 @@ func (s *StringSelectInteraction) InteractionType() InteractionDataType {
 func (s *StringSelectInteraction) resp() {}
 func (s *StringSelectInteraction) data() {}
 
+// SelectResolved contains the entities that were chosen in a user, role,
+// mentionable or channel select.
+type SelectResolved struct {
+	// Users contains user objects.
+	Users map[UserID]User `json:"users,omitempty"`
+	// Members contains partial member objects (missing User, Deaf and Mute).
+	Members map[UserID]Member `json:"members,omitempty"`
+	// Roles contains role objects.
+	Roles map[RoleID]Role `json:"roles,omitempty"`
+	// Channels contains partial channel objects that only have ID, Name, Type
+	// and Permissions.
+	Channels map[ChannelID]Channel `json:"channels,omitempty"`
+}
+
 // ChannelSelectInteraction is a channel select component's response.
 type ChannelSelectInteraction struct {
 	CustomID ComponentID `json:"custom_id"`
 	Values   []ChannelID `json:"values"`
+	// Resolved contains the channels that were selected.
+	Resolved SelectResolved `json:"resolved,omitempty"`
 }
 
 // ID implements ComponentInteraction.
@@ -353,6 +369,8 @@ func (s *ChannelSelectInteraction) data() {}
 type RoleSelectInteraction struct {
 	CustomID ComponentID `json:"custom_id"`
 	Values   []RoleID    `json:"values"`
+	// Resolved contains the roles that were selected.
+	Resolved SelectResolved `json:"resolved,omitempty"`
 }
 
 // ID implements ComponentInteraction.
@@ -373,6 +391,8 @@ func (s *RoleSelectInteraction) data() {}
 type UserSelectInteraction struct {
 	CustomID ComponentID `json:"custom_id"`
 	Values   []UserID    `json:"values"`
+	// Resolved contains the users (and members) that were selected.
+	Resolved SelectResolved `json:"resolved,omitempty"`
 }
 
 // ID implements ComponentInteraction.
@@ -393,6 +413,8 @@ func (s *UserSelectInteraction) data() {}
 type MentionableSelectInteraction struct {
 	CustomID ComponentID `json:"custom_id"`
 	Values   []Snowflake `json:"values"`
+	// Resolved contains the users (and members) and roles that were selected.
+	Resolved SelectResolved `json:"resolved,omitempty"`
 }
 
 // ID implements ComponentInteraction.

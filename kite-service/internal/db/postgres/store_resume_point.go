@@ -35,6 +35,7 @@ func (c *Client) CreateResumePoint(ctx context.Context, resumePoint *model.Resum
 		FlowState:         flowState,
 		CreatedAt:         pgtype.Timestamp{Time: resumePoint.CreatedAt, Valid: true},
 		ExpiresAt:         pgtype.Timestamp{Time: resumePoint.ExpiresAt.Time, Valid: resumePoint.ExpiresAt.Valid},
+		ScheduleID:        pgtype.Text{String: resumePoint.ScheduleID.String, Valid: resumePoint.ScheduleID.Valid},
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create resume point: %w", err)
@@ -76,6 +77,7 @@ func rowToResumePoint(row pgmodel.ResumePoint) (*model.ResumePoint, error) {
 		AppID:             row.AppID,
 		CommandID:         null.NewString(row.CommandID.String, row.CommandID.Valid),
 		EventListenerID:   null.NewString(row.EventListenerID.String, row.EventListenerID.Valid),
+		ScheduleID:        null.NewString(row.ScheduleID.String, row.ScheduleID.Valid),
 		MessageID:         null.NewString(row.MessageID.String, row.MessageID.Valid),
 		MessageInstanceID: null.NewInt(row.MessageInstanceID.Int64, row.MessageInstanceID.Valid),
 		FlowSourceID:      null.NewString(row.FlowSourceID.String, row.FlowSourceID.Valid),

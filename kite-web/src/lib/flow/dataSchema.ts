@@ -221,6 +221,8 @@ export const nodeEntryScheduleDataSchema = nodeBaseDataSchema.extend({
 
 export const nodeEntryComponentButtonDataSchema = nodeBaseDataSchema.extend({});
 
+export const nodeEntryComponentSelectDataSchema = nodeBaseDataSchema.extend({});
+
 export const nodeMessageDataSchema = z.object({
   content: z.string().max(2000),
   allowed_mentions: z
@@ -275,6 +277,7 @@ export const nodeActionResponseDeleteDataSchema = nodeBaseDataSchema.extend({
 
 export const nodeActionResponseDeferDataSchema = nodeBaseDataSchema.extend({
   message_ephemeral: z.boolean().optional(),
+  message_defer_update: z.boolean().optional(),
 });
 
 export const nodeSuspendResponseModalDataSchema = nodeBaseDataSchema.extend({
@@ -1030,12 +1033,33 @@ export const nodeConditionItemCompareDataSchema = nodeBaseDataSchema.extend({
   condition_item_mode: conditionItemModeSchema,
 });
 
-export const nodeControlLoopDataSchema = nodeBaseDataSchema.extend({
-  loop_count: z
-    .string()
-    .regex(numericRegex)
-    .or(z.string().regex(placeholderRegex)),
-});
+export const nodeControlLoopDataSchema = nodeBaseDataSchema
+  .extend({
+    loop_count: z
+      .string()
+      .regex(numericRegex)
+      .or(z.string().regex(placeholderRegex))
+      .optional(),
+    // "For each" mode: the list to iterate over.
+    loop_items: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.loop_items !== undefined) {
+      if (!data.loop_items.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["loop_items"],
+          message: "Nhập danh sách cần duyệt",
+        });
+      }
+    } else if (!data.loop_count) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["loop_count"],
+        message: "Nhập số lần lặp",
+      });
+    }
+  });
 
 export const nodeControlSleepDataSchema = nodeBaseDataSchema.extend({
   sleep_duration_seconds: z

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
+	"time"
 
 	"github.com/diamondburned/arikawa/v3/api"
 	"github.com/diamondburned/arikawa/v3/discord"
@@ -40,7 +42,9 @@ func (a *App) handleComponentInteraction(session *state.State, e *gateway.Intera
 	customID := string(d.ID())
 
 	if resumePointID, _, ok := message.DecodeCustomIDMessageComponentResumePoint(customID); ok {
-		a.resumeFlow(session, e, resumePointID)
+		a.resumeFlow(session, e, resumePointID, &componentExecution{
+			logInteraction: a.logComponentInteractions(),
+		})
 		return
 	}
 
@@ -84,7 +88,94 @@ func (a *App) handleComponentInteraction(session *state.State, e *gateway.Intera
 		return
 	}
 
-	go instance.HandleComponent(session, e, customID, targetFlow)
+	// A message sent before its button was turned into a select (or the other
+	// way around) must not run a flow written for the other component.
+	if targetFlow.IsComponentSelectEntry() != (d.Type() != discord.ButtonComponentType) {
+		a.respondComponentUnavailable(session, e, "component type changed")
+		return
+	}
+
+	go instance.HandleComponent(session, e, customID, targetFlow, &componentExecution{
+		component:      instance.Component(context.Background(), customID),
+		logInteraction: a.logComponentInteractions(),
+	})
+}
+
+// logComponentInteractions reports whether the app wants every component
+// interaction to be logged.
+func (a *App) logComponentInteractions() bool {
+	settings := a.prefixSettings(context.Background())
+	return settings != nil && settings.LogComponentInteractions
+}
+
+// describeComponentInteraction describes a component interaction for the app
+// logs, e.g. `alex đã chọn "VPS" trong menu "Chọn sản phẩm"`. Only IDs and
+// configured labels are included, never message contents.
+func describeComponentInteraction(i *discord.InteractionEvent, comp *message.ComponentData) string {
+	user := "Người dùng"
+	if sender := i.Sender(); sender != nil {
+		user = fmt.Sprintf("%s (%s)", sender.Username, sender.ID)
+	}
+
+	data, ok := i.Data.(discord.ComponentInteraction)
+	if !ok {
+		return ""
+	}
+
+	name := string(data.ID())
+	if comp != nil {
+		switch {
+		case comp.Label != "":
+			name = comp.Label
+		case comp.Placeholder != "":
+			name = comp.Placeholder
+		}
+	}
+
+	if data.Type() == discord.ButtonComponentType {
+		return fmt.Sprintf("%s đã bấm nút %q", user, name)
+	}
+
+	values := selectInteractionValues(data)
+	labels := make([]string, len(values))
+	for i, v := range values {
+		labels[i] = v
+		if comp != nil {
+			if o, ok := comp.OptionByValue(v); ok {
+				labels[i] = fmt.Sprintf("%s (%s)", o.Label, v)
+			}
+		}
+	}
+
+	if len(labels) == 0 {
+		return fmt.Sprintf("%s đã bỏ chọn tất cả trong menu %q", user, name)
+	}
+	return fmt.Sprintf("%s đã chọn %s trong menu %q", user, strings.Join(labels, ", "), name)
+}
+
+func selectInteractionValues(data discord.ComponentInteraction) []string {
+	var values []string
+	switch d := data.(type) {
+	case *discord.StringSelectInteraction:
+		values = d.Values
+	case *discord.UserSelectInteraction:
+		for _, id := range d.Values {
+			values = append(values, id.String())
+		}
+	case *discord.RoleSelectInteraction:
+		for _, id := range d.Values {
+			values = append(values, id.String())
+		}
+	case *discord.ChannelSelectInteraction:
+		for _, id := range d.Values {
+			values = append(values, id.String())
+		}
+	case *discord.MentionableSelectInteraction:
+		for _, id := range d.Values {
+			values = append(values, id.String())
+		}
+	}
+	return values
 }
 
 // handleModalInteraction continues the flow that opened the modal.
@@ -95,11 +186,12 @@ func (a *App) handleModalInteraction(session *state.State, e *gateway.Interactio
 		return
 	}
 
-	a.resumeFlow(session, e, resumePointID)
+	a.resumeFlow(session, e, resumePointID, nil)
 }
 
-// resumeFlow continues a suspended flow from the node its resume point refers to.
-func (a *App) resumeFlow(session *state.State, e *gateway.InteractionCreateEvent, resumePointID string) {
+// resumeFlow continues a suspended flow from the node its resume point refers
+// to. exec is set when resuming because of a component interaction.
+func (a *App) resumeFlow(session *state.State, e *gateway.InteractionCreateEvent, resumePointID string, exec *componentExecution) {
 	ctx := context.TODO()
 
 	resumePoint, err := a.env.ResumePointStore.ResumePoint(ctx, resumePointID)
@@ -116,6 +208,11 @@ func (a *App) resumeFlow(session *state.State, e *gateway.InteractionCreateEvent
 			slog.String("error", err.Error()),
 		)
 		respondEphemeral(session, e, componentErrorMessage)
+		return
+	}
+
+	if resumePoint.ExpiresAt.Valid && resumePoint.ExpiresAt.Time.Before(time.Now().UTC()) {
+		a.respondComponentUnavailable(session, e, "resume point expired")
 		return
 	}
 
@@ -136,7 +233,7 @@ func (a *App) resumeFlow(session *state.State, e *gateway.InteractionCreateEvent
 		return
 	}
 
-	go a.env.executeFlowEvent(
+	go a.env.executeComponentFlowEvent(
 		context.Background(),
 		a.id,
 		node,
@@ -144,6 +241,7 @@ func (a *App) resumeFlow(session *state.State, e *gateway.InteractionCreateEvent
 		e,
 		links,
 		&resumePoint.FlowState,
+		exec,
 	)
 }
 
@@ -176,6 +274,26 @@ func (a *App) resolveResumePoint(ctx context.Context, rp *model.ResumePoint) (*f
 
 		root = listener.flow
 		links = entityLinks{EventListenerID: rp.EventListenerID}
+	case rp.ScheduleID.Valid:
+		if a.env.ScheduleStore == nil {
+			return nil, entityLinks{}, fmt.Errorf("schedule store is not configured")
+		}
+
+		schedule, err := a.env.ScheduleStore.Schedule(ctx, rp.ScheduleID.String)
+		if err != nil {
+			if errors.Is(err, store.ErrNotFound) {
+				return nil, entityLinks{}, fmt.Errorf("schedule %s: %w", rp.ScheduleID.String, errResumeTargetNotFound)
+			}
+			return nil, entityLinks{}, fmt.Errorf("failed to get schedule: %w", err)
+		}
+
+		compiled, err := flow.CompileSchedule(schedule.FlowSource)
+		if err != nil {
+			return nil, entityLinks{}, fmt.Errorf("failed to compile schedule flow: %w", err)
+		}
+
+		root = compiled
+		links = entityLinks{ScheduleID: rp.ScheduleID}
 	case rp.MessageInstanceID.Valid:
 		instanceModel, err := a.env.MessageInstanceStore.MessageInstance(
 			ctx,
@@ -202,8 +320,8 @@ func (a *App) resolveResumePoint(ctx context.Context, rp *model.ResumePoint) (*f
 		root = targetFlow
 		links = instance.links(rp.FlowSourceID.String)
 	default:
-		// e.g. resume points created by scheduled flows, which aren't linked to
-		// an entity that can be resumed.
+		// e.g. resume points of scheduled flows created before schedule_id was
+		// tracked, or whose owner was deleted (the link is set to NULL).
 		return nil, entityLinks{}, fmt.Errorf("resume point has no resumable owner: %w", errResumeTargetNotFound)
 	}
 

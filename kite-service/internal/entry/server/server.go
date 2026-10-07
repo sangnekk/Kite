@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/kitecloud/kite/kite-service/internal/api"
 	"github.com/kitecloud/kite/kite-service/internal/config"
@@ -72,6 +73,8 @@ func StartServer(c context.Context, cfg *config.Config) error {
 				MaxCredits:    cfg.Engine.MaxCredits,
 				ClusterCount:  cfg.ClusterCount,
 				ClusterIndex:  cfg.ClusterIndex,
+
+				ComponentResumePointTTL: time.Duration(cfg.Engine.ComponentResumePointTTLDays) * 24 * time.Hour,
 			},
 			AppStore:             pg,
 			AppSettingsStore:     pg,
@@ -131,6 +134,7 @@ func StartServer(c context.Context, cfg *config.Config) error {
 	if cfg.IsPrimaryCluster() {
 		planManager.Run(ctx)
 		usageMgr.Run(ctx)
+		eng.RunResumePointCleanup(ctx)
 	}
 
 	apiServer := api.NewAPIServer(api.APIServerConfig{

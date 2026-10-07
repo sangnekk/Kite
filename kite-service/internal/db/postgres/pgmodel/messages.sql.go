@@ -91,10 +91,11 @@ INSERT INTO message_instances (
     hidden,
     flow_sources,
     created_at,
-    updated_at
+    updated_at,
+    message_data
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9
-) RETURNING id, message_id, hidden, ephemeral, discord_guild_id, discord_channel_id, discord_message_id, flow_sources, created_at, updated_at
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+) RETURNING id, message_id, hidden, ephemeral, discord_guild_id, discord_channel_id, discord_message_id, flow_sources, created_at, updated_at, message_data
 `
 
 type CreateMessageInstanceParams struct {
@@ -107,6 +108,7 @@ type CreateMessageInstanceParams struct {
 	FlowSources      []byte
 	CreatedAt        pgtype.Timestamp
 	UpdatedAt        pgtype.Timestamp
+	MessageData      []byte
 }
 
 func (q *Queries) CreateMessageInstance(ctx context.Context, arg CreateMessageInstanceParams) (MessageInstance, error) {
@@ -120,6 +122,7 @@ func (q *Queries) CreateMessageInstance(ctx context.Context, arg CreateMessageIn
 		arg.FlowSources,
 		arg.CreatedAt,
 		arg.UpdatedAt,
+		arg.MessageData,
 	)
 	var i MessageInstance
 	err := row.Scan(
@@ -133,6 +136,7 @@ func (q *Queries) CreateMessageInstance(ctx context.Context, arg CreateMessageIn
 		&i.FlowSources,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.MessageData,
 	)
 	return i, err
 }
@@ -192,7 +196,7 @@ func (q *Queries) GetMessage(ctx context.Context, id string) (Message, error) {
 }
 
 const getMessageInstance = `-- name: GetMessageInstance :one
-SELECT id, message_id, hidden, ephemeral, discord_guild_id, discord_channel_id, discord_message_id, flow_sources, created_at, updated_at FROM message_instances WHERE id = $1 AND message_id = $2
+SELECT id, message_id, hidden, ephemeral, discord_guild_id, discord_channel_id, discord_message_id, flow_sources, created_at, updated_at, message_data FROM message_instances WHERE id = $1 AND message_id = $2
 `
 
 type GetMessageInstanceParams struct {
@@ -214,12 +218,13 @@ func (q *Queries) GetMessageInstance(ctx context.Context, arg GetMessageInstance
 		&i.FlowSources,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.MessageData,
 	)
 	return i, err
 }
 
 const getMessageInstanceByDiscordMessageId = `-- name: GetMessageInstanceByDiscordMessageId :one
-SELECT id, message_id, hidden, ephemeral, discord_guild_id, discord_channel_id, discord_message_id, flow_sources, created_at, updated_at FROM message_instances WHERE discord_message_id = $1
+SELECT id, message_id, hidden, ephemeral, discord_guild_id, discord_channel_id, discord_message_id, flow_sources, created_at, updated_at, message_data FROM message_instances WHERE discord_message_id = $1
 `
 
 func (q *Queries) GetMessageInstanceByDiscordMessageId(ctx context.Context, discordMessageID string) (MessageInstance, error) {
@@ -236,12 +241,13 @@ func (q *Queries) GetMessageInstanceByDiscordMessageId(ctx context.Context, disc
 		&i.FlowSources,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.MessageData,
 	)
 	return i, err
 }
 
 const getMessageInstancesByMessage = `-- name: GetMessageInstancesByMessage :many
-SELECT id, message_id, hidden, ephemeral, discord_guild_id, discord_channel_id, discord_message_id, flow_sources, created_at, updated_at FROM message_instances WHERE message_id = $1 AND NOT hidden ORDER BY created_at DESC
+SELECT id, message_id, hidden, ephemeral, discord_guild_id, discord_channel_id, discord_message_id, flow_sources, created_at, updated_at, message_data FROM message_instances WHERE message_id = $1 AND NOT hidden ORDER BY created_at DESC
 `
 
 func (q *Queries) GetMessageInstancesByMessage(ctx context.Context, messageID string) ([]MessageInstance, error) {
@@ -264,6 +270,7 @@ func (q *Queries) GetMessageInstancesByMessage(ctx context.Context, messageID st
 			&i.FlowSources,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.MessageData,
 		); err != nil {
 			return nil, err
 		}
@@ -276,7 +283,7 @@ func (q *Queries) GetMessageInstancesByMessage(ctx context.Context, messageID st
 }
 
 const getMessageInstancesByMessageWithHidden = `-- name: GetMessageInstancesByMessageWithHidden :many
-SELECT id, message_id, hidden, ephemeral, discord_guild_id, discord_channel_id, discord_message_id, flow_sources, created_at, updated_at FROM message_instances WHERE message_id = $1 ORDER BY created_at DESC
+SELECT id, message_id, hidden, ephemeral, discord_guild_id, discord_channel_id, discord_message_id, flow_sources, created_at, updated_at, message_data FROM message_instances WHERE message_id = $1 ORDER BY created_at DESC
 `
 
 func (q *Queries) GetMessageInstancesByMessageWithHidden(ctx context.Context, messageID string) ([]MessageInstance, error) {
@@ -299,6 +306,7 @@ func (q *Queries) GetMessageInstancesByMessageWithHidden(ctx context.Context, me
 			&i.FlowSources,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.MessageData,
 		); err != nil {
 			return nil, err
 		}
@@ -392,8 +400,9 @@ func (q *Queries) UpdateMessage(ctx context.Context, arg UpdateMessageParams) (M
 const updateMessageInstance = `-- name: UpdateMessageInstance :one
 UPDATE message_instances SET
     flow_sources = $3,
-    updated_at = $4
-WHERE id = $1 AND message_id = $2 RETURNING id, message_id, hidden, ephemeral, discord_guild_id, discord_channel_id, discord_message_id, flow_sources, created_at, updated_at
+    updated_at = $4,
+    message_data = $5
+WHERE id = $1 AND message_id = $2 RETURNING id, message_id, hidden, ephemeral, discord_guild_id, discord_channel_id, discord_message_id, flow_sources, created_at, updated_at, message_data
 `
 
 type UpdateMessageInstanceParams struct {
@@ -401,6 +410,7 @@ type UpdateMessageInstanceParams struct {
 	MessageID   string
 	FlowSources []byte
 	UpdatedAt   pgtype.Timestamp
+	MessageData []byte
 }
 
 func (q *Queries) UpdateMessageInstance(ctx context.Context, arg UpdateMessageInstanceParams) (MessageInstance, error) {
@@ -409,6 +419,7 @@ func (q *Queries) UpdateMessageInstance(ctx context.Context, arg UpdateMessageIn
 		arg.MessageID,
 		arg.FlowSources,
 		arg.UpdatedAt,
+		arg.MessageData,
 	)
 	var i MessageInstance
 	err := row.Scan(
@@ -422,6 +433,7 @@ func (q *Queries) UpdateMessageInstance(ctx context.Context, arg UpdateMessageIn
 		&i.FlowSources,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.MessageData,
 	)
 	return i, err
 }

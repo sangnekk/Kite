@@ -34,10 +34,11 @@ type App struct {
 }
 
 type AppSetting struct {
-	AppID                string
-	EnablePrefixCommands bool
-	CommandPrefix        string
-	UpdatedAt            pgtype.Timestamp
+	AppID                    string
+	EnablePrefixCommands     bool
+	CommandPrefix            string
+	UpdatedAt                pgtype.Timestamp
+	LogComponentInteractions bool
 }
 
 type Asset struct {
@@ -177,6 +178,7 @@ type MessageInstance struct {
 	FlowSources      []byte
 	CreatedAt        pgtype.Timestamp
 	UpdatedAt        pgtype.Timestamp
+	MessageData      []byte
 }
 
 type Module struct {
@@ -244,6 +246,7 @@ type ResumePoint struct {
 	FlowState         []byte
 	CreatedAt         pgtype.Timestamp
 	ExpiresAt         pgtype.Timestamp
+	ScheduleID        pgtype.Text
 }
 
 type Schedule struct {

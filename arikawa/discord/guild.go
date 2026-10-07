@@ -408,6 +408,10 @@ type Member struct {
 
 	// IsPending specifies whether the user has not yet passed the guild's Membership Screening requirements
 	IsPending bool `json:"pending"`
+
+	// Permissions is the member's total permissions in the channel, including
+	// overwrites. It is only present on members of interaction events.
+	Permissions Permissions `json:"permissions,string,omitempty"`
 }
 
 // Mention returns the mention of the role.

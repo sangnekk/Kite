@@ -23,10 +23,11 @@ INSERT INTO resume_points (
     flow_source_id, 
     flow_node_id, 
     flow_state, 
-    created_at, 
-    expires_at
+    created_at,
+    expires_at,
+    schedule_id
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 `
 
 type CreateResumePointParams struct {
@@ -42,6 +43,7 @@ type CreateResumePointParams struct {
 	FlowState         []byte
 	CreatedAt         pgtype.Timestamp
 	ExpiresAt         pgtype.Timestamp
+	ScheduleID        pgtype.Text
 }
 
 func (q *Queries) CreateResumePoint(ctx context.Context, arg CreateResumePointParams) error {
@@ -58,6 +60,7 @@ func (q *Queries) CreateResumePoint(ctx context.Context, arg CreateResumePointPa
 		arg.FlowState,
 		arg.CreatedAt,
 		arg.ExpiresAt,
+		arg.ScheduleID,
 	)
 	return err
 }
@@ -81,7 +84,7 @@ func (q *Queries) DeleteResumePoint(ctx context.Context, id string) error {
 }
 
 const resumePoint = `-- name: ResumePoint :one
-SELECT id, type, app_id, command_id, event_listener_id, message_id, message_instance_id, flow_source_id, flow_node_id, flow_state, created_at, expires_at FROM resume_points WHERE id = $1
+SELECT id, type, app_id, command_id, event_listener_id, message_id, message_instance_id, flow_source_id, flow_node_id, flow_state, created_at, expires_at, schedule_id FROM resume_points WHERE id = $1
 `
 
 func (q *Queries) ResumePoint(ctx context.Context, id string) (ResumePoint, error) {
@@ -100,6 +103,7 @@ func (q *Queries) ResumePoint(ctx context.Context, id string) (ResumePoint, erro
 		&i.FlowState,
 		&i.CreatedAt,
 		&i.ExpiresAt,
+		&i.ScheduleID,
 	)
 	return i, err
 }

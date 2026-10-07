@@ -8,6 +8,16 @@ import MessageComponentRow from "./MessageComponentRow";
 import MessageV2Editor from "./MessageV2Editor";
 import { MESSAGE_FLAG_COMPONENTS_V2 } from "@/lib/message/schema";
 import MessageInput from "./MessageInput";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { PlusIcon } from "lucide-react";
+import { newSelectRow } from "@/lib/message/select";
+
+const MAX_ROWS = 5;
 
 export default function MessageComponentsSection({
   disableFlowEditor,
@@ -30,12 +40,19 @@ export default function MessageComponentsSection({
   );
 
   const addButtonRow = useCallback(() => {
-    if (components.length >= 5) return;
+    if (components.length >= MAX_ROWS) return;
     addRow({
       id: getUniqueId(),
       type: 1,
       components: [],
     });
+  }, [components, addRow]);
+
+  // A select menu always gets its own row: Discord doesn't allow it to share a
+  // row with buttons or another select.
+  const addSelectRow = useCallback(() => {
+    if (components.length >= MAX_ROWS) return;
+    addRow(newSelectRow());
   }, [components, addRow]);
 
   return (
@@ -63,11 +80,24 @@ export default function MessageComponentsSection({
               disableFlowEditor={disableFlowEditor}
             />
           ))}
-          <div className="space-x-3">
-            <Button onClick={addButtonRow}>Thêm hàng nút</Button>
+          <div className="flex flex-wrap items-center gap-3">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button disabled={components.length >= MAX_ROWS}>
+                  <PlusIcon className="h-4 w-4 mr-1" /> Thêm thành phần
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={addButtonRow}>Hàng nút</DropdownMenuItem>
+                <DropdownMenuItem onClick={addSelectRow}>Menu chọn</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button onClick={clearComponents} variant="outline">
               Xóa thành phần
             </Button>
+            <div className="text-sm text-muted-foreground">
+              {components.length}/{MAX_ROWS} hàng
+            </div>
           </div>
         </>
       )}

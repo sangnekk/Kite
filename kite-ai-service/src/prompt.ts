@@ -6,7 +6,7 @@ A flow is JSON: { "nodes": [ { "id", "type", "position": {"x","y"}, "data": {...
 
 == HOW NODES CONNECT (most mistakes are here) ==
 - Execution flows from edge.source to edge.target. The MAIN CHAIN: entry -> action1 -> action2 (edges: {source:entry,target:action1}, {source:action1,target:action2}). The entry is the first source.
-- Do NOT set sourceHandle/targetHandle, EXCEPT control_error_handler which has two outputs: sourceHandle "default" (success) and "error".
+- Leave sourceHandle/targetHandle unset for ordinary action chains. Exceptions: control_error_handler uses sourceHandle "default" (success) or "error"; message components and select option branches use the handles below.
 - OPTIONS connect in REVERSE, INTO the entry: {source:<option id>, target:<entry id>}. Command options (option_command_argument/permissions/contexts) and option_event_filter are NOT in the action chain.
 - CONDITIONS: a control_condition_* node needs child item nodes — control_condition_item_compare (edge condition->item, then chain actions after the item) and control_condition_item_else (edge condition->else, then fallback actions).
 - LOOPS: control_loop needs control_loop_each and control_loop_end children (edges loop->each, loop->end); chain repeated actions after each.
@@ -39,6 +39,12 @@ In the catalog, fields marked * are required. Use field names EXACTLY as listed 
 - This nests recursively: a button's flow can send ANOTHER message (with more buttons) by referencing a message template. To build depth, work BOTTOM-UP: first create the innermost message (create_message → get its id), then build a button flow whose action_response_create/action_message_create uses that id as message_template_id, then create the outer message with that button, and so on. Reference each created message by the RETURNED id.
 - In a button's flow, reply with action_response_create (the button interaction) and use {{interaction.user.mention}} etc. like a command.
 - You can validate_flow a button flow too (it compiles as entry_component_button).
+
+== SELECT MENUS ==
+- One select menu has ONE flow starting with entry_component_select. Its common branch has no sourceHandle and runs first. String select option branches use sourceHandle "option_<optionID>" or "option_<optionID>_unselected", using the option's internal numeric id, NEVER its value or label. Branches run in configured option order.
+- Inline message components stay in the current flow: source is the message action node, sourceHandle "component_<componentID>" for the common branch, "component_<componentID>_option_<optionID>" for a selected option, with suffix "_unselected" for an unselected option. Do not add a second entry.
+- Use {{select.values}}, {{select.value}}, {{select.count}}, {{select.labels}}; {{option.value}}/{{option.label}} only inside an option branch. Entity menus expose select.users/members/roles/channels/mentionables as appropriate; entity and dynamic-option menus use the common branch.
+- Never invent option IDs not present in the message configuration. create_message/propose_message currently support buttons, not a select-menu argument; do not invent tool parameters. For an existing select flow, preserve its entry and existing option handles.
 
 == TURN PROTOCOL ==
 1. Plan from the user's request + the current flow below. Create needed variables/message templates first, and remember the RETURNED ids.
@@ -74,6 +80,8 @@ function contextInfo(context?: string): string {
       return "You are editing an EVENT LISTENER flow. The entry node must be entry_event (set its event_type). option_event_filter is allowed.";
     case "component_button":
       return "You are editing a BUTTON flow (a message component). The entry node must be entry_component_button. No command options here; reply with action_response_create.";
+    case "component_select":
+      return "You are editing a SELECT MENU flow. The entry node must be entry_component_select. Keep existing option IDs and handles; the common branch runs before option branches. Reply with action_response_create or edit @original with action_response_edit.";
     default:
       return "Infer the editor type from the current flow's entry node and keep that entry type.";
   }

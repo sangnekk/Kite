@@ -135,29 +135,52 @@ func (c ComponentData) Copy() ComponentData {
 		accessory = &v
 	}
 
+	var defaultValues []ComponentDefaultValueData
+	if c.DefaultValues != nil {
+		defaultValues = make([]ComponentDefaultValueData, len(c.DefaultValues))
+		copy(defaultValues, c.DefaultValues)
+	}
+
+	var channelTypes []int
+	if c.ChannelTypes != nil {
+		channelTypes = make([]int, len(c.ChannelTypes))
+		copy(channelTypes, c.ChannelTypes)
+	}
+
+	var optionsSource *ComponentOptionsSourceData
+	if c.OptionsSource != nil {
+		v := *c.OptionsSource
+		optionsSource = &v
+	}
+
 	return ComponentData{
-		ID:           c.ID,
-		Type:         c.Type,
-		Disabled:     c.Disabled,
-		Style:        c.Style,
-		Label:        c.Label,
-		Emoji:        c.Emoji.Copy(),
-		URL:          c.URL,
-		Placeholder:  c.Placeholder,
-		MinValues:    c.MinValues,
-		MaxValues:    c.MaxValues,
-		Options:      options,
-		Content:      c.Content,
-		AccentColor:  accentColor,
-		Spoiler:      c.Spoiler,
-		Divider:      divider,
-		Spacing:      c.Spacing,
-		Media:        c.Media.Copy(),
-		Description:  c.Description,
-		Items:        items,
-		Components:   components,
-		Accessory:    accessory,
-		FlowSourceID: c.FlowSourceID,
+		ID:            c.ID,
+		Type:          c.Type,
+		Disabled:      c.Disabled,
+		Style:         c.Style,
+		Label:         c.Label,
+		Emoji:         c.Emoji.Copy(),
+		URL:           c.URL,
+		Placeholder:   c.Placeholder,
+		MinValues:     copyIntPtr(c.MinValues),
+		MaxValues:     copyIntPtr(c.MaxValues),
+		Options:       options,
+		OptionsSource: optionsSource,
+		ChannelTypes:  channelTypes,
+		DefaultValues: defaultValues,
+		ResetOnSelect: c.ResetOnSelect,
+		Access:        c.Access.Copy(),
+		Content:       c.Content,
+		AccentColor:   accentColor,
+		Spoiler:       c.Spoiler,
+		Divider:       divider,
+		Spacing:       c.Spacing,
+		Media:         c.Media.Copy(),
+		Description:   c.Description,
+		Items:         items,
+		Components:    components,
+		Accessory:     accessory,
+		FlowSourceID:  c.FlowSourceID,
 	}
 }
 
@@ -192,10 +215,38 @@ func (c *ComponentEmojiData) Copy() *ComponentEmojiData {
 	}
 }
 
+func copyIntPtr(v *int) *int {
+	if v == nil {
+		return nil
+	}
+	c := *v
+	return &c
+}
+
+func (a *ComponentAccessData) Copy() *ComponentAccessData {
+	if a == nil {
+		return nil
+	}
+
+	var roleIDs []string
+	if a.RoleIDs != nil {
+		roleIDs = make([]string, len(a.RoleIDs))
+		copy(roleIDs, a.RoleIDs)
+	}
+
+	return &ComponentAccessData{
+		Mode:        a.Mode,
+		RoleIDs:     roleIDs,
+		Permissions: a.Permissions,
+		DenyMessage: a.DenyMessage,
+	}
+}
+
 func (c ComponentSelectOptionData) Copy() ComponentSelectOptionData {
 	return ComponentSelectOptionData{
 		ID:           c.ID,
 		Label:        c.Label,
+		Value:        c.Value,
 		Description:  c.Description,
 		Emoji:        c.Emoji.Copy(),
 		Default:      c.Default,

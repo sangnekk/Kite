@@ -46,26 +46,39 @@ func (h *AppHandler) HandleAppSettingsGet(c *handler.Context) (*wire.AppSettings
 	}
 
 	return &wire.AppSettings{
-		EnablePrefixCommands: settings.EnablePrefixCommands,
-		CommandPrefix:        settings.CommandPrefix,
-		MessageContentIntent: h.hasMessageContentIntent(c.Context(), c.App),
+		EnablePrefixCommands:     settings.EnablePrefixCommands,
+		CommandPrefix:            settings.CommandPrefix,
+		MessageContentIntent:     h.hasMessageContentIntent(c.Context(), c.App),
+		LogComponentInteractions: settings.LogComponentInteractions,
 	}, nil
 }
 
 func (h *AppHandler) HandleAppSettingsUpdate(c *handler.Context, req wire.AppSettingsUpdateRequest) (*wire.AppSettingsUpdateResponse, error) {
+	current, err := h.appSettingsStore.AppSettings(c.Context(), c.App.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get app settings: %w", err)
+	}
+
+	logComponentInteractions := current.LogComponentInteractions
+	if req.LogComponentInteractions != nil {
+		logComponentInteractions = *req.LogComponentInteractions
+	}
+
 	settings, err := h.appSettingsStore.UpsertAppSettings(c.Context(), &model.AppSettings{
-		AppID:                c.App.ID,
-		EnablePrefixCommands: req.EnablePrefixCommands,
-		CommandPrefix:        req.CommandPrefix,
+		AppID:                    c.App.ID,
+		EnablePrefixCommands:     req.EnablePrefixCommands,
+		CommandPrefix:            req.CommandPrefix,
+		LogComponentInteractions: logComponentInteractions,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to update app settings: %w", err)
 	}
 
 	return &wire.AppSettings{
-		EnablePrefixCommands: settings.EnablePrefixCommands,
-		CommandPrefix:        settings.CommandPrefix,
-		MessageContentIntent: h.hasMessageContentIntent(c.Context(), c.App),
+		EnablePrefixCommands:     settings.EnablePrefixCommands,
+		CommandPrefix:            settings.CommandPrefix,
+		MessageContentIntent:     h.hasMessageContentIntent(c.Context(), c.App),
+		LogComponentInteractions: settings.LogComponentInteractions,
 	}, nil
 }
 

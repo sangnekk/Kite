@@ -43,7 +43,7 @@ export const nodeCategories = {
         "action_response_defer",
         "suspend_response_modal",
       ],
-      contextTypes: ["command", "component_button"],
+      contextTypes: ["command", "component_button", "component_select"],
     },
     {
       title: "Tin nhắn",

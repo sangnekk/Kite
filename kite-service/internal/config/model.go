@@ -105,6 +105,9 @@ type EngineConfig struct {
 	MaxOperations int    `toml:"max_operations"`
 	MaxCredits    int    `toml:"max_credits"`
 	HTTPProxyURL  string `toml:"http_proxy_url"`
+	// ComponentResumePointTTLDays expires buttons / select menus on messages sent
+	// by flows after this many days. 0 (default) keeps them working forever.
+	ComponentResumePointTTLDays int `toml:"component_resume_point_ttl_days"`
 }
 
 type UserLimitsConfig struct {

@@ -81,6 +81,7 @@ import {
   NodeData,
   nodeEntryCommandDataSchema,
   nodeEntryComponentButtonDataSchema,
+  nodeEntryComponentSelectDataSchema,
   nodeEntryEventDataSchema,
   nodeEntryCustomEventDataSchema,
   nodeActionEventEmitDataSchema,
@@ -185,6 +186,16 @@ export const nodeTypes: Record<string, NodeValues> = {
     dataFields: [],
     fixed: true,
   },
+  entry_component_select: {
+    color: entryColor,
+    icon: "list",
+    defaultTitle: "Menu chọn",
+    defaultDescription:
+      "Kích hoạt khi người dùng chọn trong menu. Nối hành động vào nhánh chung hoặc vào từng lựa chọn!",
+    dataSchema: nodeEntryComponentSelectDataSchema,
+    dataFields: [],
+    fixed: true,
+  },
   entry_schedule: {
     color: entryColor,
     icon: "clock",
@@ -251,7 +262,7 @@ export const nodeTypes: Record<string, NodeValues> = {
     defaultDescription:
       "Bot trì hoãn phản hồi tương tác để có thêm thời gian xử lý",
     dataSchema: nodeActionResponseDeferDataSchema,
-    dataFields: ["message_ephemeral", "custom_label"],
+    dataFields: ["message_ephemeral", "message_defer_update", "custom_label"],
     creditsCost: 1,
   },
   action_message_create: {

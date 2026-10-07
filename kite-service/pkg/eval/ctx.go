@@ -31,6 +31,8 @@ type InteractionEnv struct {
 	Member     any                      `expr:"member" json:"member"`
 	Command    *CommandEnv              `expr:"command" json:"command"`
 	Components map[string]*ComponentEnv `expr:"components" json:"components"`
+	// Component is the button or select menu that was interacted with.
+	Component *ComponentInteractionEnv `expr:"component" json:"component"`
 }
 
 func NewInteractionEnv(i *discord.InteractionEvent) *InteractionEnv {
@@ -40,6 +42,7 @@ func NewInteractionEnv(i *discord.InteractionEvent) *InteractionEnv {
 		ID:         i.ID.String(),
 		Channel:    NewSnowflakeEnv(i.ChannelID),
 		Components: NewComponentsEnv(i),
+		Component:  NewComponentInteractionEnv(i),
 	}
 
 	if i.Member != nil {
@@ -64,7 +67,7 @@ func NewInteractionEnv(i *discord.InteractionEvent) *InteractionEnv {
 func NewContextFromInteraction(i *discord.InteractionEvent, session *state.State) Context {
 	interactionEnv := NewInteractionEnv(i)
 
-	return Context{
+	ctx := Context{
 		Env: Env{
 			"interaction": interactionEnv,
 			"channel":     interactionEnv.Channel,
@@ -93,6 +96,14 @@ func NewContextFromInteraction(i *discord.InteractionEvent, session *state.State
 			},
 		},
 	}
+
+	// The configured options are bound later, once the select's configuration is
+	// known (see flow.FlowContext.BindComponent).
+	if selectEnv := NewSelectEnv(i, nil); selectEnv != nil {
+		ctx.Env["select"] = selectEnv
+	}
+
+	return ctx
 }
 
 func (e InteractionEnv) String() string {

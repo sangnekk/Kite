@@ -219,6 +219,36 @@ export const emojiSchema = z
 
 export type Emoji = z.infer<typeof emojiSchema>;
 
+// Who can use an interactive component (button or select menu).
+export const componentAccessSchema = z
+  .object({
+    mode: z.enum(["everyone", "roles", "permissions", "invoker"]),
+    role_ids: z.optional(z.array(z.string())),
+    permissions: z.optional(z.string()),
+    deny_message: z.optional(z.string().max(2000)),
+  })
+  .superRefine((data, ctx) => {
+    if (data.mode === "roles" && !data.role_ids?.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["role_ids"],
+        message: "Chọn ít nhất một vai trò",
+      });
+    }
+    if (
+      data.mode === "permissions" &&
+      (!data.permissions || data.permissions === "0")
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["permissions"],
+        message: "Chọn ít nhất một quyền",
+      });
+    }
+  });
+
+export type MessageComponentAccess = z.infer<typeof componentAccessSchema>;
+
 export const buttonStyleSchema = z
   .literal(1)
   .or(z.literal(2))
@@ -236,6 +266,7 @@ export const buttonSchema = z
     label: z.string(),
     emoji: z.optional(emojiSchema),
     disabled: z.optional(z.boolean()),
+    access: z.optional(componentAccessSchema),
     flow_source_id: z.string().default(() => getUniqueId().toString()),
   })
   .or(
@@ -262,33 +293,246 @@ export const buttonSchema = z
 
 export type MessageComponentButton = z.infer<typeof buttonSchema>;
 
+// ---------------------------------------------------------------------------
+// Select menus
+//
+// A select menu is either a "static option" select (String Select, type 3)
+// whose choices are configured here, or an "entity" select (User 5, Role 6,
+// Mentionable 7, Channel 8) whose choices Discord provides. Both share the
+// base fields; limits follow Discord's documentation.
+// ---------------------------------------------------------------------------
+
+export const SELECT_TYPE_STRING = 3;
+export const SELECT_TYPE_USER = 5;
+export const SELECT_TYPE_ROLE = 6;
+export const SELECT_TYPE_MENTIONABLE = 7;
+export const SELECT_TYPE_CHANNEL = 8;
+
+export const SELECT_MAX_OPTIONS = 25;
+export const SELECT_MAX_VALUES = 25;
+export const SELECT_MAX_PLACEHOLDER = 150;
+export const SELECT_MAX_OPTION_TEXT = 100;
+
+export function isSelectType(type: unknown): boolean {
+  return (
+    type === SELECT_TYPE_STRING ||
+    type === SELECT_TYPE_USER ||
+    type === SELECT_TYPE_ROLE ||
+    type === SELECT_TYPE_MENTIONABLE ||
+    type === SELECT_TYPE_CHANNEL
+  );
+}
+
+export function isEntitySelectType(type: unknown): boolean {
+  return isSelectType(type) && type !== SELECT_TYPE_STRING;
+}
+
+// Channel types a channel select can be restricted to.
+export const selectChannelTypes = [
+  { value: 0, label: "Kênh văn bản" },
+  { value: 2, label: "Kênh thoại" },
+  { value: 4, label: "Danh mục" },
+  { value: 5, label: "Kênh thông báo" },
+  { value: 13, label: "Kênh sân khấu" },
+  { value: 15, label: "Diễn đàn" },
+  { value: 16, label: "Kênh media" },
+  { value: 11, label: "Luồng công khai" },
+  { value: 12, label: "Luồng riêng tư" },
+  { value: 10, label: "Luồng thông báo" },
+] as const;
+
+const VALID_CHANNEL_TYPES: number[] = selectChannelTypes.map((t) => t.value);
+
 export const selectMenuOptionSchema = z.object({
   id: uniqueIdSchema.default(() => getUniqueId()),
-  label: z.string().min(1).max(100),
-  description: z.optional(z.string().min(1).max(100)),
+  label: z
+    .string()
+    .min(1, "Lựa chọn cần có nhãn")
+    .max(SELECT_MAX_OPTION_TEXT),
+  value: z
+    .string()
+    .min(1, "Lựa chọn cần có giá trị")
+    .max(SELECT_MAX_OPTION_TEXT)
+    .refine((v) => !v.includes("{{"), "Giá trị không được chứa biến {{ }}"),
+  description: z.optional(z.string().max(SELECT_MAX_OPTION_TEXT)),
   emoji: z.optional(emojiSchema),
+  default: z.optional(z.boolean()),
 });
 
 export type MessageComponentSelectMenuOption = z.infer<
   typeof selectMenuOptionSchema
 >;
 
-export const selectMenuSchema = z.object({
-  id: uniqueIdSchema.default(() => getUniqueId()),
-  type: z.literal(3),
-  placeholder: z.optional(z.string().max(150)),
-  disabled: z.optional(z.boolean()),
-  options: z.array(selectMenuOptionSchema).min(1).max(25),
-  flow_source_id: z.string().default(() => getUniqueId().toString()),
+export const selectOptionsSourceSchema = z.object({
+  items: z.string().min(1, "Nhập danh sách nguồn"),
+  label: z.string().min(1, "Nhập mẫu nhãn"),
+  value: z.string().min(1, "Nhập mẫu giá trị"),
+  description: z.optional(z.string()),
 });
 
+export type MessageComponentSelectOptionsSource = z.infer<
+  typeof selectOptionsSourceSchema
+>;
+
+const selectBaseShape = {
+  id: uniqueIdSchema.default(() => getUniqueId()),
+  placeholder: z.optional(z.string().max(SELECT_MAX_PLACEHOLDER)),
+  min_values: z.optional(z.number().int().min(0).max(SELECT_MAX_VALUES)),
+  max_values: z.optional(z.number().int().min(1).max(SELECT_MAX_VALUES)),
+  disabled: z.optional(z.boolean()),
+  reset_on_select: z.optional(z.boolean()),
+  access: z.optional(componentAccessSchema),
+  flow_source_id: z.string().default(() => getUniqueId().toString()),
+};
+
+export function selectLimits(data: {
+  min_values?: number;
+  max_values?: number;
+}) {
+  return { min: data.min_values ?? 1, max: data.max_values ?? 1 };
+}
+
+export const stringSelectSchema = z
+  .object({
+    ...selectBaseShape,
+    type: z.literal(3),
+    options: z.array(selectMenuOptionSchema).max(SELECT_MAX_OPTIONS).default([]),
+    options_source: z.optional(selectOptionsSourceSchema),
+  })
+  .superRefine((data, ctx) => {
+    const { min, max } = selectLimits(data);
+    if (min > max) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["min_values"],
+        message: "Tối thiểu không được lớn hơn tối đa",
+      });
+    }
+
+    // Options generated from a list are only known when the message is sent.
+    if (data.options_source) return;
+
+    if (data.options.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["options"],
+        message: "Menu chọn cần ít nhất một lựa chọn",
+      });
+      return;
+    }
+
+    if (max > data.options.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["max_values"],
+        message: `Tối đa không được lớn hơn số lựa chọn hiện có (${data.options.length})`,
+      });
+    }
+
+    const seen = new Map<string, number>();
+    data.options.forEach((option, i) => {
+      const first = seen.get(option.value);
+      if (option.value && first !== undefined) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["options", i, "value"],
+          message: `Giá trị "${option.value}" bị trùng với lựa chọn ${first + 1}`,
+        });
+      } else {
+        seen.set(option.value, i);
+      }
+    });
+
+    const defaults = data.options.filter((o) => o.default).length;
+    if (defaults > max) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["options"],
+        message: `Có ${defaults} lựa chọn được chọn sẵn nhưng tối đa chỉ cho chọn ${max}`,
+      });
+    }
+  });
+
+export const selectDefaultValueSchema = z.object({
+  id: z.string().min(1),
+  type: z.enum(["user", "role", "channel"]),
+});
+
+export type MessageComponentSelectDefaultValue = z.infer<
+  typeof selectDefaultValueSchema
+>;
+
+export const entitySelectSchema = z
+  .object({
+    ...selectBaseShape,
+    type: z.literal(5).or(z.literal(6)).or(z.literal(7)).or(z.literal(8)),
+    default_values: z.optional(z.array(selectDefaultValueSchema)),
+    channel_types: z.optional(z.array(z.number())),
+  })
+  .superRefine((data, ctx) => {
+    const { min, max } = selectLimits(data);
+    if (min > max) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["min_values"],
+        message: "Tối thiểu không được lớn hơn tối đa",
+      });
+    }
+
+    if ((data.default_values?.length ?? 0) > max) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["default_values"],
+        message: `Chỉ được chọn sẵn tối đa ${max} mục`,
+      });
+    }
+
+    if (data.channel_types?.length) {
+      if (data.type !== SELECT_TYPE_CHANNEL) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["channel_types"],
+          message: "Chỉ menu chọn kênh mới lọc được loại kênh",
+        });
+      } else if (
+        data.channel_types.some((t) => !VALID_CHANNEL_TYPES.includes(t))
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["channel_types"],
+          message: "Loại kênh không hợp lệ",
+        });
+      }
+    }
+  });
+
+export const selectMenuSchema = z.union([stringSelectSchema, entitySelectSchema]);
+
+export type MessageComponentStringSelect = z.infer<typeof stringSelectSchema>;
+export type MessageComponentEntitySelect = z.infer<typeof entitySelectSchema>;
 export type MessageComponentSelectMenu = z.infer<typeof selectMenuSchema>;
 
-export const actionRowSchema = z.object({
-  id: uniqueIdSchema.default(() => getUniqueId()),
-  type: z.literal(1),
-  components: z.array(buttonSchema.or(selectMenuSchema)).min(1).max(5),
-});
+// An action row holds up to 5 buttons OR exactly one select menu (Discord
+// doesn't allow mixing them).
+export const actionRowSchema = z
+  .object({
+    id: uniqueIdSchema.default(() => getUniqueId()),
+    type: z.literal(1),
+    components: z
+      .array(z.union([buttonSchema, selectMenuSchema]))
+      .min(1)
+      .max(5),
+  })
+  .superRefine((data, ctx) => {
+    const selects = data.components.filter((c) => isSelectType(c.type)).length;
+    if (selects > 0 && data.components.length > 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["components"],
+        message: "Menu chọn phải nằm một mình trong một hàng",
+      });
+    }
+  });
 
 export type MessageComponentActionRow = z.infer<typeof actionRowSchema>;
 

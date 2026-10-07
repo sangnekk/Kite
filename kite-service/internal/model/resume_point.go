@@ -13,6 +13,7 @@ type ResumePoint struct {
 	AppID             string
 	CommandID         null.String
 	EventListenerID   null.String
+	ScheduleID        null.String
 	MessageID         null.String
 	MessageInstanceID null.Int
 	FlowSourceID      null.String

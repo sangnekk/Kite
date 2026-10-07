@@ -35,6 +35,10 @@ func (h *MessageHandler) HandleMessageInstanceCreate(c *handler.Context, req wir
 
 	channelID, _ := strconv.ParseUint(req.DiscordChannelID, 10, 64)
 
+	if err := validateSendableComponents(&c.Message.Data); err != nil {
+		return nil, err
+	}
+
 	data := c.Message.Data.ToSendMessageData(message.ConvertOptions{})
 	data.Files, err = h.attachmentsToFiles(c.Context(), c.Message.Data.Attachments)
 	if err != nil {
@@ -52,6 +56,7 @@ func (h *MessageHandler) HandleMessageInstanceCreate(c *handler.Context, req wir
 		DiscordChannelID: req.DiscordChannelID,
 		DiscordMessageID: msg.ID.String(),
 		FlowSources:      c.Message.FlowSources,
+		MessageData:      messageSnapshot(c.Message.Data),
 		CreatedAt:        time.Now().UTC(),
 		UpdatedAt:        time.Now().UTC(),
 	})
@@ -81,6 +86,10 @@ func (h *MessageHandler) HandleMessageInstanceUpdate(c *handler.Context) (*wire.
 	channelID, _ := strconv.ParseUint(instance.DiscordChannelID, 10, 64)
 	messageID, _ := strconv.ParseUint(instance.DiscordMessageID, 10, 64)
 
+	if err := validateSendableComponents(&c.Message.Data); err != nil {
+		return nil, err
+	}
+
 	{
 		data := c.Message.Data.ToEditMessageData(message.ConvertOptions{})
 		data.Attachments = &[]discord.Attachment{}
@@ -99,6 +108,7 @@ func (h *MessageHandler) HandleMessageInstanceUpdate(c *handler.Context) (*wire.
 		ID:          instance.ID,
 		MessageID:   instance.MessageID,
 		FlowSources: c.Message.FlowSources,
+		MessageData: messageSnapshot(c.Message.Data),
 		UpdatedAt:   time.Now().UTC(),
 	})
 	if err != nil {
@@ -106,6 +116,33 @@ func (h *MessageHandler) HandleMessageInstanceUpdate(c *handler.Context) (*wire.
 	}
 
 	return wire.MessageInstanceToWire(instance), nil
+}
+
+// validateSendableComponents checks that a message can be sent from the
+// dashboard. Messages sent this way aren't evaluated like messages sent by
+// flows, so select options generated from a list can't be used.
+func validateSendableComponents(data *message.MessageData) error {
+	if err := data.ValidateComponents(); err != nil {
+		return handler.ErrBadRequest("invalid_components", err.Error())
+	}
+
+	generated := data.FindComponent(func(c *message.ComponentData) bool {
+		return c.OptionsSource != nil
+	})
+	if generated != nil {
+		return handler.ErrBadRequest(
+			"unsupported_options_source",
+			"select menus with options generated from a list can only be sent by a flow",
+		)
+	}
+	return nil
+}
+
+// messageSnapshot copies the message data that is stored with an instance, so
+// its components (e.g. select menu options) match what was sent to Discord.
+func messageSnapshot(data message.MessageData) *message.MessageData {
+	snapshot := data.Copy()
+	return &snapshot
 }
 
 func (h *MessageHandler) HandleMessageInstanceDelete(c *handler.Context) (*wire.MessageInstanceDeleteResponse, error) {

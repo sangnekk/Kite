@@ -4,6 +4,7 @@ import {
   permissionBits,
 } from "@/lib/discord/permissions";
 import { getNodeId, useNodeValues } from "@/lib/flow/nodes";
+import { useFlowContext } from "@/lib/flow/context";
 import {
   useBanks,
   useCommands,
@@ -153,6 +154,7 @@ const intputs: Record<string, any> = {
   emoji_data: EmojiDataInput,
   response_target: ResponseTargetInput,
   message_ephemeral: MessageEphemeralInput,
+  message_defer_update: MessageDeferUpdateInput,
   modal_data: ModalDataInput,
   channel_data: ChannelDataInput,
   thread_data: ThreadDataInput,
@@ -4185,19 +4187,72 @@ function ConditionAllowMultipleInput({ data, updateData, errors }: InputProps) {
 }
 
 function ControlLoopCountInput({ data, updateData, errors }: InputProps) {
+  const forEach = data.loop_items !== undefined;
+
   return (
-    <BaseInput
-      field="loop_count"
-      title="Số lần lặp"
-      description="Số lần chạy vòng lặp."
-      value={data.loop_count || ""}
-      updateValue={(v) =>
-        updateData({
-          loop_count: v || undefined,
-        })
-      }
+    <>
+      <BaseInput
+        type="select"
+        field="loop_mode"
+        title="Kiểu vòng lặp"
+        description="Lặp một số lần cố định, hoặc chạy một lần cho mỗi phần tử của danh sách (ví dụ các mục đã chọn trong menu chọn)."
+        value={forEach ? "items" : "count"}
+        options={[
+          { label: "Số lần cố định", value: "count" },
+          { label: "Mỗi phần tử trong danh sách", value: "items" },
+        ]}
+        updateValue={(v) =>
+          updateData(
+            v === "items"
+              ? { loop_items: data.loop_items ?? "", loop_count: undefined }
+              : { loop_items: undefined, loop_count: data.loop_count || "1" }
+          )
+        }
+        errors={errors}
+      />
+      {forEach ? (
+        <BaseInput
+          field="loop_items"
+          title="Danh sách"
+          description="Danh sách cần duyệt, ví dụ {{select.values}}. Trong mỗi lần lặp dùng {{item}} (phần tử) và {{index}} (vị trí, bắt đầu từ 0)."
+          value={data.loop_items || ""}
+          updateValue={(v) => updateData({ loop_items: v })}
+          errors={errors}
+          placeholders
+        />
+      ) : (
+        <BaseInput
+          field="loop_count"
+          title="Số lần lặp"
+          description="Số lần chạy vòng lặp."
+          value={data.loop_count || ""}
+          updateValue={(v) =>
+            updateData({
+              loop_count: v || undefined,
+            })
+          }
+          errors={errors}
+          placeholders
+        />
+      )}
+    </>
+  );
+}
+
+function MessageDeferUpdateInput({ data, updateData, errors }: InputProps) {
+  const contextType = useFlowContext((c) => c.type);
+  if (contextType !== "component_button" && contextType !== "component_select") {
+    return null;
+  }
+
+  return (
+    <BaseCheckbox
+      field="message_defer_update"
+      title="Không tạo tin nhắn chờ"
+      description="Chỉ dùng cho nút và menu chọn: xác nhận tương tác mà không hiện 'Bot đang suy nghĩ...'. Sau đó dùng 'Sửa tin nhắn phản hồi' để sửa chính tin nhắn chứa thành phần."
+      value={!!data.message_defer_update}
+      updateValue={(v) => updateData({ message_defer_update: v || undefined })}
       errors={errors}
-      placeholders
     />
   );
 }

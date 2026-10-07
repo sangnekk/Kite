@@ -16,6 +16,7 @@ import (
 	"github.com/kitecloud/kite/kite-service/internal/util"
 	"github.com/kitecloud/kite/kite-service/pkg/eval"
 	"github.com/kitecloud/kite/kite-service/pkg/flow"
+	"github.com/kitecloud/kite/kite-service/pkg/message"
 	"github.com/kitecloud/kite/kite-service/pkg/plugin"
 	"github.com/kitecloud/kite/kite-service/pkg/provider"
 	"gopkg.in/guregu/null.v4"
@@ -90,6 +91,7 @@ func (s Env) flowProviders(appID string, session *state.State, links entityLinks
 			s.ResumePointStore,
 			appID,
 			links,
+			s.Config.ComponentResumePointTTL,
 		),
 		InternalEvent: NewInternalEventProvider(appID, s.CustomEventStore, s.InternalEventDispatcher),
 		CustomTable:   NewCustomTableProvider(appID, s.CustomTableStore),
@@ -199,6 +201,32 @@ func (s Env) executeFlowEvent(
 	links entityLinks,
 	state *flow.FlowContextState,
 ) {
+	s.executeComponentFlowEvent(ctx, appID, node, session, event, links, state, nil)
+}
+
+// componentExecution describes the component interaction a flow runs for.
+type componentExecution struct {
+	// component is the configuration of the interacted component when it is
+	// known up front (message templates). Flows resumed from a message sent by
+	// a flow look it up themselves.
+	component *message.ComponentData
+	// logInteraction logs the interaction to the app logs.
+	logInteraction bool
+}
+
+// executeComponentFlowEvent runs a flow for an event. For component
+// interactions (comp != nil) the component is bound to the flow and the
+// interaction is described in logs.
+func (s Env) executeComponentFlowEvent(
+	ctx context.Context,
+	appID string,
+	node *flow.CompiledFlowNode,
+	session *state.State,
+	event gateway.Event,
+	links entityLinks,
+	state *flow.FlowContextState,
+	comp *componentExecution,
+) {
 	defer s.recoverPanic(appID, links)
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -206,6 +234,10 @@ func (s Env) executeFlowEvent(
 
 	fCtx := s.flowContext(ctx, appID, session, event, links, state)
 	defer fCtx.Cancel()
+
+	if comp != nil && comp.component != nil {
+		fCtx.BindComponent(comp.component)
+	}
 
 	shouldExecute, err := node.FilterEvent(fCtx)
 	if err != nil {
@@ -222,14 +254,24 @@ func (s Env) executeFlowEvent(
 		return
 	}
 
-	err = node.Execute(fCtx)
-	if err != nil {
-		s.createLogEntry(
-			appID,
-			model.LogLevelError,
-			fmt.Sprintf("Failed to execute flow event: %v", err),
-			links,
-		)
+	execErr := node.Execute(fCtx)
+
+	// The component is known after execution even for resumed flows.
+	var interactionDescription string
+	if comp != nil {
+		if e, ok := event.(*gateway.InteractionCreateEvent); ok {
+			interactionDescription = describeComponentInteraction(&e.InteractionEvent, fCtx.Component)
+		}
+	}
+
+	if execErr != nil {
+		msg := fmt.Sprintf("Failed to execute flow event: %v", execErr)
+		if interactionDescription != "" {
+			msg = fmt.Sprintf("[%s] %s", interactionDescription, msg)
+		}
+		s.createLogEntry(appID, model.LogLevelError, msg, links)
+	} else if comp != nil && comp.logInteraction && interactionDescription != "" {
+		s.createLogEntry(appID, model.LogLevelInfo, interactionDescription, links)
 	}
 
 	// Stop a pending auto-defer before acknowledging the interaction ourselves,
@@ -247,10 +289,24 @@ func (s Env) executeFlowEvent(
 
 	s.createUsageRecord(
 		appID,
-		model.UsageRecordTypeCommandFlowExecution,
+		usageTypeForLinks(links),
 		fCtx.CreditsUsed(),
 		links,
 	)
+}
+
+// usageTypeForLinks categorizes a flow execution by the entity it belongs to.
+func usageTypeForLinks(links entityLinks) model.UsageRecordType {
+	switch {
+	case links.MessageID.Valid:
+		return model.UsageRecordTypeMessageFlowExecution
+	case links.EventListenerID.Valid:
+		return model.UsageRecordTypeEventListenerFlowExecution
+	case links.ScheduleID.Valid:
+		return model.UsageRecordTypeScheduledFlowExecution
+	default:
+		return model.UsageRecordTypeCommandFlowExecution
+	}
 }
 
 func (s Env) executeWebhookEvent(

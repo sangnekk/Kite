@@ -9,6 +9,9 @@ import (
 type FlowContextState struct {
 	NodeStates  map[string]*FlowContextNodeState `json:"node_states"`
 	Temporaries map[string]thing.Thing           `json:"temporaries"`
+	// InvokerUserID is the user who triggered the flow originally. It survives
+	// suspending and resuming, so components can be restricted to that user.
+	InvokerUserID string `json:"invoker_user_id,omitempty"`
 }
 
 func NewFlowContextState() *FlowContextState {
@@ -20,11 +23,13 @@ func NewFlowContextState() *FlowContextState {
 
 func (s FlowContextState) MarshalJSON() ([]byte, error) {
 	aux := struct {
-		NodeStates  map[string]*FlowContextNodeState `json:"node_states"`
-		Temporaries map[string]thing.Thing           `json:"temporaries"`
+		NodeStates    map[string]*FlowContextNodeState `json:"node_states"`
+		Temporaries   map[string]thing.Thing           `json:"temporaries"`
+		InvokerUserID string                           `json:"invoker_user_id,omitempty"`
 	}{
-		NodeStates:  make(map[string]*FlowContextNodeState, len(s.NodeStates)),
-		Temporaries: make(map[string]thing.Thing, len(s.Temporaries)),
+		NodeStates:    make(map[string]*FlowContextNodeState, len(s.NodeStates)),
+		Temporaries:   make(map[string]thing.Thing, len(s.Temporaries)),
+		InvokerUserID: s.InvokerUserID,
 	}
 	// We don't want to serialize empty node states
 	for k, v := range s.NodeStates {
@@ -88,8 +93,9 @@ func (s *FlowContextState) SetTemporary(name string, value thing.Thing) {
 
 func (s *FlowContextState) Copy() FlowContextState {
 	copy := FlowContextState{
-		NodeStates:  make(map[string]*FlowContextNodeState, len(s.NodeStates)),
-		Temporaries: make(map[string]thing.Thing, len(s.Temporaries)),
+		NodeStates:    make(map[string]*FlowContextNodeState, len(s.NodeStates)),
+		Temporaries:   make(map[string]thing.Thing, len(s.Temporaries)),
+		InvokerUserID: s.InvokerUserID,
 	}
 
 	for k, v := range s.NodeStates {

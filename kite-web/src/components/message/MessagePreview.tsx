@@ -20,6 +20,8 @@ import {
   DiscordVideoAttachment,
 } from "@skyra/discord-components-react";
 import MessageMarkdown from "./MessageMarkdown";
+import MessagePreviewSelectMenu from "./MessagePreviewSelectMenu";
+import { isSelectType } from "@/lib/message/schema";
 import { cn } from "@/lib/utils";
 import { useAssetQuery } from "@/lib/api/queries";
 import { useAppId } from "@/lib/hooks/params";
@@ -126,7 +128,11 @@ export default function MessagePreview({
         {!isV2 && msg.components.length != 0 && (
           <DiscordAttachments slot="components">
             {msg.components.map((row) =>
-              row.type === 1 ? (
+              row.type === 1 && isSelectType(row.components[0]?.type) ? (
+                <div key={row.id} className="mt-1">
+                  <MessagePreviewSelectMenu select={row.components[0]} />
+                </div>
+              ) : row.type === 1 ? (
                 <DiscordActionRow key={row.id}>
                   {row.components.map((comp) =>
                     comp.type === 2 ? (

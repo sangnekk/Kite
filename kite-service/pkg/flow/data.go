@@ -54,6 +54,7 @@ const (
 	FlowNodeTypeEntryCommand         FlowNodeType = "entry_command"
 	FlowNodeTypeEntryEvent           FlowNodeType = "entry_event"
 	FlowNodeTypeEntryComponentButton FlowNodeType = "entry_component_button"
+	FlowNodeTypeEntryComponentSelect FlowNodeType = "entry_component_select"
 	FlowNodeTypeEntrySchedule        FlowNodeType = "entry_schedule"
 	FlowNodeTypeEntryCustomEvent     FlowNodeType = "entry_custom_event"
 
@@ -245,6 +246,9 @@ type FlowNodeData struct {
 	MessageData       *message.MessageData `json:"message_data,omitempty"`
 	MessageTemplateID string               `json:"message_template_id,omitempty"`
 	MessageEphemeral  bool                 `json:"message_ephemeral,omitempty"`
+	// MessageDeferUpdate makes action_response_defer acknowledge a component
+	// interaction as a message update instead of a "thinking..." reply.
+	MessageDeferUpdate bool `json:"message_defer_update,omitempty"`
 
 	// Message Reaction Create, Delete
 	EmojiData *EmojiData `json:"emoji_data,omitempty"`
@@ -392,6 +396,9 @@ type FlowNodeData struct {
 	ConditionItemValue     string         `json:"condition_item_value,omitempty"`
 	// Loop
 	LoopCount string `json:"loop_count,omitempty"`
+	// LoopItems switches the loop to "for each" mode: it runs once per item of
+	// the list it evaluates to, with {{item}} and {{index}} bound.
+	LoopItems string `json:"loop_items,omitempty"`
 	// Sleep
 	SleepDurationSeconds string `json:"sleep_duration_seconds,omitempty"`
 
@@ -465,6 +472,15 @@ func (d FlowNodeData) Validate(nodeType FlowNodeType) error {
 			validation.Required,
 			validation.In(provider.InternalEventExecutionModeAsync, provider.InternalEventExecutionModeSync),
 		)),
+
+		// Messages sent by flows (components, select menus)
+		validation.Field(&d.MessageData, validation.By(func(value any) error {
+			data, ok := value.(*message.MessageData)
+			if !ok {
+				return nil
+			}
+			return data.ValidateComponents()
+		})),
 
 		// Structured tables
 		validation.Field(&d.CustomTableID, validation.When(isCustomTableAction(nodeType), validation.Required)),

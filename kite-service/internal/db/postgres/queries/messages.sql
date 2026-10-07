@@ -45,9 +45,10 @@ INSERT INTO message_instances (
     hidden,
     flow_sources,
     created_at,
-    updated_at
+    updated_at,
+    message_data
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
 ) RETURNING *;
 
 -- name: GetMessageInstance :one
@@ -65,7 +66,8 @@ SELECT * FROM message_instances WHERE discord_message_id = $1;
 -- name: UpdateMessageInstance :one
 UPDATE message_instances SET
     flow_sources = $3,
-    updated_at = $4
+    updated_at = $4,
+    message_data = $5
 WHERE id = $1 AND message_id = $2 RETURNING *;
 
 -- name: DeleteMessageInstance :exec

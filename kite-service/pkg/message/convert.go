@@ -1,6 +1,8 @@
 package message
 
 import (
+	"fmt"
+
 	"github.com/diamondburned/arikawa/v3/api"
 	"github.com/diamondburned/arikawa/v3/discord"
 	"github.com/diamondburned/arikawa/v3/utils/json/option"
@@ -233,6 +235,10 @@ func (c *ComponentData) toComponent(opts ConvertOptions) discord.Component {
 		return &row
 	case ComponentTypeButton:
 		return c.toButton(opts)
+	case ComponentTypeStringSelect:
+		return c.toStringSelect(opts)
+	case ComponentTypeUserSelect, ComponentTypeRoleSelect, ComponentTypeMentionableSelect, ComponentTypeChannelSelect:
+		return c.toEntitySelect(opts)
 	case ComponentTypeTextDisplay:
 		return &discord.TextDisplayComponent{Content: c.Content}
 	case ComponentTypeSeparator:
@@ -309,11 +315,7 @@ func (c *ComponentData) toButton(opts ConvertOptions) *discord.ButtonComponent {
 
 	var customID discord.ComponentID
 	if c.Style != 5 {
-		if opts.ComponentIDFactory != nil {
-			customID = opts.ComponentIDFactory(c)
-		} else {
-			customID = discord.ComponentID(c.FlowSourceID)
-		}
+		customID = c.customID(opts)
 	}
 
 	return &discord.ButtonComponent{
@@ -323,6 +325,116 @@ func (c *ComponentData) toButton(opts ConvertOptions) *discord.ButtonComponent {
 		Disabled: c.Disabled,
 		CustomID: customID,
 	}
+}
+
+// customID returns the custom ID of an interactive component: the ID produced
+// by the factory (resume points of messages sent by flows) or the component's
+// flow source ID (message templates).
+func (c *ComponentData) customID(opts ConvertOptions) discord.ComponentID {
+	if opts.ComponentIDFactory != nil {
+		if id := opts.ComponentIDFactory(c); id != "" {
+			return id
+		}
+	}
+	if c.FlowSourceID != "" {
+		return discord.ComponentID(c.FlowSourceID)
+	}
+	// Discord requires a custom ID. Components without a flow still need one;
+	// interacting with them is answered with "no longer available".
+	return discord.ComponentID(fmt.Sprintf("noflow:%d", c.ID))
+}
+
+func (c *ComponentData) toStringSelect(opts ConvertOptions) *discord.StringSelectComponent {
+	options := make([]discord.SelectOption, len(c.Options))
+	for i, o := range c.Options {
+		options[i] = discord.SelectOption{
+			Label:       o.Label,
+			Value:       o.Value,
+			Description: o.Description,
+			Emoji:       o.Emoji.ToEmoji(),
+			Default:     o.Default,
+		}
+	}
+
+	min, max := c.ValueLimits()
+	return &discord.StringSelectComponent{
+		CustomID:    c.customID(opts),
+		Options:     options,
+		Placeholder: c.Placeholder,
+		ValueLimits: [2]int{min, max},
+		Disabled:    c.Disabled,
+	}
+}
+
+func (c *ComponentData) toEntitySelect(opts ConvertOptions) discord.Component {
+	customID := c.customID(opts)
+	min, max := c.ValueLimits()
+	limits := [2]int{min, max}
+
+	switch c.Type {
+	case ComponentTypeUserSelect:
+		return &discord.UserSelectComponent{
+			CustomID:     customID,
+			Placeholder:  c.Placeholder,
+			DefaultUsers: defaultIDs[discord.UserID](c.DefaultValues, DefaultValueTypeUser),
+			ValueLimits:  limits,
+			Disabled:     c.Disabled,
+		}
+	case ComponentTypeRoleSelect:
+		return &discord.RoleSelectComponent{
+			CustomID:     customID,
+			Placeholder:  c.Placeholder,
+			DefaultRoles: defaultIDs[discord.RoleID](c.DefaultValues, DefaultValueTypeRole),
+			ValueLimits:  limits,
+			Disabled:     c.Disabled,
+		}
+	case ComponentTypeMentionableSelect:
+		var mentions []discord.DefaultMention
+		for _, id := range defaultIDs[discord.UserID](c.DefaultValues, DefaultValueTypeUser) {
+			mentions = append(mentions, discord.DefaultUserMention(id))
+		}
+		for _, id := range defaultIDs[discord.RoleID](c.DefaultValues, DefaultValueTypeRole) {
+			mentions = append(mentions, discord.DefaultRoleMention(id))
+		}
+		return &discord.MentionableSelectComponent{
+			CustomID:        customID,
+			Placeholder:     c.Placeholder,
+			DefaultMentions: mentions,
+			ValueLimits:     limits,
+			Disabled:        c.Disabled,
+		}
+	default: // ComponentTypeChannelSelect
+		channelTypes := make([]discord.ChannelType, len(c.ChannelTypes))
+		for i, t := range c.ChannelTypes {
+			channelTypes[i] = discord.ChannelType(t)
+		}
+		return &discord.ChannelSelectComponent{
+			CustomID:        customID,
+			ChannelTypes:    channelTypes,
+			Placeholder:     c.Placeholder,
+			DefaultChannels: defaultIDs[discord.ChannelID](c.DefaultValues, DefaultValueTypeChannel),
+			ValueLimits:     limits,
+			Disabled:        c.Disabled,
+		}
+	}
+}
+
+// defaultIDs returns the valid snowflakes of the default values of the given
+// type. Values that don't parse (e.g. a placeholder that evaluated to nothing)
+// are skipped.
+func defaultIDs[T ~uint64](values []ComponentDefaultValueData, valueType string) []T {
+	var ids []T
+	for _, v := range values {
+		if v.Type != valueType {
+			continue
+		}
+		id, err := discord.ParseSnowflake(v.ID)
+		if err != nil || !id.IsValid() {
+			continue
+		}
+		ids = append(ids, T(id))
+	}
+	return ids
 }
 
 // toUnfurled converts a media item to a native unfurled media item. External

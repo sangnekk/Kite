@@ -250,3 +250,33 @@ func TestStringConversions(t *testing.T) {
 		})
 	}
 }
+
+func TestContainsArray(t *testing.T) {
+	arr := NewArray([]Thing{NewString("role_a"), NewInt(123)})
+
+	a, ab, id := NewString("role_a"), NewString("role_ab"), NewString("123")
+	if !arr.Contains(&a) {
+		t.Error("array should contain role_a")
+	}
+	if arr.Contains(&ab) {
+		t.Error("array must not match substrings of its elements")
+	}
+	if !arr.Contains(&id) {
+		t.Error("array should contain 123 when compared as a string")
+	}
+
+	s, sub := NewString("hello world"), NewString("world")
+	if !s.Contains(&sub) {
+		t.Error("strings keep substring semantics")
+	}
+}
+
+func TestGuessTypeStringSlice(t *testing.T) {
+	v, err := NewGuessType([]string{"a", "b"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v.Type != TypeArray || len(v.Array()) != 2 {
+		t.Fatalf("[]string should become an array, got %v", v.Type)
+	}
+}

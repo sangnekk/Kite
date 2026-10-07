@@ -1,4 +1,8 @@
-import { FlowContextStoreProvider, FlowContextType } from "@/lib/flow/context";
+import {
+  FlowComponentOption,
+  FlowContextStoreProvider,
+  FlowContextType,
+} from "@/lib/flow/context";
 import { FlowData } from "@/lib/flow/dataSchema";
 import { NodeMouseHandler, OnSelectionChangeParams } from "@xyflow/react";
 import { useCallback, useState } from "react";
@@ -15,10 +19,18 @@ interface Props {
   flowData: FlowData;
   logs?: LogEntry[];
   context: FlowContextType;
+  // Options of the select menu whose flow is edited (context "component_select").
+  componentOptions?: FlowComponentOption[];
   onChange: () => void;
 }
 
-export default function Flow({ flowData, logs, context, onChange }: Props) {
+export default function Flow({
+  flowData,
+  logs,
+  context,
+  componentOptions,
+  onChange,
+}: Props) {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [copilotOpen, setCopilotOpen] = useState(false);
   const features = useAppFeatures();
@@ -41,7 +53,7 @@ export default function Flow({ flowData, logs, context, onChange }: Props) {
   }, []);
 
   return (
-    <FlowContextStoreProvider type={context}>
+    <FlowContextStoreProvider type={context} componentOptions={componentOptions}>
       <div className="flex flex-auto overflow-y-hidden relative">
         <FlowMenu selectedNodeId={selectedNodeId} logs={logs} />
 

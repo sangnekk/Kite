@@ -30,6 +30,9 @@ type MessageInstance struct {
 	Ephemeral        bool
 	Hidden           bool
 	FlowSources      map[string]flow.FlowData
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
+	// MessageData is a snapshot of the message when the instance was sent or
+	// last updated. It is nil for instances created before it was tracked.
+	MessageData *message.MessageData
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
