@@ -6,7 +6,7 @@ export default function AppListPage() {
   return (
     <BaseLayout title="Ứng dụng">
       <div className="flex flex-1 justify-center items-center min-h-[100dvh] w-full px-5 pt-10 pb-20">
-        <div className="w-full max-w-lg">
+        <div className="w-full max-w-2xl">
           <div>
             <h1 className="text-lg font-semibold md:text-2xl mb-1">
               Ứng dụng của bạn

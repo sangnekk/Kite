@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useApp, useApps } from "@/lib/hooks/api";
 import env from "@/lib/env/client";
+import AppAvatar from "./AppAvatar";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useCallback } from "react";
@@ -50,9 +51,13 @@ export default function AppSidebarAppSwitcher() {
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <BotIcon className="size-5" />
-              </div>
+              {app ? (
+                <AppAvatar app={app} className="size-8 shrink-0 rounded-lg" />
+              ) : (
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                  <BotIcon className="size-5" />
+                </div>
+              )}
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">{app?.name}</span>
                 <span className="truncate text-xs">
@@ -77,10 +82,8 @@ export default function AppSidebarAppSwitcher() {
                 onClick={() => setApp(app!.id)}
                 className="gap-2 p-2"
               >
-                <div className="flex size-6 items-center justify-center rounded-sm border">
-                  <BotIcon className="size-4 shrink-0" />
-                </div>
-                {app!.name}
+                <AppAvatar app={app!} className="size-6 shrink-0 rounded-sm" />
+                <span className="truncate">{app!.name}</span>
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />

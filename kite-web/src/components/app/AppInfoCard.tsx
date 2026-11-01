@@ -12,6 +12,7 @@ import { formatDate } from "@/lib/utils";
 import { CopyIcon } from "lucide-react";
 import { useCallback } from "react";
 import UserAvatar from "../common/UserAvatar";
+import AppAvatar from "./AppAvatar";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Separator } from "../ui/separator";
@@ -31,17 +32,7 @@ export default function AppInfoCard() {
   return (
     <Card className="overflow-hidden">
       <CardHeader className="flex flex-row items-center gap-3 bg-muted/50">
-        {app && (
-          // The id of a bot user is the id of its application.
-          <UserAvatar
-            user={{
-              discord_id: app.discord_id,
-              discord_avatar: app.discord_avatar,
-              display_name: app.name,
-            }}
-            className="h-11 w-11 rounded-lg"
-          />
-        )}
+        {app && <AppAvatar app={app} className="h-11 w-11 shrink-0 rounded-lg" />}
         <div className="grid gap-0.5">
           <CardTitle className="text-lg">
             {app?.name || "Ứng dụng không xác định"}
