@@ -12,9 +12,8 @@ import (
 	"github.com/kitecloud/kite/kite-service/internal/api/handler"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/billing/payment"
 	"github.com/kitecloud/kite/kite-service/internal/api/wire"
+	"github.com/kitecloud/kite/kite-service/internal/core/fulfillment"
 	"github.com/kitecloud/kite/kite-service/internal/model"
-	"github.com/kitecloud/kite/kite-service/internal/util"
-	"gopkg.in/guregu/null.v4"
 )
 
 func (h *BillingHandler) HandleSePayIPN(c *handler.Context, body json.RawMessage) (*wire.BillingWebhookResponse, error) {
@@ -100,88 +99,13 @@ func (h *BillingHandler) processSePayIPN(c *handler.Context, body json.RawMessag
 		return nil, handler.ErrBadRequest("account_mismatch", "payment account does not match configured account")
 	}
 
-	plan := h.planManager.PlanByID(session.PlanID)
-	if plan == nil {
-		return nil, handler.ErrBadRequest("unknown_plan", "Unknown plan")
-	}
-
-	app, err := h.appStore.App(c.Context(), session.AppID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load app: %w", err)
-	}
-
-	now := time.Now().UTC()
-
-	// Reject a payment when the app already has any active plan (paid or manually
-	// granted). Checkout creation guards this too, so reaching here is an anomaly
-	// (e.g. a plan granted after checkout started) that needs manual handling
-	// (refund) rather than stacking a parallel entitlement.
-	activeEntitlements, err := h.entitlementStore.ActiveEntitlements(c.Context(), app.ID, now)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load active entitlements: %w", err)
-	}
-	if len(activeEntitlements) > 0 {
-		return nil, handler.ErrBadRequest("plan_already_active", fmt.Sprintf("app already has an active entitlement (plan %s)", activeEntitlements[0].PlanID))
-	}
-
-	// A plan with a positive premium duration grants access for a fixed window:
-	// the entitlement (the source of truth for feature gating) expires at endsAt
-	// and the subscription record mirrors it, so the billing UI releases the plan
-	// once it lapses instead of showing it as active forever. A zero duration
-	// means lifetime access (no expiry), kept as a far-future RenewsAt.
-	endsAt := null.Time{}
-	renewsAt := now.AddDate(50, 0, 0)
-	if plan.PremiumDurationDays > 0 {
-		end := now.AddDate(0, 0, plan.PremiumDurationDays)
-		endsAt = null.TimeFrom(end)
-		renewsAt = end
-	}
-
-	subscription, err := h.subscriptionStore.UpsertLemonSqueezySubscription(c.Context(), model.Subscription{
-		ID:                         util.UniqueID(),
-		DisplayName:                plan.Title,
-		Source:                     model.SubscriptionSourceSePay,
-		Status:                     "active",
-		StatusFormatted:            "Active",
-		RenewsAt:                   renewsAt,
-		TrialEndsAt:                null.Time{},
-		EndsAt:                     endsAt,
-		CreatedAt:                  now,
-		UpdatedAt:                  now,
-		UserID:                     app.OwnerUserID,
-		LemonsqueezySubscriptionID: null.StringFrom(session.PaymentID),
-		LemonsqueezyCustomerID:     null.String{},
-		LemonsqueezyOrderID:        null.StringFrom(firstNonEmpty(req.ReferenceCode, fmt.Sprintf("%d", req.ID))),
-		LemonsqueezyProductID:      null.StringFrom(plan.ID),
-		LemonsqueezyVariantID:      null.String{},
-	})
-	if err != nil {
-		slog.Error(
-			"Failed to upsert sepay subscription",
-			slog.String("payment_id", session.PaymentID),
-			slog.String("error", err.Error()),
-		)
-		return nil, fmt.Errorf("failed to upsert subscription: %w", err)
-	}
-
-	entitlement := model.Entitlement{
-		ID:             util.UniqueID(),
-		Type:           "subscription",
-		SubscriptionID: null.StringFrom(subscription.ID),
-		AppID:          app.ID,
-		PlanID:         plan.ID,
-		CreatedAt:      now,
-		UpdatedAt:      now,
-		EndsAt:         endsAt,
-	}
-
-	_, err = h.entitlementStore.UpsertSubscriptionEntitlement(c.Context(), entitlement)
-	if err != nil {
-		return nil, fmt.Errorf("failed to upsert subscription entitlement: %w", err)
-	}
-
-	if _, err := h.paymentSessionStore.MarkPaymentSessionPaid(c.Context(), session.PaymentID, firstNonEmpty(req.ReferenceCode, fmt.Sprintf("%d", req.ID)), string(body), now); err != nil {
-		return nil, fmt.Errorf("failed to mark payment session paid: %w", err)
+	orderRef := firstNonEmpty(req.ReferenceCode, fmt.Sprintf("%d", req.ID))
+	if err := h.fulfiller.Fulfill(c.Context(), session, orderRef, string(body), time.Now().UTC()); err != nil {
+		var rejected *fulfillment.Error
+		if errors.As(err, &rejected) {
+			return nil, handler.ErrBadRequest(rejected.Code, rejected.Message)
+		}
+		return nil, err
 	}
 
 	return &wire.BillingWebhookResponse{}, nil

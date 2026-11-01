@@ -25,6 +25,11 @@ type Context struct {
 	Schedule            *model.Schedule
 	PluginInstance      *model.PluginInstance
 	WebhookIntegration  *model.WebhookIntegration
+
+	// Set by the admin console middleware: the Discord ID and role ("owner",
+	// "admin" or "staff") of the signed-in admin.
+	AdminDiscordID string
+	AdminRole      string
 }
 
 func (c *Context) Context() context.Context {

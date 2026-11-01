@@ -7,6 +7,7 @@ import (
 
 	"github.com/kitecloud/kite/kite-service/internal/api/access"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler"
+	adminhandler "github.com/kitecloud/kite/kite-service/internal/api/handler/admin"
 	aihandler "github.com/kitecloud/kite/kite-service/internal/api/handler/ai"
 	internalai "github.com/kitecloud/kite/kite-service/internal/api/handler/internal_ai"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/app"
@@ -31,6 +32,7 @@ import (
 	webhookintegration "github.com/kitecloud/kite/kite-service/internal/api/handler/webhook_integration"
 	"github.com/kitecloud/kite/kite-service/internal/api/session"
 	"github.com/kitecloud/kite/kite-service/internal/core/command"
+	"github.com/kitecloud/kite/kite-service/internal/core/fulfillment"
 	"github.com/kitecloud/kite/kite-service/internal/core/plan"
 	"github.com/kitecloud/kite/kite-service/internal/store"
 	"github.com/kitecloud/kite/kite-service/internal/util"
@@ -208,6 +210,20 @@ func (s *APIServer) RegisterRoutes(
 	}, paymentSessionStore, appStore, userStore, subscriptionStore, entitlementStore, planManager)
 
 	v1Group.Post("/billing/sepay/ipn", handler.TypedWithBody(billingHandler.HandleSePayIPN))
+
+	// Admin console routes
+	adminHandler := adminhandler.NewHandler(adminhandler.Deps{
+		Access:      adminhandler.NewAccess(s.config.SystemOwner, userStore, s.config.AdminUsers),
+		Console:     s.config.AdminConsole,
+		Admins:      s.config.AdminUsers,
+		Users:       userStore,
+		Payments:    paymentSessionStore,
+		PlanStore:   s.config.PlanStore,
+		PlanManager: planManager,
+		Settings:    s.config.Settings,
+		Fulfiller:   fulfillment.New(appStore, subscriptionStore, entitlementStore, paymentSessionStore, planManager),
+	})
+	adminHandler.RegisterRoutes(v1Group, sessionManager.RequireSession)
 
 	// Internal routes for sibling microservices (authenticated by the shared secret).
 	internalAIHandler := internalai.NewHandler(s.config.InternalSecret, s.config.Settings.AI)

@@ -126,6 +126,13 @@ func (m *PlanManager) RunReload(ctx context.Context) {
 	}()
 }
 
+// Records returns every plan including archived ones, in display order.
+func (m *PlanManager) Records() []model.PlanRecord {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return append([]model.PlanRecord(nil), m.records...)
+}
+
 // Plans returns the plans that can currently be offered (archived ones are
 // left out), in display order.
 func (m *PlanManager) Plans() []model.Plan {

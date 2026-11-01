@@ -64,6 +64,10 @@ func StartServer(c context.Context, cfg *config.Config) error {
 	settingsMgr.RunReload(ctx)
 	runtimeSettings := settingsMgr.Snapshot()
 
+	if cfg.SystemOwner == "" {
+		slog.Warn("system_owner is not set in the config file: nobody can sign in to the admin console")
+	}
+
 	engineHTTP := engineHTTPClient(cfg)
 	aiProvider, aiRegistry := buildAIProvider(runtimeSettings.AI, cfg.OpenAI.APIKey, engineHTTP)
 	provider.SetDefaultModelRegistry(aiRegistry)
@@ -169,6 +173,10 @@ func StartServer(c context.Context, cfg *config.Config) error {
 		WebhookBaseURL:      cfg.API.WebhookBaseURL,
 		InternalSecret:      cfg.API.InternalSecret,
 		Settings:            settingsMgr,
+		SystemOwner:         cfg.SystemOwner,
+		AdminConsole:        pg,
+		AdminUsers:          pg,
+		PlanStore:           pg,
 	},
 		pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg,
 		assetStore, gatewayMgr, planManager, pluginRegistry, tokenCrypt, commandManager,

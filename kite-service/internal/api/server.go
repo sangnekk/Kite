@@ -31,6 +31,13 @@ type APIServerConfig struct {
 	InternalSecret      string
 	// Settings provides the live runtime settings (limits, billing, ...).
 	Settings *settings.Manager
+
+	// Admin console. SystemOwner is the Discord ID of the owner from the config
+	// file; everybody else gets access through AdminUsers.
+	SystemOwner  string
+	AdminConsole store.AdminConsoleStore
+	AdminUsers   store.AdminUserStore
+	PlanStore    store.PlanStore
 }
 
 type APIServer struct {

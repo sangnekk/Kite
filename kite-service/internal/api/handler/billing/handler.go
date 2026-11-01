@@ -3,6 +3,7 @@ package billing
 import (
 	"os"
 
+	"github.com/kitecloud/kite/kite-service/internal/core/fulfillment"
 	"github.com/kitecloud/kite/kite-service/internal/core/plan"
 	"github.com/kitecloud/kite/kite-service/internal/store"
 )
@@ -37,6 +38,7 @@ type BillingHandler struct {
 	entitlementStore    store.EntitlementStore
 	planManager         *plan.PlanManager
 	discordNotifier     *discordNotifier
+	fulfiller           *fulfillment.Fulfiller
 }
 
 func NewBillingHandler(
@@ -56,6 +58,7 @@ func NewBillingHandler(
 		subscriptionStore:   subscriptionStore,
 		entitlementStore:    entitlementStore,
 		planManager:         planManager,
+		fulfiller:           fulfillment.New(appStore, subscriptionStore, entitlementStore, paymentSessionStore, planManager),
 		discordNotifier:     newDiscordNotifier(os.Getenv("DISCORD_ERROR_WEBHOOK_URL")),
 	}
 
