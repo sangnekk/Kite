@@ -65,7 +65,10 @@ Ngoài ra còn có một số hàm đặc biệt để truy cập dữ liệu đ
 arg('name') # Access value of a command argument
 input('identifier') # Access value of a modal input
 result('id') # Access the result of a previous block
+var('name') # Access a temporary variable named in a previous block
 ```
+
+Một số hàm của Expr hay dùng trong flow: `upper`, `lower`, `trim`, `split`, `join`, `replace`, `hasPrefix`, `hasSuffix`, `len`, `string`, `int`, `round`, `min`, `max`, `first`, `last`, `filter`, `map`, `now`. Danh sách đầy đủ có trong [tài liệu của Expr](https://expr-lang.org/docs/language-definition).
 
 ## Ví dụ
 
@@ -118,6 +121,49 @@ Biểu thức này trả về giá trị trường `somefield` trong JSON respon
 ```python
 {{ result('owlspush').data().somefield }}
 ```
+
+## Trong trình chỉnh sửa flow
+
+Trình chỉnh sửa giúp bạn viết đúng mà không phải nhớ ID hay tên trường.
+
+### Chọn kênh, vai trò và server bằng tên
+
+Các ô nhận ID của **kênh**, **vai trò** và **server** có hai cách nhập, chuyển bằng nút nhỏ cạnh tiêu đề ô:
+
+- **Chọn:** chọn từ danh sách có tìm kiếm (không phân biệt dấu). Kênh được chia theo danh mục, vai trò hiện kèm màu. Nếu bot ở nhiều server, chọn server trước; editor nhớ server bạn chọn gần nhất.
+- **Dùng biến:** nhập ID hoặc biểu thức, ví dụ `{{channel.id}}`.
+
+Giá trị lưu vẫn là ID hoặc biểu thức, nên flow cũ mở lại bình thường. Mỗi khối chỉ liệt kê loại kênh nó dùng được: khối gửi tin và lưu transcript không hiện danh mục; khối chuyển thành viên chỉ hiện kênh thoại; khối tạo bài diễn đàn chỉ hiện diễn đàn; chỉ các khối lấy, sửa, xóa kênh mới cho chọn danh mục. Nếu một ID đã lưu không còn trong danh sách (kênh đã xóa, bot đang tắt), nó vẫn được giữ và ghi chú "không có trong danh sách".
+
+:::note
+Danh sách lấy từ dữ liệu bot đang giữ, nên bot cần đang chạy và ở trong server đó. Flow chạy ở nhiều server nên dùng biến thay vì chọn một kênh cố định.
+:::
+
+### Gợi ý khi gõ biểu thức
+
+Gõ `{{` trong một ô để hiện gợi ý:
+
+- Gõ một chữ để thấy các giá trị, hàm và biến phù hợp, ví dụ `up` gợi ý `upper()`.
+- Gõ `.` sau một giá trị để xem các trường của nó: `{{user.` gợi ý `username`, `display_name`...; `{{result('abc').` gợi ý các trường kết quả của khối có id `abc` kèm kiểu và mô tả.
+- Chọn bằng chuột hoặc phím mũi tên và Enter. Dấu `}}` được thêm tự động, con trỏ nằm trước nó khi bạn còn gõ tiếp (như sau `result('abc')` để gõ `.`) và nằm trong ngoặc với hàm.
+
+Gợi ý `result('id')` chỉ hiện các khối đứng trước khối đang sửa.
+
+### Báo lỗi khi gõ
+
+Backend không báo lỗi khi bạn gõ sai tên: giá trị đó chỉ ra rỗng khi flow chạy. Vì vậy editor kiểm tra giúp và **gạch đỏ** phần sai, kèm dòng giải thích dưới ô. Ví dụ:
+
+| Bạn gõ | Báo |
+|---|---|
+| `{{result('')}}` | `result` cần 1 giá trị bắt buộc: ID của khối |
+| `{{result('abc')}}` khi không có khối `abc` đứng trước | Khối 'abc' không tồn tại hoặc không nằm trước khối này |
+| `{{var('x')}}` khi chưa khối nào đặt tên biến tạm `x` | Biến 'x' không tồn tại hoặc chưa được khai báo |
+| `{{user.nme}}` | Không có trường 'nme'. Ý bạn là 'name'? |
+| `{{upperr(user.name)}}` | Hàm 'upperr' không tồn tại. Ý bạn là 'upper'? |
+| `{{user.id}}` trong flow lịch chạy | 'user' không dùng được trong loại flow này |
+| `{{1 +}}` | Biểu thức chưa hoàn chỉnh |
+
+Lỗi chỉ mang tính cảnh báo, không chặn lưu. Phần kiểm tra trường và hàm chạy ở máy chủ sau khi bạn ngừng gõ khoảng nửa giây; nếu không kết nối được, các kiểm tra tại chỗ (như `result('')`) vẫn hoạt động. Trường của `result('id')` không bị kiểm tra, vì kết quả của mỗi khối khác nhau.
 
 ## Liên quan
 
