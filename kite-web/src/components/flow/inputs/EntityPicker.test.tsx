@@ -26,6 +26,7 @@ mock.module("@/lib/api/queries", () => ({
       ? ok([
           { id: "200000000000000001", type: 0, name: "chung", topic: "", position: 0 },
           { id: "200000000000000002", type: 2, name: "voice", topic: "", position: 1 },
+          { id: "200000000000000009", type: 4, name: "Danh mục", topic: "", position: 2 },
         ])
       : { data: undefined, isFetching: false, isError: false, refetch: () => {} },
   useAppStateGuildRolesQuery: () =>
@@ -48,6 +49,18 @@ describe("EntityPicker", () => {
     const html = render({ kind: "channel" }, "200000000000000001");
     expect(html).toContain("#chung");
     expect(html).not.toContain("200000000000000001");
+  });
+
+  test("a category saved in a field that sends messages is called out", () => {
+    const html = render({ kind: "channel", channelTypes: [0, 2, 5] }, "200000000000000009");
+    expect(html).toContain("(loại kênh không phù hợp)");
+    expect(html).toContain("Danh mục");
+    expect(html).not.toContain("#Danh mục");
+  });
+
+  test("a channel of an allowed type has no such note", () => {
+    const html = render({ kind: "channel", channelTypes: [0, 2, 5] }, "200000000000000001");
+    expect(html).not.toContain("không phù hợp");
   });
 
   test("an empty channel shows the hint", () => {

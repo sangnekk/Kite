@@ -18,6 +18,7 @@ import { useAppFeature } from "@/lib/hooks/api";
 import EntityPicker from "./inputs/EntityPicker";
 import InputModeToggle, { idHint } from "./inputs/InputModeToggle";
 import {
+  channelTypesForNode,
   detectInputMode,
   fieldHint,
   InputMode,
@@ -356,7 +357,9 @@ export default function FlowNodeEditor({ nodeId }: Props) {
 
   return (
     <div className="relative bg-background w-full h-full flex flex-col md:absolute md:top-0 md:left-0 md:w-96">
-      <ScrollArea>
+      {/* Radix wraps the content in a table that grows with its widest child;
+          block keeps the fields as wide as the panel. */}
+      <ScrollArea viewportClassName="[&>div]:!block">
         <div className="p-5">
           <div className="flex-none">
             <div className="flex items-start justify-between mb-5">
@@ -3837,11 +3840,17 @@ function ThreadDataInput({ data, updateData, errors }: InputProps) {
   );
 }
 
-function ChannelTargetInput({ data, updateData, errors }: InputProps) {
+function ChannelTargetInput({
+  type: nodeType,
+  data,
+  updateData,
+  errors,
+}: InputProps) {
   return (
     <BaseInput
       type="text"
       field="channel_target"
+      pickChannelTypes={channelTypesForNode(nodeType)}
       title="Kênh mục tiêu"
       value={data.channel_target || ""}
       updateValue={(v) => updateData({ channel_target: v || undefined })}
@@ -4498,7 +4507,10 @@ function BaseInput({
   placeholders,
   disablePlaceholderBrackets,
   clearable,
+  pickChannelTypes,
 }: {
+  /** Limits the channels of a picked channel field to the ones the node can use. */
+  pickChannelTypes?: number[];
   type?: "text" | "textarea" | "select";
   field: string;
   options?: { value: string; label: string }[];
@@ -4515,8 +4527,12 @@ function BaseInput({
   const error = errors[field];
 
   // Fields that hold the ID of a server, channel or role can be picked by name.
-  const pickConfig =
+  const basePickConfig =
     type === undefined || type === "text" ? pickConfigOf(field) : undefined;
+  const pickConfig =
+    basePickConfig && pickChannelTypes
+      ? { ...basePickConfig, channelTypes: pickChannelTypes }
+      : basePickConfig;
   const [mode, setMode] = useState<InputMode>(() => detectInputMode(value));
   const picking = !!pickConfig && mode === "pick";
   const hint =

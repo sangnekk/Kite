@@ -2,7 +2,9 @@ import { describe, expect, test } from "bun:test";
 import type { Channel } from "@/lib/types/wire.gen";
 import {
   ChannelType,
+  channelTypesForNode,
   detectInputMode,
+  fitsChannelTypes,
   groupChannels,
   isSnowflake,
   matchesPickSearch,
@@ -147,5 +149,34 @@ describe("search and labels", () => {
   test("an ID that is not in the list is shown with a note, an expression as it is", () => {
     expect(unresolvedLabel(ID)).toBe(`${ID} (không có trong danh sách)`);
     expect(unresolvedLabel("{{channel.id}}")).toBe("{{channel.id}}");
+  });
+});
+
+describe("channelTypesForNode", () => {
+  test("a node that sends a message does not offer categories", () => {
+    for (const node of ["action_message_create", "action_transcript", "action_message_purge", "action_message_pin"]) {
+      const types = channelTypesForNode(node)!;
+      expect(types).not.toContain(ChannelType.Category);
+      expect(types).not.toContain(ChannelType.Forum);
+      expect(types).toContain(ChannelType.Text);
+    }
+  });
+
+  test("nodes that need one kind of channel offer only that", () => {
+    expect(channelTypesForNode("action_member_voice_move")).toEqual([ChannelType.Voice, ChannelType.Stage]);
+    expect(channelTypesForNode("action_forum_post_create")).toEqual([ChannelType.Forum, ChannelType.Media]);
+    expect(channelTypesForNode("action_thread_member_add")).not.toContain(ChannelType.Text);
+  });
+
+  test("channel edit, get and delete keep every type, a category included", () => {
+    expect(channelTypesForNode("action_channel_delete")).toBeUndefined();
+    expect(channelTypesForNode("action_channel_edit")).toBeUndefined();
+    expect(channelTypesForNode("action_channel_get")).toBeUndefined();
+  });
+
+  test("fitsChannelTypes", () => {
+    expect(fitsChannelTypes(ChannelType.Category, undefined)).toBe(true);
+    expect(fitsChannelTypes(ChannelType.Category, WRITABLE_CHANNEL_TYPES)).toBe(false);
+    expect(fitsChannelTypes(ChannelType.Text, WRITABLE_CHANNEL_TYPES)).toBe(true);
   });
 });

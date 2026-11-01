@@ -19,6 +19,7 @@ import {
 } from "@/lib/api/queries";
 import {
   ChannelType,
+  fitsChannelTypes,
   groupChannels,
   matchesPickSearch,
   PickConfig,
@@ -49,7 +50,9 @@ interface ListState<T> {
 
 // What the list queries share: the items, and why there are none yet.
 function listState<T>(query: {
-  data?: { success: true; data: (T | undefined)[] } | { success: false; error: { message: string } };
+  data?:
+    | { success: true; data: (T | undefined)[] }
+    | { success: false; error: { message: string } };
   isFetching: boolean;
   isError: boolean;
   refetch: () => unknown;
@@ -61,8 +64,8 @@ function listState<T>(query: {
     error: query.isError
       ? "Không kết nối được tới máy chủ."
       : res && !res.success
-      ? res.error.message
-      : undefined,
+        ? res.error.message
+        : undefined,
     retry: () => void query.refetch(),
   };
 }
@@ -129,12 +132,16 @@ function PickCombobox({
           rows: s.rows.filter((r) => matchesPickSearch(r, search)),
         }))
         .filter((s) => s.rows.length > 0),
-    [sections, search]
+    [sections, search],
   );
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex w-full min-w-0 items-center gap-1.5">
+      {/* On a phone the editor is a drawer. modal keeps the scroll of the list
+          working inside it (the drawer locks the scroll outside itself) and
+          data-vaul-no-drag keeps a swipe on the list from dragging the drawer. */}
       <Popover
+        modal
         open={open}
         onOpenChange={(next) => {
           setOpen(next);
@@ -146,12 +153,12 @@ function PickCombobox({
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="h-10 min-w-0 flex-1 justify-between px-3 font-normal"
+            className="h-10 min-w-0 flex-1 justify-between overflow-hidden px-3 font-normal"
           >
             <span
               className={cn(
-                "truncate text-left",
-                !value && "text-muted-foreground"
+                "min-w-0 flex-1 truncate text-left",
+                !value && "text-muted-foreground",
               )}
             >
               {value ? label : placeholder}
@@ -160,6 +167,7 @@ function PickCombobox({
           </Button>
         </PopoverTrigger>
         <PopoverContent
+          data-vaul-no-drag
           className="w-[min(20rem,calc(100vw-2rem))] p-0"
           align="start"
         >
@@ -169,7 +177,7 @@ function PickCombobox({
               value={search}
               onValueChange={setSearch}
             />
-            <CommandList>
+            <CommandList className="max-h-[min(300px,50dvh)] touch-pan-y overscroll-contain">
               {state.loading ? (
                 <div className="px-3 py-6 text-center text-sm text-muted-foreground">
                   Đang tải...
@@ -185,7 +193,10 @@ function PickCombobox({
                 <CommandEmpty>{emptyText}</CommandEmpty>
               ) : (
                 visible.map((section, i) => (
-                  <CommandGroup key={section.heading ?? i} heading={section.heading}>
+                  <CommandGroup
+                    key={section.heading ?? i}
+                    heading={section.heading}
+                  >
                     {section.rows.map((row) => (
                       <CommandItem
                         key={row.id}
@@ -198,7 +209,7 @@ function PickCombobox({
                         <CheckIcon
                           className={cn(
                             "mr-2 h-4 w-4 shrink-0",
-                            value === row.id ? "opacity-100" : "opacity-0"
+                            value === row.id ? "opacity-100" : "opacity-0",
                           )}
                         />
                         {row.prefix}
@@ -252,7 +263,10 @@ function channelIcon(type: number) {
 }
 
 function roleDot(color: number) {
-  const hex = color > 0 ? `#${(color & 0xffffff).toString(16).padStart(6, "0")}` : "#99aab5";
+  const hex =
+    color > 0
+      ? `#${(color & 0xffffff).toString(16).padStart(6, "0")}`
+      : "#99aab5";
   return (
     <span
       className="mr-2 h-3 w-3 shrink-0 rounded-full"
@@ -298,7 +312,10 @@ export default function EntityPicker({
     if (appId) storeGuild(appId, id);
   };
 
-  const guildRows: Row[] = guilds.items.map((g) => ({ id: g.id, name: g.name }));
+  const guildRows: Row[] = guilds.items.map((g) => ({
+    id: g.id,
+    name: g.name,
+  }));
   const guildPicker = (
     <PickCombobox
       value={guildId ?? ""}
@@ -314,24 +331,29 @@ export default function EntityPicker({
 
   if (config.kind === "guild") {
     return (
-      <PickCombobox
-        value={value}
-        label={
-          guilds.items.find((g) => g.id === value)?.name ?? unresolvedLabel(value)
-        }
-        placeholder="Chọn server..."
-        searchPlaceholder="Tìm server..."
-        emptyText="Bot chưa ở trong server nào."
-        sections={[{ rows: guildRows }]}
-        state={guilds}
-        onSelect={onChange}
-        onClear={() => onChange("")}
-      />
+      <div className="w-0 min-w-full">
+        <PickCombobox
+          value={value}
+          label={
+            guilds.items.find((g) => g.id === value)?.name ??
+            unresolvedLabel(value)
+          }
+          placeholder="Chọn server..."
+          searchPlaceholder="Tìm server..."
+          emptyText="Bot chưa ở trong server nào."
+          sections={[{ rows: guildRows }]}
+          state={guilds}
+          onSelect={onChange}
+          onClear={() => onChange("")}
+        />
+      </div>
     );
   }
 
+  // w-0 min-w-full: fill the width of the panel but do not ask for more, a long
+  // name is cut by the box instead of pushing the panel wider.
   return (
-    <div className="space-y-2">
+    <div className="w-0 min-w-full space-y-2">
       {guilds.items.length > 1 && guildPicker}
       {config.kind === "channel" ? (
         <ChannelCombobox
@@ -379,15 +401,25 @@ function ChannelCombobox({
           prefix: channelIcon(c.type),
         })),
       })),
-    [channels.items, config.channelTypes]
+    [channels.items, config.channelTypes],
   );
 
   const found = channels.items.find((c) => c.id === value);
 
+  // A channel saved before the list was limited (a category in a field that sends
+  // a message) stays visible, but is called out instead of looking fine.
+  const label = found
+    ? `${found.type === ChannelType.Category ? "" : "#"}${found.name}${
+        fitsChannelTypes(found.type, config.channelTypes)
+          ? ""
+          : " (loại kênh không phù hợp)"
+      }`
+    : unresolvedLabel(value);
+
   return (
     <PickCombobox
       value={value}
-      label={found ? `#${found.name}` : unresolvedLabel(value)}
+      label={label}
       placeholder="Chọn kênh..."
       searchPlaceholder="Tìm kênh..."
       emptyText={
@@ -426,7 +458,7 @@ function RoleCombobox({
           .map((r) => ({ id: r.id, name: r.name, prefix: roleDot(r.color) })),
       },
     ],
-    [roles.items, guildId]
+    [roles.items, guildId],
   );
 
   const found = roles.items.find((r) => r.id === value);

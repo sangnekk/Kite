@@ -15,7 +15,7 @@ const urlRefinement: [(v: string) => boolean, string] = [
       return false;
     }
   },
-  "Invalid URL",
+  "Địa chỉ URL không hợp lệ",
 ];
 
 const IMAGE_PATH_RE = new RegExp("\\.(png|jpg|jpeg|webp|gif)$");
@@ -30,7 +30,7 @@ const imageUrlRefinement: [(v: string) => boolean, string] = [
       return false;
     }
   },
-  "Invalid image URL",
+  "Địa chỉ hình ảnh không hợp lệ",
 ];
 
 export const uniqueIdSchema = z.number();

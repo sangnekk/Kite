@@ -57,6 +57,50 @@ export const WRITABLE_CHANNEL_TYPES: number[] = [
   ChannelType.Stage,
 ];
 
+const THREAD_CHANNEL_TYPES = [
+  ChannelType.AnnouncementThread,
+  ChannelType.PublicThread,
+  ChannelType.PrivateThread,
+];
+
+/**
+ * The channels a node can act on, by the type of the node. A category can not
+ * receive a message or be saved as a transcript, but it can be edited or
+ * deleted. Anything not listed here keeps every type.
+ */
+export function channelTypesForNode(nodeType: string): number[] | undefined {
+  switch (nodeType) {
+    case "action_message_create":
+    case "action_message_edit":
+    case "action_message_delete":
+    case "action_message_reaction_create":
+    case "action_message_reaction_delete":
+    case "action_message_pin":
+    case "action_message_unpin":
+    case "action_message_purge":
+    case "action_transcript":
+    case "action_channel_slowmode":
+      return WRITABLE_CHANNEL_TYPES;
+    case "action_member_voice_move":
+      return [ChannelType.Voice, ChannelType.Stage];
+    case "action_forum_post_create":
+      return [ChannelType.Forum, ChannelType.Media];
+    case "action_thread_member_add":
+    case "action_thread_member_remove":
+      return THREAD_CHANNEL_TYPES;
+    default:
+      return undefined;
+  }
+}
+
+/** Whether a channel of this type fits a field that lists only some types. */
+export function fitsChannelTypes(
+  type: number,
+  allowed: number[] | undefined
+): boolean {
+  return !allowed || allowed.includes(type);
+}
+
 export interface PickConfig {
   kind: PickKind;
   /** The channel types the list shows, every type when left out. */
