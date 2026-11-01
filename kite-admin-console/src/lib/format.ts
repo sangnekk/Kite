@@ -18,7 +18,26 @@ export function formatDateTime(iso: string | null | undefined): string {
   if (!iso) return "—"
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return "—"
-  return new Intl.DateTimeFormat(locale, { dateStyle: "short", timeStyle: "short" }).format(d)
+  // The year in full: with two digits "2076" reads as "76", which looks like 1976.
+  return new Intl.DateTimeFormat(locale, {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(d)
+}
+
+/**
+ * A plan with no expiry is stored as a renewal 50 years away (see the
+ * fulfillment of a payment), which is not a date anyone means. Anything this far
+ * out is shown as lifetime.
+ */
+export function isLifetime(iso: string | null | undefined, now: Date = new Date()): boolean {
+  if (!iso) return false
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return false
+  return d.getTime() - now.getTime() > 30 * 365 * 24 * 3600 * 1000
 }
 
 export function formatDate(iso: string | null | undefined): string {

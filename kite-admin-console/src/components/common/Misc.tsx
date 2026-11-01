@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { Skeleton } from "@/components/ui/skeleton"
 import { errorMessage } from "@/lib/api"
-import { formatDateTime } from "@/lib/format"
+import { formatDateTime, isLifetime } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 export function CopyButton({ value, label = "Sao chép" }: { value: string; label?: string }) {
@@ -57,6 +57,19 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
       )}
     </Empty>
   )
+}
+
+/** When a subscription ends: its end date, "Vĩnh viễn" when it never does. */
+export function SubscriptionEnd({
+  endsAt,
+  renewsAt,
+}: {
+  endsAt: string | null | undefined
+  renewsAt: string | null | undefined
+}) {
+  if (endsAt) return <DateTime value={endsAt} />
+  if (isLifetime(renewsAt)) return <span className="text-muted-foreground">Vĩnh viễn</span>
+  return <span className="text-muted-foreground">—</span>
 }
 
 export function DateTime({ value }: { value: string | null | undefined }) {

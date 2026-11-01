@@ -12,10 +12,10 @@ import (
 )
 
 const adminActiveSubscriptionOfUser = `-- name: AdminActiveSubscriptionOfUser :one
-SELECT id, status, display_name, renews_at, ends_at
-FROM subscriptions
-WHERE user_id = $1 AND status IN ('active', 'on_trial')
-ORDER BY created_at DESC LIMIT 1
+SELECT s.id, s.status, s.display_name, s.renews_at, s.ends_at
+FROM subscriptions s
+WHERE s.user_id = $1 AND s.status IN ('active', 'on_trial') AND (s.ends_at IS NULL OR s.ends_at > (NOW() AT TIME ZONE 'utc'))
+ORDER BY s.created_at DESC LIMIT 1
 `
 
 type AdminActiveSubscriptionOfUserRow struct {
@@ -179,7 +179,7 @@ func (q *Queries) AdminCountPaymentSessions(ctx context.Context, status string) 
 const adminCountSubscriptions = `-- name: AdminCountSubscriptions :one
 SELECT COUNT(*) FROM subscriptions s
 LEFT JOIN users u ON u.id = s.user_id
-WHERE ($1::text = '' OR s.status = $1::text)
+WHERE ($1::text = '' OR (CASE WHEN s.status IN ('active', 'on_trial') AND s.ends_at IS NOT NULL AND s.ends_at <= (NOW() AT TIME ZONE 'utc') THEN 'expired' ELSE s.status END) = $1::text)
   AND COALESCE(u.email, '') ILIKE $2::text
 `
 
@@ -240,7 +240,7 @@ SELECT
     (SELECT COUNT(*) FROM logs WHERE level = 'error' AND created_at >= $1::timestamp)::bigint AS errors_24h,
     (SELECT COUNT(*) FROM logs WHERE level = 'error' AND created_at >= $2::timestamp AND created_at < $1::timestamp)::bigint AS errors_prev_24h,
     COALESCE((SELECT SUM(credits_used) FROM usage_records), 0)::bigint AS total_credits,
-    (SELECT COUNT(*) FROM subscriptions WHERE status IN ('active', 'on_trial'))::bigint AS active_subscriptions
+    (SELECT COUNT(*) FROM subscriptions s WHERE s.status IN ('active', 'on_trial') AND (s.ends_at IS NULL OR s.ends_at > (NOW() AT TIME ZONE 'utc')))::bigint AS active_subscriptions
 `
 
 type AdminDashboardStatsParams struct {
@@ -413,7 +413,7 @@ SELECT
     (SELECT COUNT(*) FROM apps a WHERE a.owner_user_id = u.id)::int AS apps_count,
     COALESCE((
         SELECT s.display_name FROM subscriptions s
-        WHERE s.user_id = u.id AND s.status IN ('active', 'on_trial')
+        WHERE s.user_id = u.id AND s.status IN ('active', 'on_trial') AND (s.ends_at IS NULL OR s.ends_at > (NOW() AT TIME ZONE 'utc'))
         ORDER BY s.created_at DESC LIMIT 1
     ), 'free')::text AS plan
 FROM users u WHERE u.id = $1
@@ -703,11 +703,11 @@ func (q *Queries) AdminListPaymentSessions(ctx context.Context, arg AdminListPay
 const adminListSubscriptions = `-- name: AdminListSubscriptions :many
 
 SELECT
-    s.id, s.user_id, s.display_name, s.source, s.status, s.renews_at, s.trial_ends_at, s.ends_at, s.created_at,
+    s.id, s.user_id, s.display_name, s.source, (CASE WHEN s.status IN ('active', 'on_trial') AND s.ends_at IS NOT NULL AND s.ends_at <= (NOW() AT TIME ZONE 'utc') THEN 'expired' ELSE s.status END)::text AS status, s.renews_at, s.trial_ends_at, s.ends_at, s.created_at,
     u.email AS user_email
 FROM subscriptions s
 LEFT JOIN users u ON u.id = s.user_id
-WHERE ($1::text = '' OR s.status = $1::text)
+WHERE ($1::text = '' OR (CASE WHEN s.status IN ('active', 'on_trial') AND s.ends_at IS NOT NULL AND s.ends_at <= (NOW() AT TIME ZONE 'utc') THEN 'expired' ELSE s.status END) = $1::text)
   AND COALESCE(u.email, '') ILIKE $2::text
 ORDER BY s.created_at DESC
 LIMIT $4::int OFFSET $3::int
@@ -779,7 +779,7 @@ SELECT
     (SELECT COUNT(*) FROM apps a WHERE a.owner_user_id = u.id)::int AS apps_count,
     COALESCE((
         SELECT s.display_name FROM subscriptions s
-        WHERE s.user_id = u.id AND s.status IN ('active', 'on_trial')
+        WHERE s.user_id = u.id AND s.status IN ('active', 'on_trial') AND (s.ends_at IS NULL OR s.ends_at > (NOW() AT TIME ZONE 'utc'))
         ORDER BY s.created_at DESC LIMIT 1
     ), 'free')::text AS plan
 FROM users u
@@ -1042,7 +1042,7 @@ func (q *Queries) AdminSetSubscriptionStatus(ctx context.Context, arg AdminSetSu
 }
 
 const adminSubscriptionStatusCounts = `-- name: AdminSubscriptionStatusCounts :many
-SELECT status, COUNT(*)::bigint AS count FROM subscriptions GROUP BY status
+SELECT (CASE WHEN s.status IN ('active', 'on_trial') AND s.ends_at IS NOT NULL AND s.ends_at <= (NOW() AT TIME ZONE 'utc') THEN 'expired' ELSE s.status END)::text AS status, COUNT(*)::bigint AS count FROM subscriptions s GROUP BY 1
 `
 
 type AdminSubscriptionStatusCountsRow struct {

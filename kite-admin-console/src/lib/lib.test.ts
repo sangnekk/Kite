@@ -3,6 +3,7 @@ import { csvCell, toCsv } from "./csv"
 import {
   discordAvatarUrl,
   formatDateTime,
+  isLifetime,
   formatDayMonth,
   formatLimit,
   initials,
@@ -57,6 +58,20 @@ describe("format", () => {
     expect(formatDateTime(null)).toBe("—")
     expect(formatDateTime("not a date")).toBe("—")
     expect(formatDateTime("2026-11-04T10:00:00Z")).not.toBe("—")
+  })
+
+  it("writes the year in full, so 2076 is not read as 1976", () => {
+    expect(formatDateTime("2076-06-18T15:40:00Z")).toContain("2076")
+    expect(formatDateTime("2026-11-04T10:00:00Z")).toContain("2026")
+  })
+
+  it("tells a lifetime plan from one with an end", () => {
+    const now = new Date("2026-11-01T00:00:00Z")
+    expect(isLifetime("2076-11-01T00:00:00Z", now)).toBe(true) // renewal 50 years away
+    expect(isLifetime("2026-12-01T00:00:00Z", now)).toBe(false)
+    expect(isLifetime("2027-11-01T00:00:00Z", now)).toBe(false)
+    expect(isLifetime(null, now)).toBe(false)
+    expect(isLifetime("not a date", now)).toBe(false)
   })
 
   it("formats chart days without timezone shifts", () => {

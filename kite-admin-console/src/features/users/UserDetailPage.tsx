@@ -4,7 +4,7 @@ import { Link, useParams } from "react-router"
 import { ArrowLeft, LogOut } from "lucide-react"
 import { Can } from "@/auth/session"
 import { ConfirmDialog } from "@/components/common/ConfirmDialog"
-import { DateTime, DetailRow, DetailSkeleton, ErrorState, IdText } from "@/components/common/Misc"
+import { DateTime, DetailRow, DetailSkeleton, ErrorState, IdText, SubscriptionEnd } from "@/components/common/Misc"
 import { PageHeader } from "@/components/common/PageHeader"
 import { EnabledBadge, StatusBadge } from "@/components/common/StatusBadge"
 import { Button } from "@/components/ui/button"
@@ -100,11 +100,8 @@ export function Component() {
                 <DetailRow label="Trạng thái">
                   <StatusBadge status={u.subscription.status} />
                 </DetailRow>
-                <DetailRow label="Gia hạn">
-                  <DateTime value={u.subscription.renews_at} />
-                </DetailRow>
                 <DetailRow label="Kết thúc">
-                  <DateTime value={u.subscription.ends_at} />
+                  <SubscriptionEnd endsAt={u.subscription.ends_at} renewsAt={u.subscription.renews_at} />
                 </DetailRow>
               </dl>
             ) : (

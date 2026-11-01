@@ -5,7 +5,7 @@ import { Ban } from "lucide-react"
 import { useCurrentAdmin, atLeast } from "@/auth/session"
 import { ConfirmDialog } from "@/components/common/ConfirmDialog"
 import { FilterSelect, SearchInput } from "@/components/common/Filters"
-import { DateTime } from "@/components/common/Misc"
+import { DateTime, SubscriptionEnd } from "@/components/common/Misc"
 import { StatusBadge } from "@/components/common/StatusBadge"
 import { DataTable } from "@/components/data-table/DataTable"
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,7 @@ import { useAdminList } from "@/hooks/useAdminList"
 import { useAdminMutation } from "@/hooks/useAdminMutation"
 import { useListState } from "@/hooks/useListState"
 import { api } from "@/lib/api"
+import { isLifetime } from "@/lib/format"
 import type { SubscriptionItem } from "@/lib/types"
 
 const FILTERS = ["status"] as const
@@ -60,17 +61,16 @@ export function Component() {
         meta: { label: "Trạng thái" },
         cell: ({ row }) => <StatusBadge status={row.original.status} />,
       },
-      {
-        accessorKey: "renews_at",
-        header: "Gia hạn",
-        meta: { label: "Gia hạn" },
-        cell: ({ row }) => <DateTime value={row.original.renews_at} />,
-      },
+      // A payment buys a fixed time and never renews by itself, so there is no
+      // separate "renews" date: the end date is the one that matters.
       {
         accessorKey: "ends_at",
         header: "Kết thúc",
-        meta: { label: "Kết thúc" },
-        cell: ({ row }) => <DateTime value={row.original.ends_at} />,
+        meta: {
+          label: "Kết thúc",
+          csv: (s) => s.ends_at ?? (isLifetime(s.renews_at) ? "Vĩnh viễn" : ""),
+        },
+        cell: ({ row }) => <SubscriptionEnd endsAt={row.original.ends_at} renewsAt={row.original.renews_at} />,
       },
       {
         accessorKey: "created_at",
