@@ -13,7 +13,7 @@ func newTestHandler(secret string) *Handler {
 	return NewHandler(secret, func() settings.AI {
 		return settings.AI{DefaultModel: "m1", Providers: []settings.AIProvider{{
 			ID: "p", APIKey: "must-not-leak",
-			Models: []settings.AIModel{{Key: "m1", Model: "vendor/m1"}},
+			Models: []settings.AIModel{{Key: "m1", Name: "Model one", Model: "vendor/m1", Credits: 7}},
 		}}}
 	})
 }
@@ -33,7 +33,7 @@ func TestAuthorizedFailsClosedWithoutConfiguredSecret(t *testing.T) {
 func TestModelsListKeysAndNeverLeakAPIKeys(t *testing.T) {
 	res := newTestHandler("s").models()
 	assert.Equal(t, "m1", res.DefaultModel)
-	assert.Equal(t, []Model{{Key: "m1", Model: "vendor/m1"}}, res.Models)
+	assert.Equal(t, []Model{{Key: "m1", Name: "Model one", Model: "vendor/m1", Credits: 7}}, res.Models)
 
 	raw, err := json.Marshal(res)
 	require.NoError(t, err)

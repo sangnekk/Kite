@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { parseKiteModels } from "./models"
+import { isServable, parseKiteModels, servableModels } from "./models"
 
 // The exact shape kite-service answers with.
 const real = {
@@ -7,8 +7,8 @@ const real = {
   data: {
     default_model: "fast",
     models: [
-      { key: "fast", model: "vendor/fast" },
-      { key: "pro", model: "vendor/pro" },
+      { key: "fast", model: "deepseek-v4-flash", name: "Fast", credits: 7 },
+      { key: "pro", model: "deepseek-v4-pro", name: "Pro", credits: 13 },
     ],
   },
 }
@@ -16,12 +16,15 @@ const real = {
 describe("parseKiteModels", () => {
   test("reads the enveloped answer of kite-service", () => {
     expect(parseKiteModels(real)).toEqual({
-      map: { fast: "vendor/fast", pro: "vendor/pro" },
+      models: [
+        { key: "fast", model: "deepseek-v4-flash", name: "Fast", credits: 7 },
+        { key: "pro", model: "deepseek-v4-pro", name: "Pro", credits: 13 },
+      ],
       defaultKey: "fast",
     })
   })
 
-  test("a bare, unwrapped body is NOT accepted (this was the bug)", () => {
+  test("a bare, unwrapped body is NOT accepted", () => {
     expect(parseKiteModels(real.data)).toBeNull()
   })
 
@@ -39,16 +42,50 @@ describe("parseKiteModels", () => {
 
   test("an explicitly empty list is a valid answer", () => {
     expect(parseKiteModels({ success: true, data: { default_model: "", models: [] } })).toEqual({
-      map: {},
+      models: [],
       defaultKey: "",
     })
   })
 
-  test("skips incomplete entries", () => {
+  test("skips incomplete entries and fills in a missing name or credits", () => {
     const parsed = parseKiteModels({
       success: true,
-      data: { models: [{ key: "ok", model: "m" }, { key: "no-model" }, { model: "no-key" }, null, { key: "", model: "x" }] },
+      data: {
+        models: [
+          { key: "ok", model: "deepseek-x" },
+          { key: "no-model" },
+          { model: "no-key" },
+          null,
+          { key: "", model: "deepseek-y" },
+          { key: "odd", model: "deepseek-z", name: "", credits: "7" },
+        ],
+      },
     })
-    expect(parsed?.map).toEqual({ ok: "m" })
+    expect(parsed?.models).toEqual([
+      { key: "ok", model: "deepseek-x", name: "ok", credits: 0 },
+      { key: "odd", model: "deepseek-z", name: "odd", credits: 0 },
+    ])
+  })
+})
+
+describe("what the copilot can serve", () => {
+  test("only DeepSeek model ids", () => {
+    for (const ok of ["deepseek-v4-flash", "deepseek-chat", "DeepSeek-Reasoner"]) expect(isServable(ok)).toBe(true)
+    for (const no of ["gpt-4.1", "claude-sonnet-4-6", "meta-llama/llama-3.3-70b", "deepseek/deepseek-r1", "", "my-deepseek-clone"]) {
+      expect(isServable(no), no).toBe(false)
+    }
+  })
+
+  test("models of other providers are left out of the list", () => {
+    const all = [
+      { key: "fast", model: "deepseek-v4-flash", name: "Fast", credits: 7 },
+      { key: "gpt", model: "gpt-4.1", name: "GPT", credits: 100 },
+      { key: "claude", model: "claude-sonnet-4-6", name: "Claude", credits: 30 },
+    ]
+    expect(servableModels(all).map((m) => m.key)).toEqual(["fast"])
+  })
+
+  test("no DeepSeek model at all gives an empty list", () => {
+    expect(servableModels([{ key: "gpt", model: "gpt-4.1", name: "GPT", credits: 1 }])).toEqual([])
   })
 })

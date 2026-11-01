@@ -11,7 +11,6 @@ import {
   AIConversationResponse,
   AIConversationListResponse,
   AICreditsResponse,
-  AIModelListResponse,
   BankListResponse,
   BillingPlanListResponse,
   BillingCheckoutStatusResponse,
@@ -421,13 +420,6 @@ export function useBanksQuery() {
     queryKey: ["integrations", "banks"],
     queryFn: () => apiRequest<BankListResponse>(`/v1/integrations/banks`),
     staleTime: Infinity, // static reference data
-  });
-}
-
-export function useAIModelsQuery() {
-  return useQuery({
-    queryKey: ["ai", "models"],
-    queryFn: () => apiRequest<AIModelListResponse>(`/v1/ai-models`),
   });
 }
 

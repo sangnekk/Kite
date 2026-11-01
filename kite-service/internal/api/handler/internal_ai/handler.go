@@ -17,8 +17,10 @@ type ModelsResponse struct {
 }
 
 type Model struct {
-	Key   string `json:"key"`
-	Model string `json:"model"`
+	Key     string `json:"key"`
+	Name    string `json:"name"`
+	Model   string `json:"model"`
+	Credits int    `json:"credits"`
 }
 
 type Handler struct {
@@ -50,7 +52,7 @@ func (h *Handler) models() *ModelsResponse {
 	res := &ModelsResponse{DefaultModel: ai.DefaultModel, Models: []Model{}}
 	for _, p := range ai.Providers {
 		for _, m := range p.Models {
-			res.Models = append(res.Models, Model{Key: m.Key, Model: m.Model})
+			res.Models = append(res.Models, Model{Key: m.Key, Name: m.Name, Model: m.Model, Credits: m.Credits})
 		}
 	}
 	return res

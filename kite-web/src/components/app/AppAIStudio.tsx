@@ -6,7 +6,7 @@ import {
   useMessageCreateMutation,
 } from "@/lib/api/mutations";
 import { useAICreditsQuery } from "@/lib/api/queries";
-import { useAIModels } from "@/lib/hooks/api";
+import { useCopilotModels } from "@/lib/hooks/copilot";
 import { useAppId } from "@/lib/hooks/params";
 import { useChat } from "@ai-sdk/react";
 import {
@@ -102,7 +102,7 @@ const STUDIO_CONTEXT = "studio";
 export default function AppAIStudio() {
   const appId = useAppId();
 
-  const models = useAIModels();
+  const models = useCopilotModels();
   const creditsQuery = useAICreditsQuery(appId);
   const credits = creditsQuery.data?.success ? creditsQuery.data.data : undefined;
 

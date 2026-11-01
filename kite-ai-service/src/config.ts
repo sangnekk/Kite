@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { parse as parseToml } from "smol-toml";
-import { parseKiteModels, type LoadedModels } from "./models";
+import { parseKiteModels, servableModels, type KiteModel, type LoadedModels } from "./models";
 
 export const config = {
   port: Number(process.env.PORT ?? 3001),
@@ -35,22 +35,26 @@ function loadModelsFromKiteToml(): LoadedModels {
     const cfg = parseToml(raw) as {
       ai?: {
         default_model?: string;
-        provider?: { model?: { key?: string; model?: string }[] }[];
+        provider?: {
+          model?: { key?: string; name?: string; model?: string; credits?: number }[];
+        }[];
       };
     };
-    const map: Record<string, string> = {};
+    const models: KiteModel[] = [];
     for (const p of cfg.ai?.provider ?? []) {
       for (const m of p.model ?? []) {
-        if (m.key && m.model) map[m.key] = m.model;
+        if (m.key && m.model) {
+          models.push({ key: m.key, model: m.model, name: m.name || m.key, credits: Number(m.credits) || 0 });
+        }
       }
     }
-    return { map, defaultKey: cfg.ai?.default_model };
+    return { models, defaultKey: cfg.ai?.default_model };
   } catch (err) {
     console.warn(
       `Could not read AI models from ${config.kiteConfigPath}:`,
       err instanceof Error ? err.message : err
     );
-    return { map: {} };
+    return { models: [] };
   }
 }
 
@@ -74,16 +78,23 @@ async function loadModelsFromKiteService(): Promise<LoadedModels | null> {
   }
 }
 
-// key -> gateway model id. Mutated in place on refresh so existing importers
-// always see the current models.
+// key -> model id the copilot can run. Mutated in place on refresh so existing
+// importers always see the current models.
 export const MODEL_MAP: Record<string, string> = {};
+// The same models for the picker of the website: key, label and credit cost.
+export const COPILOT_MODELS: { key: string; name: string; credits: number }[] = [];
 let defaultModel = "";
 
-// Default model: accepts either a model KEY or a gateway model id (forgiving).
-// Falls back to the first configured model.
+// Only models the copilot can run are kept (see isServable), whatever other
+// providers kite-service has configured for the AI nodes of bot flows.
+// Default model: accepts either a model KEY or a model id (forgiving). Falls
+// back to the first servable model.
 function applyModels(loaded: LoadedModels, source: string) {
+  const usable = servableModels(loaded.models);
+
   for (const key of Object.keys(MODEL_MAP)) delete MODEL_MAP[key];
-  Object.assign(MODEL_MAP, loaded.map);
+  for (const m of usable) MODEL_MAP[m.key] = m.model;
+  COPILOT_MODELS.splice(0, COPILOT_MODELS.length, ...usable.map(({ key, name, credits }) => ({ key, name, credits })));
 
   const dk = loaded.defaultKey;
   defaultModel =
@@ -93,8 +104,10 @@ function applyModels(loaded: LoadedModels, source: string) {
     process.env.DEFAULT_MODEL ||
     "";
 
+  const skipped = loaded.models.length - usable.length;
   console.log(
-    `AI models loaded from ${source}: [${Object.keys(MODEL_MAP).join(", ")}] default=${defaultModel || "(none)"}`
+    `AI models loaded from ${source}: [${Object.keys(MODEL_MAP).join(", ")}] default=${defaultModel || "(none)"}` +
+      (skipped > 0 ? ` (${skipped} model(s) of other providers skipped, the copilot only runs DeepSeek)` : "")
   );
 }
 

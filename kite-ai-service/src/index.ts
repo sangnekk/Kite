@@ -1,7 +1,7 @@
 import { cors } from "@elysiajs/cors";
 import { Elysia } from "elysia";
 import { streamChat } from "./agent";
-import { config } from "./config";
+import { COPILOT_MODELS, MODEL_MAP, config } from "./config";
 import { checkCredit } from "./kite";
 
 // Per-app count of /chat turns currently streaming. Used to cap concurrency so a
@@ -31,6 +31,8 @@ const app = new Elysia()
     })
   )
   .get("/health", () => "ok")
+  // The models the copilot can run, for the model picker of the website.
+  .get("/models", () => COPILOT_MODELS)
   .post("/chat", async ({ request, body, set }) => {
     const cookie = request.headers.get("cookie") ?? "";
     const {
@@ -52,6 +54,14 @@ const app = new Elysia()
     if (!appId) {
       set.status = 400;
       return { error: "appId is required" };
+    }
+
+    // A model this service cannot run (another provider, or one that no longer
+    // exists) is refused. Falling back to the default would charge the credits of
+    // the model that was asked for while running a different one.
+    if (model && !Object.hasOwn(MODEL_MAP, model)) {
+      set.status = 400;
+      return { error: "Mô hình AI này không được trợ lý hỗ trợ. Hãy chọn mô hình khác." };
     }
 
     // Gate server-side (plan ai_included + daily budget) BEFORE any LLM call.

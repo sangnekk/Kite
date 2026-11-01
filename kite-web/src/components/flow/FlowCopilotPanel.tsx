@@ -2,7 +2,7 @@ import { useAIConversations } from "@/lib/ai/useAIConversations";
 import { useAICreditsQuery } from "@/lib/api/queries";
 import { NodeData } from "@/lib/flow/dataSchema";
 import { getLayoutedElements } from "@/lib/flow/layout";
-import { useAIModels } from "@/lib/hooks/api";
+import { useCopilotModels } from "@/lib/hooks/copilot";
 import { useAppId } from "@/lib/hooks/params";
 import { useChat } from "@ai-sdk/react";
 import {
@@ -53,7 +53,7 @@ export default function FlowCopilotPanel({
   // Conversations are scoped per editor route (this flow entity); each route has
   // its own list of saved chats the user can pick from.
   const contextKey = router.asPath.split(/[?#]/)[0];
-  const models = useAIModels();
+  const models = useCopilotModels();
   const creditsQuery = useAICreditsQuery(appId);
   const credits = creditsQuery.data?.success ? creditsQuery.data.data : undefined;
 
