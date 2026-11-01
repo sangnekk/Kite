@@ -60,7 +60,10 @@ export default function AppListEntry({ app }: { app: App }) {
         <div className="flex items-start gap-3 p-4 sm:p-5">
           <AppAvatar app={app} className="h-11 w-11 shrink-0 rounded-lg" />
 
-          <div className="min-w-0 flex-1 space-y-1">
+          {/* At least as tall as the avatar and centred against it, so the name
+              of an app with nothing under it sits next to the middle of the
+              avatar instead of its top. Longer content still starts at the top. */}
+          <div className="flex min-h-11 min-w-0 flex-1 flex-col justify-center gap-1">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <span className="max-w-full truncate text-base font-semibold">
                 {app.name}
@@ -83,7 +86,7 @@ export default function AppListEntry({ app }: { app: App }) {
             <AppOrigin app={app} />
           </div>
 
-          <ChevronRightIcon className="mt-3 h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+          <ChevronRightIcon className="h-5 w-5 shrink-0 self-center text-muted-foreground transition-transform group-hover:translate-x-0.5" />
         </div>
       </Card>
     </Link>
