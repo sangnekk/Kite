@@ -8,30 +8,20 @@ import (
 	"github.com/kitecloud/kite/kite-service/internal/store"
 )
 
+// BillingHandlerConfig is what the bank transfer flow needs. It is read on every
+// use (see cfg) so changes made in the admin console apply without a restart.
 type BillingHandlerConfig struct {
-	WebhookHMACSecret       string
-	TransferCodePrefix      string
-	MerchantBankName        string
-	MerchantAccountNo       string
-	CheckoutTTLMinutes      int
-	SePayMerchantID         string
-	SePaySecretKey          string
-	SePayCheckoutBaseURL    string
-	SePayAPIBaseURL         string
-	SePayBearerToken        string
-	SePayBankAccountXID     string
-	SePayVaPrefix           string
-	SePayQRCodeTemplate     string
-	SePayWithQRCode         bool
-	SePayCheckoutTTLMinutes int
-	AppPublicBaseURL        string
+	MerchantBankName   string
+	MerchantAccountNo  string
+	CheckoutTTLMinutes int
+	// SePaySecretKey authenticates the payment notifications (IPN) of SePay.
+	SePaySecretKey string
 }
 
 type BillingHandler struct {
-	// settings returns the live billing settings (edited from the admin console).
+	// settings returns the live billing settings.
 	settings            func() BillingHandlerConfig
 	paymentSessionStore store.PaymentSessionStore
-	sepay               *sepayClient
 	appStore            store.AppStore
 	userStore           store.UserStore
 	subscriptionStore   store.SubscriptionStore
@@ -50,7 +40,7 @@ func NewBillingHandler(
 	entitlementStore store.EntitlementStore,
 	planManager *plan.PlanManager,
 ) *BillingHandler {
-	h := &BillingHandler{
+	return &BillingHandler{
 		settings:            settings,
 		paymentSessionStore: paymentSessionStore,
 		appStore:            appStore,
@@ -61,35 +51,14 @@ func NewBillingHandler(
 		fulfiller:           fulfillment.New(appStore, subscriptionStore, entitlementStore, paymentSessionStore, planManager),
 		discordNotifier:     newDiscordNotifier(os.Getenv("DISCORD_ERROR_WEBHOOK_URL")),
 	}
-
-	initial := h.cfg()
-	h.sepay = newSePayClient(initial.SePayAPIBaseURL, initial.SePayBearerToken)
-	return h
 }
 
-// cfg returns the current billing settings with defaults applied. It is read on
-// every use so changes made in the admin console apply without a restart.
+// cfg returns the current billing settings with defaults applied.
 func (h *BillingHandler) cfg() BillingHandlerConfig {
 	config := h.settings()
 
-	if config.TransferCodePrefix == "" {
-		config.TransferCodePrefix = "KITE"
-	}
-
 	if config.CheckoutTTLMinutes <= 0 {
 		config.CheckoutTTLMinutes = 30
-	}
-
-	if config.SePayCheckoutBaseURL == "" {
-		config.SePayCheckoutBaseURL = "https://pay.sepay.vn"
-	}
-
-	if config.SePayAPIBaseURL == "" {
-		config.SePayAPIBaseURL = "https://userapi.sepay.vn/v2"
-	}
-
-	if config.SePayCheckoutTTLMinutes <= 0 {
-		config.SePayCheckoutTTLMinutes = 30
 	}
 
 	return config

@@ -239,8 +239,6 @@ type Plan struct {
 	Hidden                      bool
 	Archived                    bool
 	SortOrder                   int32
-	LemonsqueezyProductID       string
-	LemonsqueezyVariantID       string
 	DiscordRoleID               string
 	FeatureMaxCollaborators     int32
 	FeatureUsageCreditsPerMonth int32

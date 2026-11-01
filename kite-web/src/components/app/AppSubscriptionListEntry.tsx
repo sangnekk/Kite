@@ -1,28 +1,17 @@
 import { Subscription } from "@/lib/types/wire.gen";
 import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
 import {
   Card,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "../ui/card";
-import {
-  useLemonSqueezyCustomerPortal,
-  useLemonSqueezyUpdatePaymentMethod,
-} from "@/lib/hooks/lemonsqueezy";
 
 export default function AppSubscriptionListEntry({
   subscription,
 }: {
   subscription: Subscription;
 }) {
-  const updatePaymentMethod = useLemonSqueezyUpdatePaymentMethod(
-    subscription.id
-  );
-  const openCustomerPortal = useLemonSqueezyCustomerPortal(subscription.id);
-
   return (
     <Card>
       <CardHeader>
@@ -48,16 +37,6 @@ export default function AppSubscriptionListEntry({
           </div>
         </div>
       </CardHeader>
-      {subscription.manageable && (
-        <CardFooter className="gap-3">
-          <Button variant="outline" onClick={() => updatePaymentMethod()}>
-            Cập nhật thanh toán
-          </Button>
-          <Button variant="outline" onClick={() => openCustomerPortal()}>
-            Quản lý
-          </Button>
-        </CardFooter>
-      )}
     </Card>
   );
 }

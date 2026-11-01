@@ -186,8 +186,6 @@ export interface Plan {
   hidden: boolean
   archived: boolean
   sort_order: number
-  lemonsqueezy_product_id: string
-  lemonsqueezy_variant_id: string
   discord_role_id: string
   feature_max_collaborators: number
   feature_usage_credits_per_month: number

@@ -79,7 +79,6 @@ import {
   PluginInstanceUpdateRequest,
   PluginInstanceUpdateResponse,
   StateGuildLeaveResponse,
-  SubscriptionManageResponse,
   VariableCreateRequest,
   VariableCreateResponse,
   VariableDeleteResponse,
@@ -1040,18 +1039,6 @@ export function useCheckoutCreateMutation(appId: string) {
         }
       );
     },
-  });
-}
-
-export function useAppSubscriptionManageMutation(subscriptionId: string) {
-  return useMutation({
-    mutationFn: () =>
-      apiRequest<SubscriptionManageResponse>(
-        `/v1/billing/subscriptions/${subscriptionId}/manage`,
-        {
-          method: "POST",
-        }
-      ),
   });
 }
 

@@ -244,7 +244,6 @@ export interface BillingWebhookResponse {
 }
 export interface BillingCheckoutRequest {
   plan_id: string;
-  lemonsqueezy_variant_id?: string;
 }
 export interface BillingCheckoutField {
   name: string;
@@ -293,10 +292,6 @@ export interface BillingSePayIPNRequest {
   referenceCode: string;
   description: string;
 }
-export interface SubscriptionManageResponse {
-  update_payment_method_url: string;
-  customer_portal_url: string;
-}
 export interface Subscription {
   id: string;
   display_name: string;
@@ -315,7 +310,6 @@ export interface Subscription {
   lemonsqueezy_order_id: null | string;
   lemonsqueezy_product_id: null | string;
   lemonsqueezy_variant_id: null | string;
-  manageable: boolean;
 }
 export type SubscriptionListResponse = (Subscription | undefined)[];
 export interface BillingPlan {
@@ -328,8 +322,6 @@ export interface BillingPlan {
   default: boolean;
   popular: boolean;
   hidden: boolean;
-  lemonsqueezy_product_id: string;
-  lemonsqueezy_variant_id: string;
   discord_role_id: string;
   feature_max_collaborators: number /* int */;
   feature_usage_credits_per_month: number /* int */;

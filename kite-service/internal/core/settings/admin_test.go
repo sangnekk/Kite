@@ -26,13 +26,14 @@ func TestViewsNeverExposeSecrets(t *testing.T) {
 
 	raw, err := json.Marshal(views)
 	require.NoError(t, err)
-	for _, secret := range []string{"super-secret", "bearer-token", "bot-token", "vck_provider_key"} {
+	for _, secret := range []string{"super-secret", "bot-token", "vck_provider_key"} {
 		assert.NotContains(t, string(raw), secret)
 	}
 
 	assert.True(t, views["billing"].SecretsSet["sepay_secret_key"])
 	assert.True(t, views["discord"].SecretsSet["bot_token"])
-	assert.False(t, views["billing"].SecretsSet["webhook_hmac_secret"], "unset secrets are reported as unset")
+	assert.True(t, views["discord"].SecretsSet["bot_token"])
+	assert.False(t, views["discord"].SecretsSet["nope"], "unknown secrets are reported as unset")
 	assert.Equal(t, "123", views["billing"].Values["merchant_account_no"])
 	assert.True(t, views["engine"].RestartRequired)
 	assert.True(t, views["ai"].RestartRequired)
@@ -56,7 +57,7 @@ func TestUpdateIsPartialAndKeepsBlankSecrets(t *testing.T) {
 	b := m.Billing()
 	assert.Equal(t, "999", b.MerchantAccountNo)
 	assert.Equal(t, "super-secret", b.SePaySecretKey)
-	assert.Equal(t, "KITE", b.TransferCodePrefix, "untouched fields stay")
+	assert.Equal(t, "MBBank", b.MerchantBankName, "untouched fields stay")
 
 	require.NoError(t, m.Update(ctx, NamespaceBilling, patchOf(t, map[string]any{
 		"sepay_secret_key": "rotated",
@@ -68,9 +69,9 @@ func TestUpdateClearsSecretOnlyWhenAsked(t *testing.T) {
 	m := newTestManager(t, newFakeSettingStore(), testSeed())
 	ctx := context.Background()
 
-	require.NoError(t, m.Update(ctx, NamespaceBilling, map[string]json.RawMessage{}, []string{"sepay_bearer_token"}, "tester"))
-	assert.Equal(t, "", m.Billing().SePayBearerToken)
-	assert.Equal(t, "super-secret", m.Billing().SePaySecretKey)
+	require.NoError(t, m.Update(ctx, NamespaceBilling, map[string]json.RawMessage{}, []string{"sepay_secret_key"}, "tester"))
+	assert.Equal(t, "", m.Billing().SePaySecretKey)
+	assert.Equal(t, "123", m.Billing().MerchantAccountNo, "other settings are untouched")
 
 	err := m.Update(ctx, NamespaceBilling, map[string]json.RawMessage{}, []string{"merchant_account_no"}, "tester")
 	assert.ErrorAs(t, err, new(*ValidationError), "only secrets can be cleared")
@@ -89,7 +90,8 @@ func TestUpdateRejectsBadInput(t *testing.T) {
 		"unknown key":         {NamespaceBilling, map[string]any{"made_up": 1}},
 		"wrong type":          {NamespaceLimits, map[string]any{"max_apps_per_user": "ten"}},
 		"negative limit":      {NamespaceLimits, map[string]any{"max_apps_per_user": -1}},
-		"bad url":             {NamespaceBilling, map[string]any{"sepay_api_base_url": "ftp://x"}},
+		"negative ttl":        {NamespaceBilling, map[string]any{"checkout_ttl_minutes": -5}},
+		"removed setting":     {NamespaceBilling, map[string]any{"sepay_bearer_token": "x"}},
 		"bad guild":           {NamespaceDiscord, map[string]any{"guild_id": "abc"}},
 		"engine zero":         {NamespaceEngine, map[string]any{"max_stack_depth": 0}},
 		"default not a model": {NamespaceAI, map[string]any{"default_model": "ghost"}},

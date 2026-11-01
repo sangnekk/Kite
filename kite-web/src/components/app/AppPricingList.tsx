@@ -22,7 +22,7 @@ import {
   useBillingCheckoutStatus,
   useBillingPlans,
 } from "@/lib/hooks/api";
-import { useBillingCheckout } from "@/lib/hooks/lemonsqueezy";
+import { useBillingCheckout } from "@/lib/hooks/billing";
 import { useAppId } from "@/lib/hooks/params";
 import { BillingCheckoutResponse, BillingPlan } from "@/lib/types/wire.gen";
 import { cn, formatBillingPeriod, formatNumber } from "@/lib/utils";

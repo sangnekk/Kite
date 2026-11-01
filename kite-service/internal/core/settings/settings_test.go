@@ -42,7 +42,7 @@ func (f *fakeSettingStore) SaveSetting(_ context.Context, s store.Setting, _ str
 
 func testSeed() Snapshot {
 	return Snapshot{
-		Billing: Billing{TransferCodePrefix: "KITE", SePaySecretKey: "super-secret", SePayBearerToken: "bearer-token", MerchantAccountNo: "123"},
+		Billing: Billing{MerchantBankName: "MBBank", MerchantAccountNo: "123", CheckoutTTLMinutes: 30, SePaySecretKey: "super-secret"},
 		Limits:  Limits{MaxAppsPerUser: 10, MaxAssetSize: 8_000_000},
 		Discord: Discord{BotToken: "bot-token", GuildID: "guild"},
 		Engine:  Engine{MaxStackDepth: 100, MaxOperations: 100, MaxCredits: 250},
@@ -72,7 +72,7 @@ func TestSecretsAreEncryptedAtRest(t *testing.T) {
 	fake := newFakeSettingStore()
 	newTestManager(t, fake, testSeed())
 
-	for _, plaintext := range []string{"super-secret", "bearer-token", "bot-token", "vck_provider_key"} {
+	for _, plaintext := range []string{"super-secret", "bot-token", "vck_provider_key"} {
 		for key, row := range fake.rows {
 			assert.False(t, bytes.Contains(row.Value, []byte(plaintext)), "%s leaks %q", key, plaintext)
 		}
@@ -123,9 +123,9 @@ func TestSaveClearsSecretAndRejectsWrongKey(t *testing.T) {
 	m := newTestManager(t, fake, testSeed())
 
 	b := m.Billing()
-	b.SePayBearerToken = ""
+	b.SePaySecretKey = ""
 	require.NoError(t, m.Save(context.Background(), NamespaceBilling, b, "tester"))
-	assert.Equal(t, "", m.Billing().SePayBearerToken)
+	assert.Equal(t, "", m.Billing().SePaySecretKey)
 
 	// A different encryption key must not silently yield garbage secrets.
 	other, err := util.NewSymmetricCrypt("0000000000000000000000000000000000000000000000000000000000000001")
@@ -147,4 +147,19 @@ func TestAIProviderKeysRoundTripAfterSave(t *testing.T) {
 	require.Len(t, got.Providers, 2)
 	assert.Equal(t, "vck_provider_key", got.Providers[0].APIKey)
 	assert.Equal(t, "sk-new", got.Providers[1].APIKey)
+}
+
+// Databases created before the unused billing settings were removed still have
+// their rows (migration 039 deletes them). They must be ignored, not break the
+// start of the server.
+func TestStaleRowsOfRemovedSettingsAreIgnored(t *testing.T) {
+	fake := newFakeSettingStore()
+	newTestManager(t, fake, testSeed())
+
+	for _, key := range []string{"sepay_bearer_token", "webhook_hmac_secret", "transfer_code_prefix", "sepay_with_qrcode"} {
+		fake.rows["billing."+key] = store.Setting{Namespace: NamespaceBilling, Key: key, Value: []byte(`"x"`)}
+	}
+
+	m := newTestManager(t, fake, Snapshot{})
+	assert.Equal(t, testSeed().Billing, m.Billing())
 }

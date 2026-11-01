@@ -97,21 +97,10 @@ secret_access_key = "1234567890"
 #   credits = 10
 
 [billing]
-transfer_code_prefix = "KITE"
 merchant_bank_name = "Bank UserName" # Tên ngân hàng
 merchant_account_no = "0123456789" # STK
-webhook_hmac_secret = "hmac_sec" # derpecated, không dùng nữa
 checkout_ttl_minutes = 30
-sepay_merchant_id = "SP-LIVE-???????"
-sepay_secret_key = ""
-sepay_checkout_base_url = "https://pay.sepay.vn"
-sepay_api_base_url = "https://userapi.sepay.vn/v2"
-sepay_bearer_token = ""
-sepay_bank_account_xid = ""
-sepay_va_prefix = ""
-sepay_qrcode_template = "compact"
-sepay_with_qrcode = true
-sepay_checkout_ttl_minutes = 30
+sepay_secret_key = "" # Khóa xác thực thông báo tiền về (IPN) từ SePay
 
 [[billing.plans]]
 id = "basic"

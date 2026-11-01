@@ -160,23 +160,14 @@ type AIModelConfig struct {
 	Credits int `toml:"credits"`
 }
 
+// BillingConfig only keeps what the SePay bank transfer flow uses. It is the
+// seed for the billing settings of an empty database.
 type BillingConfig struct {
-	WebhookHMACSecret       string              `toml:"webhook_hmac_secret"`
-	TransferCodePrefix      string              `toml:"transfer_code_prefix"`
-	MerchantBankName        string              `toml:"merchant_bank_name"`
-	MerchantAccountNo       string              `toml:"merchant_account_no"`
-	CheckoutTTLMinutes      int                 `toml:"checkout_ttl_minutes"`
-	SePayMerchantID         string              `toml:"sepay_merchant_id"`
-	SePaySecretKey          string              `toml:"sepay_secret_key"`
-	SePayCheckoutBaseURL    string              `toml:"sepay_checkout_base_url"`
-	SePayAPIBaseURL         string              `toml:"sepay_api_base_url"`
-	SePayBearerToken        string              `toml:"sepay_bearer_token"`
-	SePayBankAccountXID     string              `toml:"sepay_bank_account_xid"`
-	SePayVaPrefix           string              `toml:"sepay_va_prefix"`
-	SePayQRCodeTemplate     string              `toml:"sepay_qrcode_template"`
-	SePayWithQRCode         bool                `toml:"sepay_with_qrcode"`
-	SePayCheckoutTTLMinutes int                 `toml:"sepay_checkout_ttl_minutes"`
-	Plans                   []BillingPlanConfig `toml:"plans"`
+	MerchantBankName   string              `toml:"merchant_bank_name"`
+	MerchantAccountNo  string              `toml:"merchant_account_no"`
+	CheckoutTTLMinutes int                 `toml:"checkout_ttl_minutes"`
+	SePaySecretKey     string              `toml:"sepay_secret_key"`
+	Plans              []BillingPlanConfig `toml:"plans"`
 }
 
 type BillingPlanConfig struct {
@@ -189,9 +180,6 @@ type BillingPlanConfig struct {
 	Default             bool    `toml:"default"`
 	Popular             bool    `toml:"popular"`
 	Hidden              bool    `toml:"hidden"`
-
-	LemonSqueezyProductID string `toml:"lemonsqueezy_product_id"`
-	LemonSqueezyVariantID string `toml:"lemonsqueezy_variant_id"`
 
 	DiscordRoleID string `toml:"discord_role_id"`
 

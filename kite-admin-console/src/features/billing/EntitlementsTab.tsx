@@ -122,8 +122,8 @@ function GrantDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (ope
             ) : overrides ? (
               <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-xs">
                 <span>
-                  <strong>Ghi đè:</strong> gói <strong>{plan.title}</strong> quy định {formatDuration(planDays)}, bạn đang cấp{" "}
-                  {formatDuration(duration)}.
+                  <strong>Ghi đè:</strong> gói <strong>{plan.title}</strong> quy định {formatDuration(planDays)}, bạn đang cấp {formatDuration(duration)} {" "}
+                  .
                 </span>
                 <Button
                   variant="link"
@@ -131,7 +131,7 @@ function GrantDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (ope
                   className="ml-auto h-auto shrink-0 p-0"
                   onClick={() => setDays(String(plan.premium_duration_days))}
                 >
-                  Dùng thời hạn của gói
+                  Dùng thời hạn của gói?
                 </Button>
               </div>
             ) : (

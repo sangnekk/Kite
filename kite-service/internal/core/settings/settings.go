@@ -30,23 +30,13 @@ const (
 	NamespaceAI      = "ai"
 )
 
-// Billing configures checkout and the SePay integration. Hot reloaded.
+// Billing is the bank account that receives the transfers and the key that
+// authenticates the payment notifications of SePay. Hot reloaded.
 type Billing struct {
-	WebhookHMACSecret       string `json:"webhook_hmac_secret"`
-	TransferCodePrefix      string `json:"transfer_code_prefix"`
-	MerchantBankName        string `json:"merchant_bank_name"`
-	MerchantAccountNo       string `json:"merchant_account_no"`
-	CheckoutTTLMinutes      int    `json:"checkout_ttl_minutes"`
-	SePayMerchantID         string `json:"sepay_merchant_id"`
-	SePaySecretKey          string `json:"sepay_secret_key"`
-	SePayCheckoutBaseURL    string `json:"sepay_checkout_base_url"`
-	SePayAPIBaseURL         string `json:"sepay_api_base_url"`
-	SePayBearerToken        string `json:"sepay_bearer_token"`
-	SePayBankAccountXID     string `json:"sepay_bank_account_xid"`
-	SePayVaPrefix           string `json:"sepay_va_prefix"`
-	SePayQRCodeTemplate     string `json:"sepay_qrcode_template"`
-	SePayWithQRCode         bool   `json:"sepay_with_qrcode"`
-	SePayCheckoutTTLMinutes int    `json:"sepay_checkout_ttl_minutes"`
+	MerchantBankName   string `json:"merchant_bank_name"`
+	MerchantAccountNo  string `json:"merchant_account_no"`
+	CheckoutTTLMinutes int    `json:"checkout_ttl_minutes"`
+	SePaySecretKey     string `json:"sepay_secret_key"`
 }
 
 // Limits are the per-user limits. Hot reloaded.
@@ -108,7 +98,7 @@ type namespace struct {
 }
 
 var namespaces = []namespace{
-	{NamespaceBilling, []string{"webhook_hmac_secret", "sepay_secret_key", "sepay_bearer_token"}, func(s *Snapshot) any { return &s.Billing }},
+	{NamespaceBilling, []string{"sepay_secret_key"}, func(s *Snapshot) any { return &s.Billing }},
 	{NamespaceLimits, nil, func(s *Snapshot) any { return &s.Limits }},
 	{NamespaceDiscord, []string{"bot_token"}, func(s *Snapshot) any { return &s.Discord }},
 	{NamespaceEngine, nil, func(s *Snapshot) any { return &s.Engine }},

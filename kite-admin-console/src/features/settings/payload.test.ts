@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import type { SettingsGroup } from "@/lib/types"
-import { GROUP_BY_ID } from "./groups"
+import { GROUP_BY_ID, type GroupSpec } from "./groups"
 import { buildPatch, initialState, toApiValue, validate } from "./payload"
 
 const billing = GROUP_BY_ID.billing
@@ -8,15 +8,26 @@ const limits = GROUP_BY_ID.limits
 
 const billingData: SettingsGroup = {
   values: {
-    transfer_code_prefix: "KITE",
+    merchant_bank_name: "MBBank",
     merchant_account_no: "123",
     checkout_ttl_minutes: 30,
-    sepay_with_qrcode: true,
     sepay_secret_key: "",
   },
-  secrets_set: { sepay_secret_key: true, sepay_bearer_token: false, webhook_hmac_secret: false },
+  secrets_set: { sepay_secret_key: true },
   restart_required: false,
 }
+
+// No group has a switch right now, but the form supports them.
+const flags: GroupSpec = {
+  id: "flags",
+  label: "Flags",
+  description: "",
+  fields: [
+    { key: "flag", label: "Flag", kind: "bool" },
+    { key: "missing", label: "Missing", kind: "bool" },
+  ],
+}
+const flagData: SettingsGroup = { values: { flag: true }, secrets_set: {}, restart_required: false }
 
 const limitsData: SettingsGroup = {
   values: { max_apps_per_user: 10, max_asset_size: 8_000_000 },
@@ -38,7 +49,6 @@ describe("initialState", () => {
 
   it("copes with settings the server does not know yet", () => {
     const s = initialState(billing, { values: {}, secrets_set: {}, restart_required: false })
-    expect(s.values.sepay_with_qrcode).toBe(false)
     expect(s.values.merchant_account_no).toBe("")
   })
 })
@@ -91,10 +101,13 @@ describe("buildPatch", () => {
     expect(buildPatch(billing, billingData, state)).toEqual({ values: { sepay_secret_key: "fresh" }, clear_secrets: [] })
   })
 
-  it("can switch a boolean off", () => {
-    const state = initialState(billing, billingData)
-    state.values.sepay_with_qrcode = false
-    expect(buildPatch(billing, billingData, state)?.values).toEqual({ sepay_with_qrcode: false })
+  it("can switch a boolean off and ignores one the server does not know yet", () => {
+    const state = initialState(flags, flagData)
+    expect(state.values.flag).toBe(true)
+    expect(state.values.missing).toBe(false)
+
+    state.values.flag = false
+    expect(buildPatch(flags, flagData, state)?.values).toEqual({ flag: false })
   })
 
   it("skips invalid numbers instead of sending garbage", () => {

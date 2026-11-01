@@ -11,9 +11,6 @@ type Plan struct {
 	Popular             bool
 	Hidden              bool
 
-	LemonSqueezyProductID string
-	LemonSqueezyVariantID string
-
 	DiscordRoleID string
 
 	FeatureMaxCollaborators     int

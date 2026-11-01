@@ -32,7 +32,7 @@ func (q *Queries) CountPlans(ctx context.Context) (int64, error) {
 }
 
 const listPlans = `-- name: ListPlans :many
-SELECT id, title, description, price, payment_amount, premium_duration_days, is_default, popular, hidden, archived, sort_order, lemonsqueezy_product_id, lemonsqueezy_variant_id, discord_role_id, feature_max_collaborators, feature_usage_credits_per_month, feature_max_guilds, feature_max_commands, feature_max_variables, feature_max_custom_tables, feature_max_custom_events, feature_max_messages, feature_max_event_listeners, feature_max_schedules, feature_priority_support, feature_custom_bot_status, feature_ai_included, feature_ai_credit_per_day, updated_at FROM plans ORDER BY sort_order, id
+SELECT id, title, description, price, payment_amount, premium_duration_days, is_default, popular, hidden, archived, sort_order, discord_role_id, feature_max_collaborators, feature_usage_credits_per_month, feature_max_guilds, feature_max_commands, feature_max_variables, feature_max_custom_tables, feature_max_custom_events, feature_max_messages, feature_max_event_listeners, feature_max_schedules, feature_priority_support, feature_custom_bot_status, feature_ai_included, feature_ai_credit_per_day, updated_at FROM plans ORDER BY sort_order, id
 `
 
 func (q *Queries) ListPlans(ctx context.Context) ([]Plan, error) {
@@ -56,8 +56,6 @@ func (q *Queries) ListPlans(ctx context.Context) ([]Plan, error) {
 			&i.Hidden,
 			&i.Archived,
 			&i.SortOrder,
-			&i.LemonsqueezyProductID,
-			&i.LemonsqueezyVariantID,
 			&i.DiscordRoleID,
 			&i.FeatureMaxCollaborators,
 			&i.FeatureUsageCreditsPerMonth,
@@ -88,16 +86,15 @@ func (q *Queries) ListPlans(ctx context.Context) ([]Plan, error) {
 const upsertPlan = `-- name: UpsertPlan :exec
 INSERT INTO plans (
     id, title, description, price, payment_amount, premium_duration_days,
-    is_default, popular, hidden, archived, sort_order,
-    lemonsqueezy_product_id, lemonsqueezy_variant_id, discord_role_id,
+    is_default, popular, hidden, archived, sort_order, discord_role_id,
     feature_max_collaborators, feature_usage_credits_per_month, feature_max_guilds,
     feature_max_commands, feature_max_variables, feature_max_custom_tables,
     feature_max_custom_events, feature_max_messages, feature_max_event_listeners,
     feature_max_schedules, feature_priority_support, feature_custom_bot_status,
     feature_ai_included, feature_ai_credit_per_day, updated_at
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
-    $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
+    $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27
 )
 ON CONFLICT (id) DO UPDATE SET
     title = EXCLUDED.title,
@@ -110,8 +107,6 @@ ON CONFLICT (id) DO UPDATE SET
     hidden = EXCLUDED.hidden,
     archived = EXCLUDED.archived,
     sort_order = EXCLUDED.sort_order,
-    lemonsqueezy_product_id = EXCLUDED.lemonsqueezy_product_id,
-    lemonsqueezy_variant_id = EXCLUDED.lemonsqueezy_variant_id,
     discord_role_id = EXCLUDED.discord_role_id,
     feature_max_collaborators = EXCLUDED.feature_max_collaborators,
     feature_usage_credits_per_month = EXCLUDED.feature_usage_credits_per_month,
@@ -142,8 +137,6 @@ type UpsertPlanParams struct {
 	Hidden                      bool
 	Archived                    bool
 	SortOrder                   int32
-	LemonsqueezyProductID       string
-	LemonsqueezyVariantID       string
 	DiscordRoleID               string
 	FeatureMaxCollaborators     int32
 	FeatureUsageCreditsPerMonth int32
@@ -175,8 +168,6 @@ func (q *Queries) UpsertPlan(ctx context.Context, arg UpsertPlanParams) error {
 		arg.Hidden,
 		arg.Archived,
 		arg.SortOrder,
-		arg.LemonsqueezyProductID,
-		arg.LemonsqueezyVariantID,
 		arg.DiscordRoleID,
 		arg.FeatureMaxCollaborators,
 		arg.FeatureUsageCreditsPerMonth,

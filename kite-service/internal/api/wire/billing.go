@@ -44,8 +44,7 @@ type BillingWebhookRequest struct {
 type BillingWebhookResponse struct{}
 
 type BillingCheckoutRequest struct {
-	PlanID                string `json:"plan_id"`
-	LemonSqueezyVariantID string `json:"lemonsqueezy_variant_id,omitempty"`
+	PlanID string `json:"plan_id"`
 }
 
 type BillingCheckoutField struct {
@@ -100,11 +99,6 @@ type BillingSePayIPNRequest struct {
 	Description     string  `json:"description"`
 }
 
-type SubscriptionManageResponse struct {
-	UpdatePaymentMethodURL string `json:"update_payment_method_url"`
-	CustomerPortalURL      string `json:"customer_portal_url"`
-}
-
 type Subscription struct {
 	ID                         string      `json:"id"`
 	DisplayName                string      `json:"display_name"`
@@ -123,12 +117,11 @@ type Subscription struct {
 	LemonsqueezyOrderID        null.String `json:"lemonsqueezy_order_id"`
 	LemonsqueezyProductID      null.String `json:"lemonsqueezy_product_id"`
 	LemonsqueezyVariantID      null.String `json:"lemonsqueezy_variant_id"`
-	Manageable                 bool        `json:"manageable"`
 }
 
 type SubscriptionListResponse = []*Subscription
 
-func SubscriptionToWire(subscription *model.Subscription, userID string) *Subscription {
+func SubscriptionToWire(subscription *model.Subscription) *Subscription {
 	if subscription == nil {
 		return nil
 	}
@@ -151,7 +144,7 @@ func SubscriptionToWire(subscription *model.Subscription, userID string) *Subscr
 		LemonsqueezyOrderID:        subscription.LemonsqueezyOrderID,
 		LemonsqueezyProductID:      subscription.LemonsqueezyProductID,
 		LemonsqueezyVariantID:      subscription.LemonsqueezyVariantID,
-		Manageable:                 subscription.UserID == userID && subscription.Source == model.SubscriptionSourceLemonSqueezy && subscription.LemonsqueezySubscriptionID.Valid,
+
 	}
 }
 
@@ -165,9 +158,6 @@ type BillingPlan struct {
 	Default             bool    `json:"default"`
 	Popular             bool    `json:"popular"`
 	Hidden              bool    `json:"hidden"`
-
-	LemonSqueezyProductID string `json:"lemonsqueezy_product_id"`
-	LemonSqueezyVariantID string `json:"lemonsqueezy_variant_id"`
 
 	DiscordRoleID string `json:"discord_role_id"`
 

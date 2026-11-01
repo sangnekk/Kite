@@ -196,19 +196,8 @@ func validate(v any) error {
 }
 
 func validateBilling(b *Billing) error {
-	for field, v := range map[string]int{
-		"checkout_ttl_minutes": b.CheckoutTTLMinutes, "sepay_checkout_ttl_minutes": b.SePayCheckoutTTLMinutes,
-	} {
-		if v < 0 {
-			return invalid("%s cannot be negative", field)
-		}
-	}
-	for field, v := range map[string]string{
-		"sepay_checkout_base_url": b.SePayCheckoutBaseURL, "sepay_api_base_url": b.SePayAPIBaseURL,
-	} {
-		if err := validateHTTPURL(field, v); err != nil {
-			return err
-		}
+	if b.CheckoutTTLMinutes < 0 {
+		return invalid("checkout_ttl_minutes cannot be negative")
 	}
 	return nil
 }

@@ -34,7 +34,7 @@ func (h *BillingHandler) HandleAppSubscriptionList(c *handler.Context) (*wire.Su
 
 	res := make(wire.SubscriptionListResponse, len(subscriptions))
 	for i, subscription := range subscriptions {
-		w := wire.SubscriptionToWire(subscription, c.Session.UserID)
+		w := wire.SubscriptionToWire(subscription)
 		if !activeSubscriptionIDs[subscription.ID] {
 			w.Status = "expired"
 			w.StatusFormatted = "Hết hạn"
@@ -74,10 +74,5 @@ func (h *BillingHandler) manualEntitlementToWire(ent *model.Entitlement) *wire.S
 		UpdatedAt:       ent.UpdatedAt,
 		RenewsAt:        ent.CreatedAt.AddDate(50, 0, 0),
 		EndsAt:          ent.EndsAt,
-		Manageable:      false,
 	}
-}
-
-func (h *BillingHandler) HandleSubscriptionManage(c *handler.Context) (*wire.SubscriptionManageResponse, error) {
-	return nil, handler.ErrNotFound("unmanageable_subscription", "Subscription can not be managed")
 }

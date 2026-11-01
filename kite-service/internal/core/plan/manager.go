@@ -169,19 +169,6 @@ func (m *PlanManager) IsArchived(planID string) bool {
 	return m.archived[planID]
 }
 
-func (m *PlanManager) PlanByLemonSqueezyProductID(productID string) *model.Plan {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	for _, r := range m.records {
-		if r.LemonSqueezyProductID == productID {
-			plan := r.Plan
-			return &plan
-		}
-	}
-	return nil
-}
-
 func (m *PlanManager) AppFeatures(ctx context.Context, appID string) model.Features {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()

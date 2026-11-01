@@ -47,7 +47,7 @@ func TestManagerAgainstPostgres(t *testing.T) {
 		var secret bool
 		require.NoError(t, rows.Scan(&ns, &key, &value, &secret))
 		seen[ns+"."+key] = secret
-		for _, plaintext := range []string{"super-secret", "bearer-token", "bot-token", "vck_provider_key"} {
+		for _, plaintext := range []string{"super-secret", "bot-token", "vck_provider_key"} {
 			assert.False(t, strings.Contains(value, plaintext), "%s.%s stores %q in plaintext", ns, key, plaintext)
 		}
 	}

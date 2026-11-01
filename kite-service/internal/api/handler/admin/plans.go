@@ -29,9 +29,7 @@ type PlanItem struct {
 	Archived            bool    `json:"archived"`
 	SortOrder           int     `json:"sort_order"`
 
-	LemonSqueezyProductID string `json:"lemonsqueezy_product_id"`
-	LemonSqueezyVariantID string `json:"lemonsqueezy_variant_id"`
-	DiscordRoleID         string `json:"discord_role_id"`
+	DiscordRoleID string `json:"discord_role_id"`
 
 	FeatureMaxCollaborators     int  `json:"feature_max_collaborators"`
 	FeatureUsageCreditsPerMonth int  `json:"feature_usage_credits_per_month"`
@@ -55,7 +53,6 @@ func planItem(r model.PlanRecord) PlanItem {
 		ID: p.ID, Title: p.Title, Description: p.Description, Price: p.Price, PaymentAmount: p.PaymentAmount,
 		PremiumDurationDays: p.PremiumDurationDays, Default: p.Default, Popular: p.Popular, Hidden: p.Hidden,
 		Archived: r.Archived, SortOrder: r.SortOrder,
-		LemonSqueezyProductID: p.LemonSqueezyProductID, LemonSqueezyVariantID: p.LemonSqueezyVariantID,
 		DiscordRoleID:               p.DiscordRoleID,
 		FeatureMaxCollaborators:     p.FeatureMaxCollaborators,
 		FeatureUsageCreditsPerMonth: p.FeatureUsageCreditsPerMonth,
@@ -80,7 +77,6 @@ func (p PlanItem) record() model.PlanRecord {
 			ID: p.ID, Title: strings.TrimSpace(p.Title), Description: strings.TrimSpace(p.Description),
 			Price: p.Price, PaymentAmount: p.PaymentAmount, PremiumDurationDays: p.PremiumDurationDays,
 			Default: p.Default, Popular: p.Popular, Hidden: p.Hidden,
-			LemonSqueezyProductID: p.LemonSqueezyProductID, LemonSqueezyVariantID: p.LemonSqueezyVariantID,
 			DiscordRoleID:               p.DiscordRoleID,
 			FeatureMaxCollaborators:     p.FeatureMaxCollaborators,
 			FeatureUsageCreditsPerMonth: p.FeatureUsageCreditsPerMonth,

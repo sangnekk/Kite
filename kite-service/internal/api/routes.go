@@ -200,22 +200,10 @@ func (s *APIServer) RegisterRoutes(
 	billingHandler := billing.NewBillingHandler(func() billing.BillingHandlerConfig {
 		b := s.config.Settings.Billing()
 		return billing.BillingHandlerConfig{
-			WebhookHMACSecret:       b.WebhookHMACSecret,
-			TransferCodePrefix:      b.TransferCodePrefix,
-			MerchantBankName:        b.MerchantBankName,
-			MerchantAccountNo:       b.MerchantAccountNo,
-			CheckoutTTLMinutes:      b.CheckoutTTLMinutes,
-			SePayMerchantID:         b.SePayMerchantID,
-			SePaySecretKey:          b.SePaySecretKey,
-			SePayCheckoutBaseURL:    b.SePayCheckoutBaseURL,
-			SePayAPIBaseURL:         b.SePayAPIBaseURL,
-			SePayBearerToken:        b.SePayBearerToken,
-			SePayBankAccountXID:     b.SePayBankAccountXID,
-			SePayVaPrefix:           b.SePayVaPrefix,
-			SePayQRCodeTemplate:     b.SePayQRCodeTemplate,
-			SePayWithQRCode:         b.SePayWithQRCode,
-			SePayCheckoutTTLMinutes: b.SePayCheckoutTTLMinutes,
-			AppPublicBaseURL:        s.config.AppPublicBaseURL,
+			MerchantBankName:   b.MerchantBankName,
+			MerchantAccountNo:  b.MerchantAccountNo,
+			CheckoutTTLMinutes: b.CheckoutTTLMinutes,
+			SePaySecretKey:     b.SePaySecretKey,
 		}
 	}, paymentSessionStore, appStore, userStore, subscriptionStore, entitlementStore, planManager)
 
@@ -261,9 +249,6 @@ func (s *APIServer) RegisterRoutes(
 	// Flow routes
 	flowHandler := flowhandler.NewFlowHandler()
 	appGroup.Post("/flows/validate", handler.TypedWithBody(flowHandler.HandleFlowValidate))
-
-	userBillingGroup := v1Group.Group("/billing", sessionManager.RequireSession)
-	userBillingGroup.Post("/subscriptions/{subscriptionID}/manage", handler.Typed(billingHandler.HandleSubscriptionManage))
 
 	appBillingGroup := appGroup.Group("/billing")
 	appBillingGroup.Get("/subscriptions", handler.Typed(billingHandler.HandleAppSubscriptionList))

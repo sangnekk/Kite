@@ -22,21 +22,10 @@ func seedSettings(cfg *config.Config) settings.Snapshot {
 
 	return settings.Snapshot{
 		Billing: settings.Billing{
-			WebhookHMACSecret:       b.WebhookHMACSecret,
-			TransferCodePrefix:      b.TransferCodePrefix,
-			MerchantBankName:        b.MerchantBankName,
-			MerchantAccountNo:       b.MerchantAccountNo,
-			CheckoutTTLMinutes:      b.CheckoutTTLMinutes,
-			SePayMerchantID:         b.SePayMerchantID,
-			SePaySecretKey:          b.SePaySecretKey,
-			SePayCheckoutBaseURL:    b.SePayCheckoutBaseURL,
-			SePayAPIBaseURL:         b.SePayAPIBaseURL,
-			SePayBearerToken:        b.SePayBearerToken,
-			SePayBankAccountXID:     b.SePayBankAccountXID,
-			SePayVaPrefix:           b.SePayVaPrefix,
-			SePayQRCodeTemplate:     b.SePayQRCodeTemplate,
-			SePayWithQRCode:         b.SePayWithQRCode,
-			SePayCheckoutTTLMinutes: b.SePayCheckoutTTLMinutes,
+			MerchantBankName:   b.MerchantBankName,
+			MerchantAccountNo:  b.MerchantAccountNo,
+			CheckoutTTLMinutes: b.CheckoutTTLMinutes,
+			SePaySecretKey:     b.SePaySecretKey,
 		},
 		Limits: settings.Limits{
 			MaxAppsPerUser: cfg.UserLimits.MaxAppsPerUser,
