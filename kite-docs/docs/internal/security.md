@@ -2,7 +2,7 @@
 
 Chúng tôi coi trọng vấn đề bảo mật và luôn cố gắng xây dựng các cơ chế bảo vệ vững chắc trong khi vẫn mang lại dịch vụ tốt nhất cho người dùng.
 
-Rút kinh nghiệm từ các vụ rò rỉ dữ liệu của các nhà cung cấp dịch vụ Discord khác, chúng tôi không muốn lặp lại những sai lầm đó, vì vậy chúng tôi đặt bảo vệ dữ liệu và bảo mật lên hàng đầu. Nếu bạn có thêm câu hỏi, hãy liên hệ với chúng tôi tại contact@kite.onl.
+Rút kinh nghiệm từ các vụ rò rỉ dữ liệu của các nhà cung cấp dịch vụ Discord khác, chúng tôi không muốn lặp lại những sai lầm đó, vì vậy chúng tôi đặt bảo vệ dữ liệu và bảo mật lên hàng đầu. Nếu bạn có thêm câu hỏi, hãy liên hệ với chúng tôi qua [máy chủ Discord](https://discord.gg/vibestore).
 
 ## Ngăn chặn lạm dụng dữ liệu
 

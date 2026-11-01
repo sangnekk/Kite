@@ -9,15 +9,15 @@ const config: Config = {
   favicon: "img/favicon.ico",
 
   // Set the production url of your site here
-  url: "https://docs.kite.onl",
+  url: "https://docs.bot.vibehost.vn",
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: "/",
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: "merlinfuchs", // Usually your GitHub org/user name.
-  projectName: "kite", // Usually your repo name.
+  organizationName: "sangnekk", // Usually your GitHub org/user name.
+  projectName: "Kite", // Usually your repo name.
 
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",
@@ -36,7 +36,7 @@ const config: Config = {
   },
 
   customFields: {
-    appBaseUrl: process.env.APP_BASE_URL || "http://localhost:3000",
+    appBaseUrl: process.env.APP_BASE_URL || "https://bot.vibehost.vn",
   },
 
   presets: [
@@ -126,16 +126,16 @@ const config: Config = {
           items: [
             {
               label: "Điều khoản dịch vụ",
-              href: "https://kite.onl/terms",
+              href: "https://bot.vibehost.vn/terms",
             },
             {
               label: "Chính sách bảo mật",
-              href: "https://kite.onl/privacy",
+              href: "https://bot.vibehost.vn/privacy",
             },
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} tạo bởi Merlin Fuchs`,
+      copyright: `Copyright © ${new Date().getFullYear()} Vibe Bot`,
     },
     prism: {
       theme: prismThemes.github,

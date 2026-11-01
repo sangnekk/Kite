@@ -29,7 +29,7 @@ Thay vì tạo ứng dụng mới, bạn cũng có thể thêm ứng dụng Disc
 
 Sau khi tạo ứng dụng trong Discord, bước tiếp theo là thêm ứng dụng đó vào Vibe Bot.
 
-Mở [bảng điều khiển Vibe Bot](https://kite.onl/apps) và đăng nhập bằng tài khoản Discord của bạn. Tại đây bạn có thể thêm ứng dụng, quản lý lệnh và nhiều thứ khác.
+Mở [bảng điều khiển Vibe Bot](https://bot.vibehost.vn/apps) và đăng nhập bằng tài khoản Discord của bạn. Tại đây bạn có thể thêm ứng dụng, quản lý lệnh và nhiều thứ khác.
 
 1. Bấm `Create app` ở phía dưới
 2. Điền bot token và bấm `Create app`

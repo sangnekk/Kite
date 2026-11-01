@@ -104,13 +104,9 @@ services:
       - kite
 
   docs:
-    build:
-      context: ./kite-docs
-      dockerfile: Dockerfile
-      args:
-        # Domain the docs embeds/schema fetch from. Bound to .env so switching
-        # to a real domain only requires editing KITE_APP__PUBLIC_BASE_URL there.
-        APP_BASE_URL: ${KITE_APP__PUBLIC_BASE_URL}
+    # Prebuilt on Docker Hub with APP_BASE_URL=https://bot.vibehost.vn baked in.
+    # To use another domain, build it yourself: docker build --build-arg APP_BASE_URL=<url> ./kite-docs
+    image: chisadin/vibebot-docs:latest
     restart: always
     ports:
       - "4000:80"
