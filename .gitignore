@@ -5,3 +5,4 @@ kite.toml
 .env
 claude.*
 *claude.*
+plans/
