@@ -6,6 +6,12 @@ import { VariableIcon } from "lucide-react";
 import { useMemo } from "react";
 import PlaceholderExplorer from "../common/PlaceholderExplorer";
 import { isSelectType } from "@/lib/message/schema";
+import type { CompletionContext, Member } from "@/lib/flow/expressionEngine";
+import {
+  FUNCTIONS,
+  membersOfSchema,
+  ROOT_MEMBERS,
+} from "@/lib/flow/expressionModel";
 
 // Placeholders of a select menu interaction ({{select}}), see
 // kite-service/pkg/eval/select.go.
@@ -57,6 +63,77 @@ export function useFlowPlaceholders(): FlowPlaceholderGroup[] {
   return useMemo(
     () => [...commandPlaceholders, ...globalPlaceholders, ...nodePlaceholders],
     [commandPlaceholders, globalPlaceholders, nodePlaceholders]
+  );
+}
+
+// useFlowCompletionContext tells the expression autocomplete what exists in the
+// current flow: the fields of the results of the nodes before the selected one,
+// next to the values and functions of the language itself.
+export function useFlowCompletionContext(): CompletionContext {
+  const nodes = useNodes();
+  const edges = useEdges();
+  const contextType = useFlowContext((c) => c.type);
+
+  const known = useMemo(() => {
+    const resultMembers = new Map<string, Member[]>();
+    const resultIds = new Set<string>();
+    const varNames = new Set<string>();
+    const inputIds = new Set<string>();
+
+    const selected = nodes.find((n) => n.selected);
+    if (selected) {
+      for (const parent of getParentNodes(selected, nodes, edges)) {
+        if (!parent.type) continue;
+
+        // The same nodes the explorer offers a result() for.
+        if (
+          parent.type.startsWith("action_") ||
+          parent.type === "control_error_handler"
+        ) {
+          resultIds.add(parent.id);
+        }
+
+        const members = membersOfSchema(getNodeValues(parent.type).resultSchema);
+        if (members.length > 0) resultMembers.set(parent.id, members);
+
+        if (parent.data.temporary_name) {
+          varNames.add(String(parent.data.temporary_name));
+        }
+
+        if (parent.type === "suspend_response_modal") {
+          for (const row of (parent.data.modal_data as any)?.components ?? []) {
+            for (const component of row?.components ?? []) {
+              if (component?.custom_id) inputIds.add(component.custom_id);
+            }
+          }
+        }
+      }
+    }
+
+    // Only a command has arguments, in the other flows arg() is not checked.
+    const argNames =
+      contextType === "command"
+        ? new Set(
+            nodes
+              .filter((n) => n.type === "option_command_argument")
+              .map((n) => String(n.data.name))
+          )
+        : undefined;
+
+    return { resultMembers, resultIds, varNames, inputIds, argNames };
+  }, [nodes, edges, contextType]);
+
+  return useMemo(
+    () => ({
+      roots: ROOT_MEMBERS,
+      functions: FUNCTIONS,
+      resultMembers: (id: string) => known.resultMembers.get(id),
+      resultIds: known.resultIds,
+      varNames: known.varNames,
+      inputIds: known.inputIds,
+      argNames: known.argNames,
+    }),
+    [known]
   );
 }
 

@@ -100,6 +100,7 @@ import { Switch } from "../ui/switch";
 import { Textarea } from "../ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import FlowPlaceholderExplorer, {
+  useFlowCompletionContext,
   useFlowPlaceholders,
 } from "./FlowPlaceholderExplorer";
 import env from "@/lib/env/client";
@@ -2455,7 +2456,7 @@ function TranscriptFormatInput({ data, updateData, errors }: InputProps) {
         { value: "text", label: "Văn bản thuần (.txt)" },
         { value: "both", label: "Cả hai (.html và .txt)" },
       ]}
-      value={data.transcript_format || ""}
+      value={data.transcript_format || "html"}
       updateValue={(v) => updateData({ transcript_format: v || undefined })}
       errors={errors}
     />
@@ -4447,33 +4448,7 @@ const FlowPlaceholderInput = forwardRef<
   }
 >((props, ref) => {
   const groups = useFlowPlaceholders();
-
-  const suggestions = useMemo(
-    () =>
-      groups.flatMap((g) =>
-        g.placeholders.map((p) => ({
-          label: p.label,
-          value: p.value,
-          group: g.label,
-        }))
-      ),
-    [groups]
-  );
-
-  return <PlaceholderInput {...props} ref={ref} suggestions={suggestions} />;
-});
-
-FlowPlaceholderInput.displayName = "FlowPlaceholderInput";
-
-const FlowPlaceholderTextarea = forwardRef<
-  HTMLTextAreaElement,
-  {
-    value: string;
-    onChange: (value: string) => void;
-    placeholder?: string;
-  }
->((props, ref) => {
-  const groups = useFlowPlaceholders();
+  const completion = useFlowCompletionContext();
 
   const suggestions = useMemo(
     () =>
@@ -4488,7 +4463,47 @@ const FlowPlaceholderTextarea = forwardRef<
   );
 
   return (
-    <PlaceholderTextarea {...props} ref={ref} suggestions={suggestions} />
+    <PlaceholderInput
+      {...props}
+      ref={ref}
+      suggestions={suggestions}
+      completion={completion}
+    />
+  );
+});
+
+FlowPlaceholderInput.displayName = "FlowPlaceholderInput";
+
+const FlowPlaceholderTextarea = forwardRef<
+  HTMLTextAreaElement,
+  {
+    value: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+  }
+>((props, ref) => {
+  const groups = useFlowPlaceholders();
+  const completion = useFlowCompletionContext();
+
+  const suggestions = useMemo(
+    () =>
+      groups.flatMap((g) =>
+        g.placeholders.map((p) => ({
+          label: p.label,
+          value: p.value,
+          group: g.label,
+        }))
+      ),
+    [groups]
+  );
+
+  return (
+    <PlaceholderTextarea
+      {...props}
+      ref={ref}
+      suggestions={suggestions}
+      completion={completion}
+    />
   );
 });
 
