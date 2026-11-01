@@ -80,17 +80,13 @@ services:
       timeout: 30s
       retries: 3
 
-  minio:
-    image: quay.io/minio/minio
-    command: server --console-address ":9001" /data
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    environment:
-      MINIO_ROOT_USER: kite
-      MINIO_ROOT_PASSWORD: 1234567890
+  s3:
+    image: chrislusf/seaweedfs
+    command: server -s3 -s3.port=9000 -s3.config=/etc/seaweedfs/s3.json -dir=/data -master.volumeSizeLimitMB=256
+    restart: always
     volumes:
-      - kite-local-minio:/data
+      - kite-local-s3:/data
+      - ./seaweedfs-s3.json:/etc/seaweedfs/s3.json:ro
 
   kite:
     image: merlintor/kite:latest
@@ -102,7 +98,7 @@ services:
       - KITE_DATABASE__POSTGRES__HOST=postgres
       - KITE_DATABASE__POSTGRES__USER=postgres
       - KITE_DATABASE__POSTGRES__DB_NAME=kite
-      - KITE_DATABASE__S3__ENDPOINT=minio:9000
+      - KITE_DATABASE__S3__ENDPOINT=s3:9000
       - KITE_DATABASE__S3__ACCESS_KEY_ID=kite
       - KITE_DATABASE__S3__SECRET_ACCESS_KEY=1234567890
       - KITE_DATABASE__S3__SECURE=false
@@ -116,7 +112,21 @@ services:
 
 volumes:
   kite-local-postgres:
-  kite-local-minio:
+  kite-local-s3:
+```
+
+Kho tệp S3 dùng [SeaweedFS](https://github.com/seaweedfs/seaweedfs) (image MinIO cộng đồng không còn được phát hành). Tạo thêm file `seaweedfs-s3.json` cạnh `docker-compose.yaml` để định nghĩa tài khoản, nếu thiếu file này kho tệp sẽ không đòi đăng nhập:
+
+```json
+{
+  "identities": [
+    {
+      "name": "kite",
+      "credentials": [{ "accessKey": "kite", "secretKey": "1234567890" }],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    }
+  ]
+}
 ```
 
 Chạy file bằng `docker-compose up`. Nó sẽ tự động mount file `kite.toml` vào container. Bạn không nên cấu hình postgres trong file config vì nó sử dụng instance postgres từ container.

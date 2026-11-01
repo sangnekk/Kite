@@ -1,0 +1,9 @@
+{
+  "identities": [
+    {
+      "name": "kite",
+      "credentials": [{ "accessKey": "kite", "secretKey": "1234567890" }],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    }
+  ]
+}
