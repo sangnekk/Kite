@@ -20,6 +20,13 @@ type App struct {
 	CreatorUserID  string            `json:"creator_user_id"`
 	CreatedAt      time.Time         `json:"created_at"`
 	UpdatedAt      time.Time         `json:"updated_at"`
+	// DiscordAvatar is the avatar hash of the bot user, null until the bot has
+	// connected once.
+	DiscordAvatar null.String `json:"discord_avatar"`
+	// Owner and InvitedBy are only filled in the app list, for the apps the
+	// user does not own: who owns the app and who added the user to it.
+	Owner     *User `json:"owner,omitempty"`
+	InvitedBy *User `json:"invited_by,omitempty"`
 }
 
 type AppDiscordStatus struct {
@@ -147,6 +154,7 @@ func AppToWire(app *model.App) *App {
 		DisabledReason: app.DisabledReason,
 		DiscordID:      app.DiscordID,
 		DiscordStatus:  status,
+		DiscordAvatar:  app.DiscordAvatar,
 		OwnerUserID:    app.OwnerUserID,
 		CreatorUserID:  app.CreatorUserID,
 		CreatedAt:      app.CreatedAt,

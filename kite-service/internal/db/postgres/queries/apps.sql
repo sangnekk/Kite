@@ -10,11 +10,21 @@ SELECT discord_id, discord_token FROM apps WHERE id = $1;
 -- name: GetAppsByOwner :many
 SELECT * FROM apps WHERE owner_user_id = $1 ORDER BY created_at DESC;
 
--- name: GetAppsByCollaborator :many
-SELECT a.* FROM apps a
-LEFT JOIN collaborators c ON a.id = c.app_id
-WHERE a.owner_user_id = @user_id OR c.user_id = @user_id
-ORDER BY a.created_at DESC;
+-- The apps a user owns or collaborates on, each exactly once, with who added
+-- them as a collaborator. (The collaborators join is limited to this user,
+-- otherwise an owner would see an app once per collaborator.)
+-- name: GetAppListByUser :many
+SELECT sqlc.embed(apps), collaborators.invited_by_user_id
+FROM apps
+LEFT JOIN collaborators ON collaborators.app_id = apps.id AND collaborators.user_id = @user_id
+WHERE apps.owner_user_id = @user_id OR collaborators.user_id IS NOT NULL
+ORDER BY apps.created_at DESC;
+
+-- The avatar is refreshed every time the bot connects. updated_at is left
+-- alone on purpose: the gateway manager restarts a bot whose row changed.
+-- name: SetAppDiscordAvatar :exec
+UPDATE apps SET discord_avatar = NULLIF(@avatar::text, '')
+WHERE id = @id AND discord_avatar IS DISTINCT FROM NULLIF(@avatar::text, '');
 
 -- name: CountAppsByOwner :one
 SELECT COUNT(*) FROM apps WHERE owner_user_id = $1;

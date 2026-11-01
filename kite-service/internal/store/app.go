@@ -26,13 +26,17 @@ type AppDisableOpts struct {
 }
 
 type AppStore interface {
-	AppsByUser(ctx context.Context, userID string) ([]*model.App, error)
+	// AppListByUser returns the apps a user owns or collaborates on, once each.
+	AppListByUser(ctx context.Context, userID string) ([]*model.AppListEntry, error)
 	CountAppsByUser(ctx context.Context, userID string) (int, error)
 	App(ctx context.Context, id string) (*model.App, error)
 	AppCredentials(ctx context.Context, id string) (*model.AppCredentials, error)
 	CreateApp(ctx context.Context, app *model.App) (*model.App, error)
 	UpdateApp(ctx context.Context, opts AppUpdateOpts) (*model.App, error)
 	DisableApp(ctx context.Context, opts AppDisableOpts) error
+	// SetAppDiscordAvatar stores the avatar hash of the bot user ("" clears it).
+	// It does not touch updated_at, so it never makes the gateway restart a bot.
+	SetAppDiscordAvatar(ctx context.Context, id string, avatar string) error
 	DeleteApp(ctx context.Context, id string) error
 	EnabledAppIDs(ctx context.Context) ([]string, error)
 	EnabledAppsUpdatedSince(ctx context.Context, updatedSince time.Time) ([]*model.App, error)

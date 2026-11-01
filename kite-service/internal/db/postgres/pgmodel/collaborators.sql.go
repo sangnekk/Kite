@@ -24,17 +24,18 @@ func (q *Queries) CountCollaboratorsByApp(ctx context.Context, appID string) (in
 }
 
 const createCollaborator = `-- name: CreateCollaborator :one
-INSERT INTO collaborators (app_id, user_id, role, created_at, updated_at)
-VALUES ($1, $2, $3, $4, $5)
-RETURNING user_id, app_id, role, created_at, updated_at
+INSERT INTO collaborators (app_id, user_id, role, created_at, updated_at, invited_by_user_id)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING user_id, app_id, role, created_at, updated_at, invited_by_user_id
 `
 
 type CreateCollaboratorParams struct {
-	AppID     string
-	UserID    string
-	Role      string
-	CreatedAt pgtype.Timestamp
-	UpdatedAt pgtype.Timestamp
+	AppID           string
+	UserID          string
+	Role            string
+	CreatedAt       pgtype.Timestamp
+	UpdatedAt       pgtype.Timestamp
+	InvitedByUserID pgtype.Text
 }
 
 func (q *Queries) CreateCollaborator(ctx context.Context, arg CreateCollaboratorParams) (Collaborator, error) {
@@ -44,6 +45,7 @@ func (q *Queries) CreateCollaborator(ctx context.Context, arg CreateCollaborator
 		arg.Role,
 		arg.CreatedAt,
 		arg.UpdatedAt,
+		arg.InvitedByUserID,
 	)
 	var i Collaborator
 	err := row.Scan(
@@ -52,6 +54,7 @@ func (q *Queries) CreateCollaborator(ctx context.Context, arg CreateCollaborator
 		&i.Role,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.InvitedByUserID,
 	)
 	return i, err
 }
@@ -72,7 +75,7 @@ func (q *Queries) DeleteCollaborator(ctx context.Context, arg DeleteCollaborator
 }
 
 const getCollaborator = `-- name: GetCollaborator :one
-SELECT collaborators.user_id, collaborators.app_id, collaborators.role, collaborators.created_at, collaborators.updated_at, users.id, users.email, users.display_name, users.discord_id, users.discord_username, users.discord_avatar, users.created_at, users.updated_at FROM collaborators
+SELECT collaborators.user_id, collaborators.app_id, collaborators.role, collaborators.created_at, collaborators.updated_at, collaborators.invited_by_user_id, users.id, users.email, users.display_name, users.discord_id, users.discord_username, users.discord_avatar, users.created_at, users.updated_at FROM collaborators
 LEFT JOIN users ON collaborators.user_id = users.id
 WHERE app_id = $1 AND user_id = $2
 `
@@ -96,6 +99,7 @@ func (q *Queries) GetCollaborator(ctx context.Context, arg GetCollaboratorParams
 		&i.Collaborator.Role,
 		&i.Collaborator.CreatedAt,
 		&i.Collaborator.UpdatedAt,
+		&i.Collaborator.InvitedByUserID,
 		&i.User.ID,
 		&i.User.Email,
 		&i.User.DisplayName,
@@ -109,7 +113,7 @@ func (q *Queries) GetCollaborator(ctx context.Context, arg GetCollaboratorParams
 }
 
 const getCollaboratorsByApp = `-- name: GetCollaboratorsByApp :many
-SELECT collaborators.user_id, collaborators.app_id, collaborators.role, collaborators.created_at, collaborators.updated_at, users.id, users.email, users.display_name, users.discord_id, users.discord_username, users.discord_avatar, users.created_at, users.updated_at FROM collaborators
+SELECT collaborators.user_id, collaborators.app_id, collaborators.role, collaborators.created_at, collaborators.updated_at, collaborators.invited_by_user_id, users.id, users.email, users.display_name, users.discord_id, users.discord_username, users.discord_avatar, users.created_at, users.updated_at FROM collaborators
 LEFT JOIN users ON collaborators.user_id = users.id
 WHERE app_id = $1
 `
@@ -134,6 +138,7 @@ func (q *Queries) GetCollaboratorsByApp(ctx context.Context, appID string) ([]Ge
 			&i.Collaborator.Role,
 			&i.Collaborator.CreatedAt,
 			&i.Collaborator.UpdatedAt,
+			&i.Collaborator.InvitedByUserID,
 			&i.User.ID,
 			&i.User.Email,
 			&i.User.DisplayName,
@@ -157,7 +162,7 @@ const updateCollaborator = `-- name: UpdateCollaborator :one
 UPDATE collaborators
 SET role = $3, updated_at = $4
 WHERE app_id = $1 AND user_id = $2
-RETURNING user_id, app_id, role, created_at, updated_at
+RETURNING user_id, app_id, role, created_at, updated_at, invited_by_user_id
 `
 
 type UpdateCollaboratorParams struct {
@@ -181,6 +186,7 @@ func (q *Queries) UpdateCollaborator(ctx context.Context, arg UpdateCollaborator
 		&i.Role,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.InvitedByUserID,
 	)
 	return i, err
 }

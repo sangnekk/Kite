@@ -101,6 +101,10 @@ func (g *Gateway) startGateway() {
 			e.User.Username, e.User.Discriminator, e.User.ID,
 		))
 
+		// Keep the avatar of the bot up to date, the app list shows it. It runs
+		// on its own so a slow database never delays the gateway.
+		go g.saveAvatar(e.User.Avatar)
+
 		features := g.planManager.AppFeatures(g.ctx, g.app.ID)
 		if len(e.Guilds) > features.MaxGuilds {
 			msg := fmt.Sprintf("Bots that are in more than %d servers are currently not supported.", features.MaxGuilds)
@@ -115,6 +119,19 @@ func (g *Gateway) startGateway() {
 		g.createLogEntry(model.LogLevelError, fmt.Sprintf("Failed to connect to gateway: %v", err))
 		g.disableApp(fmt.Sprintf("Failed to connect to gateway: %v", err))
 		return
+	}
+}
+
+func (g *Gateway) saveAvatar(avatar string) {
+	ctx, cancel := context.WithTimeout(g.ctx, 5*time.Second)
+	defer cancel()
+
+	if err := g.appStore.SetAppDiscordAvatar(ctx, g.app.ID, avatar); err != nil {
+		slog.Warn(
+			"Failed to save the avatar of the bot",
+			slog.String("app_id", g.app.ID),
+			slog.String("error", err.Error()),
+		)
 	}
 }
 

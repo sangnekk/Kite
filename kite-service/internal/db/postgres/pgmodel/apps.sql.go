@@ -35,7 +35,7 @@ INSERT INTO apps (
     updated_at
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8, $9
-) RETURNING id, name, description, enabled, owner_user_id, creator_user_id, discord_token, discord_id, created_at, updated_at, discord_status, disabled_reason
+) RETURNING id, name, description, enabled, owner_user_id, creator_user_id, discord_token, discord_id, created_at, updated_at, discord_status, disabled_reason, discord_avatar
 `
 
 type CreateAppParams struct {
@@ -76,6 +76,7 @@ func (q *Queries) CreateApp(ctx context.Context, arg CreateAppParams) (App, erro
 		&i.UpdatedAt,
 		&i.DiscordStatus,
 		&i.DisabledReason,
+		&i.DiscordAvatar,
 	)
 	return i, err
 }
@@ -109,7 +110,7 @@ func (q *Queries) DisableApp(ctx context.Context, arg DisableAppParams) error {
 }
 
 const getAllApps = `-- name: GetAllApps :many
-SELECT id, name, description, enabled, owner_user_id, creator_user_id, discord_token, discord_id, created_at, updated_at, discord_status, disabled_reason FROM apps
+SELECT id, name, description, enabled, owner_user_id, creator_user_id, discord_token, discord_id, created_at, updated_at, discord_status, disabled_reason, discord_avatar FROM apps
 `
 
 func (q *Queries) GetAllApps(ctx context.Context) ([]App, error) {
@@ -134,6 +135,7 @@ func (q *Queries) GetAllApps(ctx context.Context) ([]App, error) {
 			&i.UpdatedAt,
 			&i.DiscordStatus,
 			&i.DisabledReason,
+			&i.DiscordAvatar,
 		); err != nil {
 			return nil, err
 		}
@@ -146,7 +148,7 @@ func (q *Queries) GetAllApps(ctx context.Context) ([]App, error) {
 }
 
 const getApp = `-- name: GetApp :one
-SELECT id, name, description, enabled, owner_user_id, creator_user_id, discord_token, discord_id, created_at, updated_at, discord_status, disabled_reason FROM apps WHERE id = $1
+SELECT id, name, description, enabled, owner_user_id, creator_user_id, discord_token, discord_id, created_at, updated_at, discord_status, disabled_reason, discord_avatar FROM apps WHERE id = $1
 `
 
 func (q *Queries) GetApp(ctx context.Context, id string) (App, error) {
@@ -165,6 +167,7 @@ func (q *Queries) GetApp(ctx context.Context, id string) (App, error) {
 		&i.UpdatedAt,
 		&i.DiscordStatus,
 		&i.DisabledReason,
+		&i.DiscordAvatar,
 	)
 	return i, err
 }
@@ -241,35 +244,46 @@ func (q *Queries) GetAppEntities(ctx context.Context, appID string) ([]GetAppEnt
 	return items, nil
 }
 
-const getAppsByCollaborator = `-- name: GetAppsByCollaborator :many
-SELECT a.id, a.name, a.description, a.enabled, a.owner_user_id, a.creator_user_id, a.discord_token, a.discord_id, a.created_at, a.updated_at, a.discord_status, a.disabled_reason FROM apps a
-LEFT JOIN collaborators c ON a.id = c.app_id
-WHERE a.owner_user_id = $1 OR c.user_id = $1
-ORDER BY a.created_at DESC
+const getAppListByUser = `-- name: GetAppListByUser :many
+SELECT apps.id, apps.name, apps.description, apps.enabled, apps.owner_user_id, apps.creator_user_id, apps.discord_token, apps.discord_id, apps.created_at, apps.updated_at, apps.discord_status, apps.disabled_reason, apps.discord_avatar, collaborators.invited_by_user_id
+FROM apps
+LEFT JOIN collaborators ON collaborators.app_id = apps.id AND collaborators.user_id = $1
+WHERE apps.owner_user_id = $1 OR collaborators.user_id IS NOT NULL
+ORDER BY apps.created_at DESC
 `
 
-func (q *Queries) GetAppsByCollaborator(ctx context.Context, userID string) ([]App, error) {
-	rows, err := q.db.Query(ctx, getAppsByCollaborator, userID)
+type GetAppListByUserRow struct {
+	App             App
+	InvitedByUserID pgtype.Text
+}
+
+// The apps a user owns or collaborates on, each exactly once, with who added
+// them as a collaborator. (The collaborators join is limited to this user,
+// otherwise an owner would see an app once per collaborator.)
+func (q *Queries) GetAppListByUser(ctx context.Context, userID string) ([]GetAppListByUserRow, error) {
+	rows, err := q.db.Query(ctx, getAppListByUser, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []App
+	var items []GetAppListByUserRow
 	for rows.Next() {
-		var i App
+		var i GetAppListByUserRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Description,
-			&i.Enabled,
-			&i.OwnerUserID,
-			&i.CreatorUserID,
-			&i.DiscordToken,
-			&i.DiscordID,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.DiscordStatus,
-			&i.DisabledReason,
+			&i.App.ID,
+			&i.App.Name,
+			&i.App.Description,
+			&i.App.Enabled,
+			&i.App.OwnerUserID,
+			&i.App.CreatorUserID,
+			&i.App.DiscordToken,
+			&i.App.DiscordID,
+			&i.App.CreatedAt,
+			&i.App.UpdatedAt,
+			&i.App.DiscordStatus,
+			&i.App.DisabledReason,
+			&i.App.DiscordAvatar,
+			&i.InvitedByUserID,
 		); err != nil {
 			return nil, err
 		}
@@ -282,7 +296,7 @@ func (q *Queries) GetAppsByCollaborator(ctx context.Context, userID string) ([]A
 }
 
 const getAppsByOwner = `-- name: GetAppsByOwner :many
-SELECT id, name, description, enabled, owner_user_id, creator_user_id, discord_token, discord_id, created_at, updated_at, discord_status, disabled_reason FROM apps WHERE owner_user_id = $1 ORDER BY created_at DESC
+SELECT id, name, description, enabled, owner_user_id, creator_user_id, discord_token, discord_id, created_at, updated_at, discord_status, disabled_reason, discord_avatar FROM apps WHERE owner_user_id = $1 ORDER BY created_at DESC
 `
 
 func (q *Queries) GetAppsByOwner(ctx context.Context, ownerUserID string) ([]App, error) {
@@ -307,6 +321,7 @@ func (q *Queries) GetAppsByOwner(ctx context.Context, ownerUserID string) ([]App
 			&i.UpdatedAt,
 			&i.DiscordStatus,
 			&i.DisabledReason,
+			&i.DiscordAvatar,
 		); err != nil {
 			return nil, err
 		}
@@ -343,7 +358,7 @@ func (q *Queries) GetEnabledAppIDs(ctx context.Context) ([]string, error) {
 }
 
 const getEnabledAppsUpdatedSince = `-- name: GetEnabledAppsUpdatedSince :many
-SELECT id, name, description, enabled, owner_user_id, creator_user_id, discord_token, discord_id, created_at, updated_at, discord_status, disabled_reason FROM apps WHERE enabled = TRUE AND updated_at > $1
+SELECT id, name, description, enabled, owner_user_id, creator_user_id, discord_token, discord_id, created_at, updated_at, discord_status, disabled_reason, discord_avatar FROM apps WHERE enabled = TRUE AND updated_at > $1
 `
 
 func (q *Queries) GetEnabledAppsUpdatedSince(ctx context.Context, updatedAt pgtype.Timestamp) ([]App, error) {
@@ -368,6 +383,7 @@ func (q *Queries) GetEnabledAppsUpdatedSince(ctx context.Context, updatedAt pgty
 			&i.UpdatedAt,
 			&i.DiscordStatus,
 			&i.DisabledReason,
+			&i.DiscordAvatar,
 		); err != nil {
 			return nil, err
 		}
@@ -379,6 +395,23 @@ func (q *Queries) GetEnabledAppsUpdatedSince(ctx context.Context, updatedAt pgty
 	return items, nil
 }
 
+const setAppDiscordAvatar = `-- name: SetAppDiscordAvatar :exec
+UPDATE apps SET discord_avatar = NULLIF($1::text, '')
+WHERE id = $2 AND discord_avatar IS DISTINCT FROM NULLIF($1::text, '')
+`
+
+type SetAppDiscordAvatarParams struct {
+	Avatar string
+	ID     string
+}
+
+// The avatar is refreshed every time the bot connects. updated_at is left
+// alone on purpose: the gateway manager restarts a bot whose row changed.
+func (q *Queries) SetAppDiscordAvatar(ctx context.Context, arg SetAppDiscordAvatarParams) error {
+	_, err := q.db.Exec(ctx, setAppDiscordAvatar, arg.Avatar, arg.ID)
+	return err
+}
+
 const updateApp = `-- name: UpdateApp :one
 UPDATE apps SET
     name = $2,
@@ -388,7 +421,7 @@ UPDATE apps SET
     enabled = $6,
     disabled_reason = $7,
     updated_at = $8
-WHERE id = $1 RETURNING id, name, description, enabled, owner_user_id, creator_user_id, discord_token, discord_id, created_at, updated_at, discord_status, disabled_reason
+WHERE id = $1 RETURNING id, name, description, enabled, owner_user_id, creator_user_id, discord_token, discord_id, created_at, updated_at, discord_status, disabled_reason, discord_avatar
 `
 
 type UpdateAppParams struct {
@@ -427,6 +460,7 @@ func (q *Queries) UpdateApp(ctx context.Context, arg UpdateAppParams) (App, erro
 		&i.UpdatedAt,
 		&i.DiscordStatus,
 		&i.DisabledReason,
+		&i.DiscordAvatar,
 	)
 	return i, err
 }

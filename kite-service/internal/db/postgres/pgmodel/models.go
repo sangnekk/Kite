@@ -47,6 +47,7 @@ type App struct {
 	UpdatedAt      pgtype.Timestamp
 	DiscordStatus  []byte
 	DisabledReason pgtype.Text
+	DiscordAvatar  pgtype.Text
 }
 
 type AppSetting struct {
@@ -72,11 +73,12 @@ type Asset struct {
 }
 
 type Collaborator struct {
-	UserID    string
-	AppID     string
-	Role      string
-	CreatedAt pgtype.Timestamp
-	UpdatedAt pgtype.Timestamp
+	UserID          string
+	AppID           string
+	Role            string
+	CreatedAt       pgtype.Timestamp
+	UpdatedAt       pgtype.Timestamp
+	InvitedByUserID pgtype.Text
 }
 
 type Command struct {

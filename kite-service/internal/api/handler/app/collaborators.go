@@ -9,6 +9,7 @@ import (
 	"github.com/kitecloud/kite/kite-service/internal/api/wire"
 	"github.com/kitecloud/kite/kite-service/internal/model"
 	"github.com/kitecloud/kite/kite-service/internal/store"
+	"gopkg.in/guregu/null.v4"
 )
 
 func (h *AppHandler) HandleAppCollaboratorsList(c *handler.Context) (*wire.AppCollaboratorListResponse, error) {
@@ -74,6 +75,8 @@ func (h *AppHandler) HandleAppCollaboratorCreate(c *handler.Context, req wire.Ap
 		Role:      model.AppCollaboratorRole(req.Role),
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
+		// Remembered so the invited person can see who added them.
+		InvitedByUserID: null.StringFrom(c.Session.UserID),
 	}, c.Features.MaxCollaborators)
 	if err != nil {
 		if errors.Is(err, store.ErrResourceLimit) {

@@ -83,16 +83,12 @@ func (h *AppHandler) HandleAppSettingsUpdate(c *handler.Context, req wire.AppSet
 }
 
 func (h *AppHandler) HandleAppList(c *handler.Context) (*wire.AppListResponse, error) {
-	apps, err := h.appStore.AppsByUser(c.Context(), c.Session.UserID)
+	entries, err := h.appStore.AppListByUser(c.Context(), c.Session.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get apps: %w", err)
 	}
 
-	res := make([]*wire.App, len(apps))
-	for i, app := range apps {
-		res[i] = wire.AppToWire(app)
-	}
-
+	res := appListToWire(c.Context(), entries, c.Session.UserID, h.userStore.User)
 	return &res, nil
 }
 

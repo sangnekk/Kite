@@ -82,6 +82,9 @@ export interface App {
   creator_user_id: string;
   created_at: string /* RFC3339 */;
   updated_at: string /* RFC3339 */;
+  discord_avatar: null | string;
+  owner?: User;
+  invited_by?: User;
 }
 export interface AppDiscordStatus {
   status?: string;

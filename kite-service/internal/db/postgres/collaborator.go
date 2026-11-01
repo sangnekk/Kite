@@ -9,6 +9,7 @@ import (
 	"github.com/kitecloud/kite/kite-service/internal/db/postgres/pgmodel"
 	"github.com/kitecloud/kite/kite-service/internal/model"
 	"github.com/kitecloud/kite/kite-service/internal/store"
+	"gopkg.in/guregu/null.v4"
 )
 
 func (c *Client) Collaborator(ctx context.Context, appID string, userID string) (*model.AppCollaborator, error) {
@@ -55,6 +56,10 @@ func (c *Client) CreateCollaborator(ctx context.Context, collaborator *model.App
 		Role:      string(collaborator.Role),
 		CreatedAt: pgtype.Timestamp{Time: collaborator.CreatedAt, Valid: true},
 		UpdatedAt: pgtype.Timestamp{Time: collaborator.UpdatedAt, Valid: true},
+		InvitedByUserID: pgtype.Text{
+			String: collaborator.InvitedByUserID.String,
+			Valid:  collaborator.InvitedByUserID.Valid,
+		},
 	}
 
 	if limit < 0 {
@@ -138,5 +143,6 @@ func rowToCollaborator(row pgmodel.Collaborator, user *pgmodel.User) *model.AppC
 		Role:      model.AppCollaboratorRole(row.Role),
 		CreatedAt: row.CreatedAt.Time,
 		UpdatedAt: row.UpdatedAt.Time,
+		InvitedByUserID: null.NewString(row.InvitedByUserID.String, row.InvitedByUserID.Valid),
 	}
 }

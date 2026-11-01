@@ -17,8 +17,19 @@ type App struct {
 	DiscordToken   string
 	DiscordID      string
 	DiscordStatus  *AppDiscordStatus
+	// DiscordAvatar is the avatar hash of the bot user, filled in when the bot
+	// connects to Discord.
+	DiscordAvatar null.String
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
+}
+
+// AppListEntry is an app in the list of one user.
+type AppListEntry struct {
+	*App
+	// InvitedByUserID is who added the user as a collaborator. It is empty for
+	// the apps the user owns and for collaborators added before it was recorded.
+	InvitedByUserID null.String
 }
 
 type AppCredentials struct {
@@ -96,6 +107,8 @@ type AppCollaborator struct {
 	Role      AppCollaboratorRole
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	// InvitedByUserID is who added the collaborator, when known.
+	InvitedByUserID null.String
 }
 
 type AppEntity struct {

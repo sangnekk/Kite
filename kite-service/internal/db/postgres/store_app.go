@@ -33,22 +33,29 @@ func (c *Client) AllApps(ctx context.Context) ([]*model.App, error) {
 	return apps, nil
 }
 
-func (c *Client) AppsByUser(ctx context.Context, userID string) ([]*model.App, error) {
-	rows, err := c.Q.GetAppsByCollaborator(ctx, userID)
+func (c *Client) AppListByUser(ctx context.Context, userID string) ([]*model.AppListEntry, error) {
+	rows, err := c.Q.GetAppListByUser(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	apps := make([]*model.App, len(rows))
+	entries := make([]*model.AppListEntry, len(rows))
 	for i, row := range rows {
-		app, err := rowToApp(row)
+		app, err := rowToApp(row.App)
 		if err != nil {
 			return nil, err
 		}
-		apps[i] = app
+		entries[i] = &model.AppListEntry{
+			App:             app,
+			InvitedByUserID: null.NewString(row.InvitedByUserID.String, row.InvitedByUserID.Valid),
+		}
 	}
 
-	return apps, nil
+	return entries, nil
+}
+
+func (c *Client) SetAppDiscordAvatar(ctx context.Context, id string, avatar string) error {
+	return c.Q.SetAppDiscordAvatar(ctx, pgmodel.SetAppDiscordAvatarParams{ID: id, Avatar: avatar})
 }
 
 func (c *Client) CountAppsByUser(ctx context.Context, userID string) (int, error) {
@@ -219,6 +226,7 @@ func rowToApp(row pgmodel.App) (*model.App, error) {
 		DiscordToken:   row.DiscordToken,
 		DiscordID:      row.DiscordID,
 		DiscordStatus:  status,
+		DiscordAvatar:  null.NewString(row.DiscordAvatar.String, row.DiscordAvatar.Valid),
 		CreatedAt:      row.CreatedAt.Time,
 		UpdatedAt:      row.UpdatedAt.Time,
 	}, nil
