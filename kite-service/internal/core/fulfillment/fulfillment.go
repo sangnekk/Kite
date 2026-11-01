@@ -92,7 +92,7 @@ func (f *Fulfiller) Fulfill(ctx context.Context, session *model.PaymentSession, 
 		renewsAt = end
 	}
 
-	subscription, err := f.subscriptionStore.UpsertLemonSqueezySubscription(ctx, model.Subscription{
+	subscription, err := f.subscriptionStore.UpsertSubscription(ctx, model.Subscription{
 		ID:                         util.UniqueID(),
 		DisplayName:                plan.Title,
 		Source:                     model.SubscriptionSourceSePay,
@@ -104,11 +104,9 @@ func (f *Fulfiller) Fulfill(ctx context.Context, session *model.PaymentSession, 
 		CreatedAt:                  now,
 		UpdatedAt:                  now,
 		UserID:                     app.OwnerUserID,
-		LemonsqueezySubscriptionID: null.StringFrom(session.PaymentID),
-		LemonsqueezyCustomerID:     null.String{},
-		LemonsqueezyOrderID:        null.StringFrom(orderRef),
-		LemonsqueezyProductID:      null.StringFrom(plan.ID),
-		LemonsqueezyVariantID:      null.String{},
+		PaymentID:                  null.StringFrom(session.PaymentID),
+		PaymentReference:           null.StringFrom(orderRef),
+		PlanID:                     null.StringFrom(plan.ID),
 	})
 	if err != nil {
 		slog.Error(

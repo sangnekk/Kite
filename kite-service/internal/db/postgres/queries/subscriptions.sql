@@ -10,7 +10,7 @@ SELECT * FROM subscriptions ORDER BY created_at DESC;
 -- name: GetSubscription :one
 SELECT * FROM subscriptions WHERE id = $1;
 
--- name: UpsertLemonSqueezySubscription :one
+-- name: UpsertSubscription :one
 INSERT INTO subscriptions (
     id,
     display_name,
@@ -23,14 +23,12 @@ INSERT INTO subscriptions (
     created_at,
     updated_at,
     user_id,
-    lemonsqueezy_subscription_id,
-    lemonsqueezy_customer_id,
-    lemonsqueezy_order_id,
-    lemonsqueezy_product_id,
-    lemonsqueezy_variant_id
+    payment_id,
+    payment_reference,
+    plan_id
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-ON CONFLICT (lemonsqueezy_subscription_id) DO UPDATE SET 
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+ON CONFLICT (payment_id) DO UPDATE SET 
     display_name = EXCLUDED.display_name,
     status = EXCLUDED.status,
     status_formatted = EXCLUDED.status_formatted,
@@ -38,8 +36,6 @@ ON CONFLICT (lemonsqueezy_subscription_id) DO UPDATE SET
     trial_ends_at = EXCLUDED.trial_ends_at,
     ends_at = EXCLUDED.ends_at,
     updated_at = EXCLUDED.updated_at,
-    lemonsqueezy_customer_id = EXCLUDED.lemonsqueezy_customer_id,
-    lemonsqueezy_order_id = EXCLUDED.lemonsqueezy_order_id,
-    lemonsqueezy_product_id = EXCLUDED.lemonsqueezy_product_id,
-    lemonsqueezy_variant_id = EXCLUDED.lemonsqueezy_variant_id
+    payment_reference = EXCLUDED.payment_reference,
+    plan_id = EXCLUDED.plan_id
 RETURNING *;

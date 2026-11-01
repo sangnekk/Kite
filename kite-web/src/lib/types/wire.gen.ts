@@ -305,11 +305,6 @@ export interface Subscription {
   trial_ends_at: null | string /* RFC3339 */;
   ends_at: null | string /* RFC3339 */;
   user_id: string;
-  lemonsqueezy_subscription_id: null | string;
-  lemonsqueezy_customer_id: null | string;
-  lemonsqueezy_order_id: null | string;
-  lemonsqueezy_product_id: null | string;
-  lemonsqueezy_variant_id: null | string;
 }
 export type SubscriptionListResponse = (Subscription | undefined)[];
 export interface BillingPlan {

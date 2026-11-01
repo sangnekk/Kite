@@ -60,8 +60,8 @@ func (c *Client) Subscription(ctx context.Context, subscriptionID string) (*mode
 	return rowToSubscription(row), nil
 }
 
-func (c *Client) UpsertLemonSqueezySubscription(ctx context.Context, sub model.Subscription) (*model.Subscription, error) {
-	row, err := c.Q.UpsertLemonSqueezySubscription(ctx, pgmodel.UpsertLemonSqueezySubscriptionParams{
+func (c *Client) UpsertSubscription(ctx context.Context, sub model.Subscription) (*model.Subscription, error) {
+	row, err := c.Q.UpsertSubscription(ctx, pgmodel.UpsertSubscriptionParams{
 		ID:                         sub.ID,
 		DisplayName:                sub.DisplayName,
 		Source:                     string(sub.Source),
@@ -73,11 +73,9 @@ func (c *Client) UpsertLemonSqueezySubscription(ctx context.Context, sub model.S
 		CreatedAt:                  pgtype.Timestamp{Time: sub.CreatedAt, Valid: true},
 		UpdatedAt:                  pgtype.Timestamp{Time: sub.UpdatedAt, Valid: true},
 		UserID:                     sub.UserID,
-		LemonsqueezySubscriptionID: pgtype.Text{String: sub.LemonsqueezySubscriptionID.String, Valid: sub.LemonsqueezySubscriptionID.Valid},
-		LemonsqueezyCustomerID:     pgtype.Text{String: sub.LemonsqueezyCustomerID.String, Valid: sub.LemonsqueezyCustomerID.Valid},
-		LemonsqueezyOrderID:        pgtype.Text{String: sub.LemonsqueezyOrderID.String, Valid: sub.LemonsqueezyOrderID.Valid},
-		LemonsqueezyProductID:      pgtype.Text{String: sub.LemonsqueezyProductID.String, Valid: sub.LemonsqueezyProductID.Valid},
-		LemonsqueezyVariantID:      pgtype.Text{String: sub.LemonsqueezyVariantID.String, Valid: sub.LemonsqueezyVariantID.Valid},
+		PaymentID:                  pgtype.Text{String: sub.PaymentID.String, Valid: sub.PaymentID.Valid},
+		PaymentReference:           pgtype.Text{String: sub.PaymentReference.String, Valid: sub.PaymentReference.Valid},
+		PlanID:                     pgtype.Text{String: sub.PlanID.String, Valid: sub.PlanID.Valid},
 	})
 	if err != nil {
 		return nil, err
@@ -103,10 +101,8 @@ func rowToSubscription(row pgmodel.Subscription) *model.Subscription {
 		CreatedAt:                  row.CreatedAt.Time,
 		UpdatedAt:                  row.UpdatedAt.Time,
 		UserID:                     row.UserID,
-		LemonsqueezySubscriptionID: null.NewString(row.LemonsqueezySubscriptionID.String, row.LemonsqueezySubscriptionID.Valid),
-		LemonsqueezyCustomerID:     null.NewString(row.LemonsqueezyCustomerID.String, row.LemonsqueezyCustomerID.Valid),
-		LemonsqueezyOrderID:        null.NewString(row.LemonsqueezyOrderID.String, row.LemonsqueezyOrderID.Valid),
-		LemonsqueezyProductID:      null.NewString(row.LemonsqueezyProductID.String, row.LemonsqueezyProductID.Valid),
-		LemonsqueezyVariantID:      null.NewString(row.LemonsqueezyVariantID.String, row.LemonsqueezyVariantID.Valid),
+		PaymentID:                  null.NewString(row.PaymentID.String, row.PaymentID.Valid),
+		PaymentReference:           null.NewString(row.PaymentReference.String, row.PaymentReference.Valid),
+		PlanID:                     null.NewString(row.PlanID.String, row.PlanID.Valid),
 	}
 }

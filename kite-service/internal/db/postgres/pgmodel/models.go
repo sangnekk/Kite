@@ -330,22 +330,20 @@ type Setting struct {
 }
 
 type Subscription struct {
-	ID                         string
-	DisplayName                string
-	Source                     string
-	Status                     string
-	StatusFormatted            string
-	CreatedAt                  pgtype.Timestamp
-	UpdatedAt                  pgtype.Timestamp
-	RenewsAt                   pgtype.Timestamp
-	TrialEndsAt                pgtype.Timestamp
-	EndsAt                     pgtype.Timestamp
-	UserID                     string
-	LemonsqueezySubscriptionID pgtype.Text
-	LemonsqueezyCustomerID     pgtype.Text
-	LemonsqueezyOrderID        pgtype.Text
-	LemonsqueezyProductID      pgtype.Text
-	LemonsqueezyVariantID      pgtype.Text
+	ID               string
+	DisplayName      string
+	Source           string
+	Status           string
+	StatusFormatted  string
+	CreatedAt        pgtype.Timestamp
+	UpdatedAt        pgtype.Timestamp
+	RenewsAt         pgtype.Timestamp
+	TrialEndsAt      pgtype.Timestamp
+	EndsAt           pgtype.Timestamp
+	UserID           string
+	PaymentID        pgtype.Text
+	PaymentReference pgtype.Text
+	PlanID           pgtype.Text
 }
 
 type UsageRecord struct {

@@ -112,11 +112,6 @@ type Subscription struct {
 	TrialEndsAt                null.Time   `json:"trial_ends_at"`
 	EndsAt                     null.Time   `json:"ends_at"`
 	UserID                     string      `json:"user_id"`
-	LemonsqueezySubscriptionID null.String `json:"lemonsqueezy_subscription_id"`
-	LemonsqueezyCustomerID     null.String `json:"lemonsqueezy_customer_id"`
-	LemonsqueezyOrderID        null.String `json:"lemonsqueezy_order_id"`
-	LemonsqueezyProductID      null.String `json:"lemonsqueezy_product_id"`
-	LemonsqueezyVariantID      null.String `json:"lemonsqueezy_variant_id"`
 }
 
 type SubscriptionListResponse = []*Subscription
@@ -129,7 +124,7 @@ func SubscriptionToWire(subscription *model.Subscription) *Subscription {
 	return &Subscription{
 		ID:                         subscription.ID,
 		DisplayName:                subscription.DisplayName,
-		PlanID:                     subscription.LemonsqueezyProductID.String,
+		PlanID:                     subscription.PlanID.String,
 		Source:                     string(subscription.Source),
 		Status:                     subscription.Status,
 		StatusFormatted:            subscription.StatusFormatted,
@@ -139,12 +134,6 @@ func SubscriptionToWire(subscription *model.Subscription) *Subscription {
 		TrialEndsAt:                subscription.TrialEndsAt,
 		EndsAt:                     subscription.EndsAt,
 		UserID:                     subscription.UserID,
-		LemonsqueezySubscriptionID: subscription.LemonsqueezySubscriptionID,
-		LemonsqueezyCustomerID:     subscription.LemonsqueezyCustomerID,
-		LemonsqueezyOrderID:        subscription.LemonsqueezyOrderID,
-		LemonsqueezyProductID:      subscription.LemonsqueezyProductID,
-		LemonsqueezyVariantID:      subscription.LemonsqueezyVariantID,
-
 	}
 }
 

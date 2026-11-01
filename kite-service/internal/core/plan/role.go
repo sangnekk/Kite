@@ -49,12 +49,11 @@ func (m *PlanManager) handOutRoles(ctx context.Context) error {
 			continue
 		}
 
-		if !sub.LemonsqueezyProductID.Valid {
+		if !sub.PlanID.Valid {
 			continue
 		}
 
-		// For subscriptions bought through SePay this column holds the plan id.
-		plan := m.PlanByID(sub.LemonsqueezyProductID.String)
+		plan := m.PlanByID(sub.PlanID.String)
 		if plan == nil || plan.DiscordRoleID == "" {
 			continue
 		}

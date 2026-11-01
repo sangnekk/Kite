@@ -18,17 +18,19 @@ type Subscription struct {
 	TrialEndsAt                null.Time
 	EndsAt                     null.Time
 	UserID                     string
-	LemonsqueezySubscriptionID null.String
-	LemonsqueezyCustomerID     null.String
-	LemonsqueezyOrderID        null.String
-	LemonsqueezyProductID      null.String
-	LemonsqueezyVariantID      null.String
+	// PaymentID is the transfer code of the payment session (for example
+	// KITE123); it identifies the subscription a payment created.
+	PaymentID null.String
+	// PaymentReference is the reference of the bank transaction, or the admin
+	// who confirmed the payment by hand.
+	PaymentReference null.String
+	// PlanID is the plan that was bought.
+	PlanID null.String
 }
 
 type SubscriptionSource string
 
 const (
-	SubscriptionSourceLemonSqueezy SubscriptionSource = "lemonsqueezy"
 	SubscriptionSourceSePay        SubscriptionSource = "sepay"
 	SubscriptionSourceManual       SubscriptionSource = "manual"
 )

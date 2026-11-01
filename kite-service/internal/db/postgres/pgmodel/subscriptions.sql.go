@@ -12,7 +12,7 @@ import (
 )
 
 const getAllSubscriptions = `-- name: GetAllSubscriptions :many
-SELECT id, display_name, source, status, status_formatted, created_at, updated_at, renews_at, trial_ends_at, ends_at, user_id, lemonsqueezy_subscription_id, lemonsqueezy_customer_id, lemonsqueezy_order_id, lemonsqueezy_product_id, lemonsqueezy_variant_id FROM subscriptions ORDER BY created_at DESC
+SELECT id, display_name, source, status, status_formatted, created_at, updated_at, renews_at, trial_ends_at, ends_at, user_id, payment_id, payment_reference, plan_id FROM subscriptions ORDER BY created_at DESC
 `
 
 func (q *Queries) GetAllSubscriptions(ctx context.Context) ([]Subscription, error) {
@@ -36,11 +36,9 @@ func (q *Queries) GetAllSubscriptions(ctx context.Context) ([]Subscription, erro
 			&i.TrialEndsAt,
 			&i.EndsAt,
 			&i.UserID,
-			&i.LemonsqueezySubscriptionID,
-			&i.LemonsqueezyCustomerID,
-			&i.LemonsqueezyOrderID,
-			&i.LemonsqueezyProductID,
-			&i.LemonsqueezyVariantID,
+			&i.PaymentID,
+			&i.PaymentReference,
+			&i.PlanID,
 		); err != nil {
 			return nil, err
 		}
@@ -53,7 +51,7 @@ func (q *Queries) GetAllSubscriptions(ctx context.Context) ([]Subscription, erro
 }
 
 const getSubscription = `-- name: GetSubscription :one
-SELECT id, display_name, source, status, status_formatted, created_at, updated_at, renews_at, trial_ends_at, ends_at, user_id, lemonsqueezy_subscription_id, lemonsqueezy_customer_id, lemonsqueezy_order_id, lemonsqueezy_product_id, lemonsqueezy_variant_id FROM subscriptions WHERE id = $1
+SELECT id, display_name, source, status, status_formatted, created_at, updated_at, renews_at, trial_ends_at, ends_at, user_id, payment_id, payment_reference, plan_id FROM subscriptions WHERE id = $1
 `
 
 func (q *Queries) GetSubscription(ctx context.Context, id string) (Subscription, error) {
@@ -71,17 +69,15 @@ func (q *Queries) GetSubscription(ctx context.Context, id string) (Subscription,
 		&i.TrialEndsAt,
 		&i.EndsAt,
 		&i.UserID,
-		&i.LemonsqueezySubscriptionID,
-		&i.LemonsqueezyCustomerID,
-		&i.LemonsqueezyOrderID,
-		&i.LemonsqueezyProductID,
-		&i.LemonsqueezyVariantID,
+		&i.PaymentID,
+		&i.PaymentReference,
+		&i.PlanID,
 	)
 	return i, err
 }
 
 const getSubscriptions = `-- name: GetSubscriptions :many
-SELECT id, display_name, source, status, status_formatted, created_at, updated_at, renews_at, trial_ends_at, ends_at, user_id, lemonsqueezy_subscription_id, lemonsqueezy_customer_id, lemonsqueezy_order_id, lemonsqueezy_product_id, lemonsqueezy_variant_id FROM subscriptions WHERE user_id = $1 ORDER BY created_at DESC
+SELECT id, display_name, source, status, status_formatted, created_at, updated_at, renews_at, trial_ends_at, ends_at, user_id, payment_id, payment_reference, plan_id FROM subscriptions WHERE user_id = $1 ORDER BY created_at DESC
 `
 
 func (q *Queries) GetSubscriptions(ctx context.Context, userID string) ([]Subscription, error) {
@@ -105,11 +101,9 @@ func (q *Queries) GetSubscriptions(ctx context.Context, userID string) ([]Subscr
 			&i.TrialEndsAt,
 			&i.EndsAt,
 			&i.UserID,
-			&i.LemonsqueezySubscriptionID,
-			&i.LemonsqueezyCustomerID,
-			&i.LemonsqueezyOrderID,
-			&i.LemonsqueezyProductID,
-			&i.LemonsqueezyVariantID,
+			&i.PaymentID,
+			&i.PaymentReference,
+			&i.PlanID,
 		); err != nil {
 			return nil, err
 		}
@@ -122,7 +116,7 @@ func (q *Queries) GetSubscriptions(ctx context.Context, userID string) ([]Subscr
 }
 
 const getSubscriptionsByAppID = `-- name: GetSubscriptionsByAppID :many
-SELECT subscriptions.id, subscriptions.display_name, subscriptions.source, subscriptions.status, subscriptions.status_formatted, subscriptions.created_at, subscriptions.updated_at, subscriptions.renews_at, subscriptions.trial_ends_at, subscriptions.ends_at, subscriptions.user_id, subscriptions.lemonsqueezy_subscription_id, subscriptions.lemonsqueezy_customer_id, subscriptions.lemonsqueezy_order_id, subscriptions.lemonsqueezy_product_id, subscriptions.lemonsqueezy_variant_id FROM subscriptions LEFT JOIN entitlements ON subscriptions.id = entitlements.subscription_id WHERE entitlements.app_id = $1 ORDER BY subscriptions.created_at DESC
+SELECT subscriptions.id, subscriptions.display_name, subscriptions.source, subscriptions.status, subscriptions.status_formatted, subscriptions.created_at, subscriptions.updated_at, subscriptions.renews_at, subscriptions.trial_ends_at, subscriptions.ends_at, subscriptions.user_id, subscriptions.payment_id, subscriptions.payment_reference, subscriptions.plan_id FROM subscriptions LEFT JOIN entitlements ON subscriptions.id = entitlements.subscription_id WHERE entitlements.app_id = $1 ORDER BY subscriptions.created_at DESC
 `
 
 func (q *Queries) GetSubscriptionsByAppID(ctx context.Context, appID string) ([]Subscription, error) {
@@ -146,11 +140,9 @@ func (q *Queries) GetSubscriptionsByAppID(ctx context.Context, appID string) ([]
 			&i.TrialEndsAt,
 			&i.EndsAt,
 			&i.UserID,
-			&i.LemonsqueezySubscriptionID,
-			&i.LemonsqueezyCustomerID,
-			&i.LemonsqueezyOrderID,
-			&i.LemonsqueezyProductID,
-			&i.LemonsqueezyVariantID,
+			&i.PaymentID,
+			&i.PaymentReference,
+			&i.PlanID,
 		); err != nil {
 			return nil, err
 		}
@@ -162,7 +154,7 @@ func (q *Queries) GetSubscriptionsByAppID(ctx context.Context, appID string) ([]
 	return items, nil
 }
 
-const upsertLemonSqueezySubscription = `-- name: UpsertLemonSqueezySubscription :one
+const upsertSubscription = `-- name: UpsertSubscription :one
 INSERT INTO subscriptions (
     id,
     display_name,
@@ -175,14 +167,12 @@ INSERT INTO subscriptions (
     created_at,
     updated_at,
     user_id,
-    lemonsqueezy_subscription_id,
-    lemonsqueezy_customer_id,
-    lemonsqueezy_order_id,
-    lemonsqueezy_product_id,
-    lemonsqueezy_variant_id
+    payment_id,
+    payment_reference,
+    plan_id
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-ON CONFLICT (lemonsqueezy_subscription_id) DO UPDATE SET 
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+ON CONFLICT (payment_id) DO UPDATE SET 
     display_name = EXCLUDED.display_name,
     status = EXCLUDED.status,
     status_formatted = EXCLUDED.status_formatted,
@@ -190,34 +180,30 @@ ON CONFLICT (lemonsqueezy_subscription_id) DO UPDATE SET
     trial_ends_at = EXCLUDED.trial_ends_at,
     ends_at = EXCLUDED.ends_at,
     updated_at = EXCLUDED.updated_at,
-    lemonsqueezy_customer_id = EXCLUDED.lemonsqueezy_customer_id,
-    lemonsqueezy_order_id = EXCLUDED.lemonsqueezy_order_id,
-    lemonsqueezy_product_id = EXCLUDED.lemonsqueezy_product_id,
-    lemonsqueezy_variant_id = EXCLUDED.lemonsqueezy_variant_id
-RETURNING id, display_name, source, status, status_formatted, created_at, updated_at, renews_at, trial_ends_at, ends_at, user_id, lemonsqueezy_subscription_id, lemonsqueezy_customer_id, lemonsqueezy_order_id, lemonsqueezy_product_id, lemonsqueezy_variant_id
+    payment_reference = EXCLUDED.payment_reference,
+    plan_id = EXCLUDED.plan_id
+RETURNING id, display_name, source, status, status_formatted, created_at, updated_at, renews_at, trial_ends_at, ends_at, user_id, payment_id, payment_reference, plan_id
 `
 
-type UpsertLemonSqueezySubscriptionParams struct {
-	ID                         string
-	DisplayName                string
-	Source                     string
-	Status                     string
-	StatusFormatted            string
-	RenewsAt                   pgtype.Timestamp
-	TrialEndsAt                pgtype.Timestamp
-	EndsAt                     pgtype.Timestamp
-	CreatedAt                  pgtype.Timestamp
-	UpdatedAt                  pgtype.Timestamp
-	UserID                     string
-	LemonsqueezySubscriptionID pgtype.Text
-	LemonsqueezyCustomerID     pgtype.Text
-	LemonsqueezyOrderID        pgtype.Text
-	LemonsqueezyProductID      pgtype.Text
-	LemonsqueezyVariantID      pgtype.Text
+type UpsertSubscriptionParams struct {
+	ID               string
+	DisplayName      string
+	Source           string
+	Status           string
+	StatusFormatted  string
+	RenewsAt         pgtype.Timestamp
+	TrialEndsAt      pgtype.Timestamp
+	EndsAt           pgtype.Timestamp
+	CreatedAt        pgtype.Timestamp
+	UpdatedAt        pgtype.Timestamp
+	UserID           string
+	PaymentID        pgtype.Text
+	PaymentReference pgtype.Text
+	PlanID           pgtype.Text
 }
 
-func (q *Queries) UpsertLemonSqueezySubscription(ctx context.Context, arg UpsertLemonSqueezySubscriptionParams) (Subscription, error) {
-	row := q.db.QueryRow(ctx, upsertLemonSqueezySubscription,
+func (q *Queries) UpsertSubscription(ctx context.Context, arg UpsertSubscriptionParams) (Subscription, error) {
+	row := q.db.QueryRow(ctx, upsertSubscription,
 		arg.ID,
 		arg.DisplayName,
 		arg.Source,
@@ -229,11 +215,9 @@ func (q *Queries) UpsertLemonSqueezySubscription(ctx context.Context, arg Upsert
 		arg.CreatedAt,
 		arg.UpdatedAt,
 		arg.UserID,
-		arg.LemonsqueezySubscriptionID,
-		arg.LemonsqueezyCustomerID,
-		arg.LemonsqueezyOrderID,
-		arg.LemonsqueezyProductID,
-		arg.LemonsqueezyVariantID,
+		arg.PaymentID,
+		arg.PaymentReference,
+		arg.PlanID,
 	)
 	var i Subscription
 	err := row.Scan(
@@ -248,11 +232,9 @@ func (q *Queries) UpsertLemonSqueezySubscription(ctx context.Context, arg Upsert
 		&i.TrialEndsAt,
 		&i.EndsAt,
 		&i.UserID,
-		&i.LemonsqueezySubscriptionID,
-		&i.LemonsqueezyCustomerID,
-		&i.LemonsqueezyOrderID,
-		&i.LemonsqueezyProductID,
-		&i.LemonsqueezyVariantID,
+		&i.PaymentID,
+		&i.PaymentReference,
+		&i.PlanID,
 	)
 	return i, err
 }
