@@ -3636,8 +3636,9 @@ func (n *CompiledFlowNode) executeTranscript(ctx *FlowContext) error {
 		Name:        name,
 		ChannelName: channelName,
 		ChannelID:   channelID,
-		// Only plans that were given the feature in the admin console may hide it.
-		HideWatermark: ctx.Features != nil && ctx.Features.TranscriptNoWatermark(ctx),
+		// The block has to ask for it and the plan of the app has to allow it, which
+		// no plan does until it is turned on in the admin console.
+		HideWatermark: n.Data.TranscriptHideWatermark && ctx.Features != nil && ctx.Features.TranscriptNoWatermark(ctx),
 	}
 
 	// "both" gives an HTML file and a text file. The html one stays the main

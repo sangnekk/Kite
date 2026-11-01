@@ -1776,6 +1776,7 @@
         "transcript_before",
         "transcript_after",
         "transcript_exclude_bots",
+        "transcript_hide_watermark",
         "transcript_output_channel",
         "temporary_name",
         "custom_label"
@@ -1824,6 +1825,9 @@
             "type": "string"
           },
           "transcript_exclude_bots": {
+            "type": "boolean"
+          },
+          "transcript_hide_watermark": {
             "type": "boolean"
           },
           "transcript_output_channel": {

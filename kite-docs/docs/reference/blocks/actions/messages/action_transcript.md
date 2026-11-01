@@ -32,6 +32,8 @@ import NodeInfoExplorer from "@site/src/components/NodeInfoExplorer";
 
 > `Bỏ tin nhắn của bot` — bật để không đưa tin của bot vào transcript.
 
+> `Ẩn watermark` — bỏ nhãn "Tạo bởi Vibe Bot" ở góc tệp HTML và dòng "Tạo bởi VibeBot" ở cuối tệp txt. Chỉ dùng được khi gói của ứng dụng có tính năng này, nếu không công tắc bị khóa.
+
 > `Gửi tệp vào kênh` — để trống nếu chỉ muốn dùng kết quả ở các khối sau. Nếu điền, bot upload tệp vào kênh này. Tệp lớn hơn 8 MB không gửi được, hãy giảm số tin nhắn.
 
 ## Kết quả trả về
@@ -54,7 +56,7 @@ import NodeInfoExplorer from "@site/src/components/NodeInfoExplorer";
 - Cần bật **Message Content Intent** cho ứng dụng bot trong Discord Developer Portal. Nếu không, Discord gửi tin nhắn với nội dung trống, khi đó `warning` sẽ báo và transcript chỉ có tên và giờ.
 - Transcript chứa tin nhắn của thành viên. Hãy thông báo cho thành viên và đừng gửi tệp vào kênh công khai.
 - Tệp HTML đã được escape, không chứa script, nên mở được an toàn. Ảnh đính kèm và ảnh trong embed được hiển thị trực tiếp (cần mạng để tải ảnh), các tệp khác hiện dưới dạng liên kết. Chỉ liên kết `http` và `https` được giữ lại.
-- Góc dưới bên trái của tệp HTML có nhãn "Tạo bởi Vibe Bot". Nhãn chỉ được ẩn khi ứng dụng có gói được bật tính năng "Ẩn watermark transcript"; mặc định không gói nào có.
+- Góc dưới bên trái của tệp HTML có nhãn "Tạo bởi Vibe Bot", tệp txt có một dòng giới thiệu ở cuối. Nhãn chỉ được ẩn khi khối bật `Ẩn watermark` và ứng dụng có gói được bật tính năng "Ẩn watermark transcript" trong admin console; mặc định không gói nào có.
 - Tốn **3 credit** mỗi lần chạy. Xem [Hệ thống credit](/reference/credit-system).
 - [Lấy tin nhắn kênh](/reference/blocks/actions/action_message_get)
 - [Tạo tin nhắn kênh](/reference/blocks/actions/action_message_create)

@@ -22,6 +22,8 @@ const (
 
 	maxNameLength = 80
 	watermarkURL  = "https://bot.vibehost.vn"
+	// textWatermark is the last line of the text file.
+	textWatermark = "## -----  Tạo bởi VibeBot - tạo bot cho riêng bạn tại https://bot.vibehost.vn -------"
 )
 
 // Options controls how a transcript is rendered.
@@ -200,6 +202,10 @@ func renderText(messages []discord.Message, opts Options, now time.Time) string 
 		for _, line := range extras(m) {
 			fmt.Fprintf(&b, "    %s\n", line)
 		}
+	}
+
+	if !opts.HideWatermark {
+		b.WriteString("\n" + textWatermark + "\n")
 	}
 
 	return b.String()

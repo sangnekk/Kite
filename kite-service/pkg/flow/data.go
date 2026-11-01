@@ -258,6 +258,7 @@ type FlowNodeData struct {
 	TranscriptBefore        string `json:"transcript_before,omitempty"`         // template, only messages older than this id
 	TranscriptAfter         string `json:"transcript_after,omitempty"`          // template, only messages newer than this id
 	TranscriptExcludeBots   bool   `json:"transcript_exclude_bots,omitempty"`   // leave out messages of bots
+	TranscriptHideWatermark bool   `json:"transcript_hide_watermark,omitempty"` // only takes effect when the plan of the app allows it
 	TranscriptOutputChannel string `json:"transcript_output_channel,omitempty"` // template, when set the file is sent to this channel
 
 	// Message Reaction Create, Delete

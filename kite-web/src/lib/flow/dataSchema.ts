@@ -996,6 +996,7 @@ export const nodeActionTranscriptDataSchema = nodeBaseDataSchema.extend({
   transcript_before: z.string().optional(),
   transcript_after: z.string().optional(),
   transcript_exclude_bots: z.boolean().optional(),
+  transcript_hide_watermark: z.boolean().optional(),
   transcript_output_channel: z
     .string()
     .regex(numericRegex)

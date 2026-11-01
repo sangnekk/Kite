@@ -61,7 +61,7 @@ type fakeFeatures struct{ noWatermark bool }
 
 func (f fakeFeatures) TranscriptNoWatermark(ctx context.Context) bool { return f.noWatermark }
 
-func runTranscriptWithFeatures(t *testing.T, features FeatureProvider) string {
+func runTranscriptWithFeatures(t *testing.T, features FeatureProvider, hide bool) string {
 	d := &TestDiscordProvider{transcriptMessages: []discord.Message{transcriptMsg(1, "an", "xin chào", false)}}
 	c := newDiscordTestContext(t, d)
 	defer c.Cancel()
@@ -70,7 +70,7 @@ func runTranscriptWithFeatures(t *testing.T, features FeatureProvider) string {
 	node := &CompiledFlowNode{
 		ID:   "0",
 		Type: FlowNodeTypeActionTranscript,
-		Data: FlowNodeData{ChannelTarget: "111"},
+		Data: FlowNodeData{ChannelTarget: "111", TranscriptHideWatermark: hide},
 	}
 	require.NoError(t, node.Execute(c))
 
@@ -80,7 +80,8 @@ func runTranscriptWithFeatures(t *testing.T, features FeatureProvider) string {
 func TestFlowExecuteTranscriptWatermarkFollowsThePlan(t *testing.T) {
 	const badge = "Tạo bởi Vibe Bot"
 
-	assert.Contains(t, runTranscriptWithFeatures(t, nil), badge, "no feature lookup means no plan may hide it")
-	assert.Contains(t, runTranscriptWithFeatures(t, fakeFeatures{noWatermark: false}), badge)
-	assert.NotContains(t, runTranscriptWithFeatures(t, fakeFeatures{noWatermark: true}), badge)
+	assert.Contains(t, runTranscriptWithFeatures(t, nil, true), badge, "no feature lookup means no plan may hide it")
+	assert.Contains(t, runTranscriptWithFeatures(t, fakeFeatures{noWatermark: false}, true), badge, "the block asks but the plan does not allow")
+	assert.Contains(t, runTranscriptWithFeatures(t, fakeFeatures{noWatermark: true}, false), badge, "the plan allows but the block does not ask")
+	assert.NotContains(t, runTranscriptWithFeatures(t, fakeFeatures{noWatermark: true}, true), badge)
 }

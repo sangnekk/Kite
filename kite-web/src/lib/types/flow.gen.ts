@@ -292,6 +292,7 @@ export interface FlowNodeData {
   transcript_before?: string; // template, only messages older than this id
   transcript_after?: string; // template, only messages newer than this id
   transcript_exclude_bots?: boolean; // leave out messages of bots
+  transcript_hide_watermark?: boolean; // only takes effect when the plan of the app allows it
   transcript_output_channel?: string; // template, when set the file is sent to this channel
   /**
    * Message Purge / Channel Slowmode (pin/unpin reuse channel_target + message_target)

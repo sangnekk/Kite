@@ -127,6 +127,12 @@ func TestRenderWatermark(t *testing.T) {
 	assert.NotContains(t, without, `class="wm"`)
 	assert.NotContains(t, without, "Tạo bởi Vibe Bot")
 
-	text := string(Render(nil, Options{Format: FormatText, ChannelID: 1, Now: now}).Content)
-	assert.NotContains(t, text, "Vibe Bot", "the text file has no watermark")
+	one := []discord.Message{msg(1, "an", "xin chào")}
+
+	text := string(Render(one, Options{Format: FormatText, ChannelID: 1, Now: now}).Content)
+	assert.True(t, strings.HasSuffix(text, "\n"+textWatermark+"\n"), "the text file ends with its own line")
+	assert.Contains(t, text, "## -----  Tạo bởi VibeBot - tạo bot cho riêng bạn tại https://bot.vibehost.vn -------")
+
+	textHidden := string(Render(one, Options{Format: FormatText, ChannelID: 1, Now: now, HideWatermark: true}).Content)
+	assert.NotContains(t, textHidden, "VibeBot")
 }

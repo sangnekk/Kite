@@ -14,6 +14,7 @@ import {
   useVariables,
 } from "@/lib/hooks/api";
 import { useRouter } from "next/router";
+import { useAppFeature } from "@/lib/hooks/api";
 import { useAppId } from "@/lib/hooks/params";
 import {
   CommandArgumentChoiceData,
@@ -195,6 +196,7 @@ const intputs: Record<string, any> = {
   transcript_before: TranscriptBeforeInput,
   transcript_after: TranscriptAfterInput,
   transcript_exclude_bots: TranscriptExcludeBotsInput,
+  transcript_hide_watermark: TranscriptHideWatermarkInput,
   transcript_output_channel: TranscriptOutputChannelInput,
   channel_slowmode_seconds: ChannelSlowmodeSecondsInput,
   list_input: ListInputField,
@@ -2499,6 +2501,32 @@ function TranscriptExcludeBotsInput({ data, updateData, errors }: InputProps) {
         updateData({ transcript_exclude_bots: v || undefined })
       }
       errors={errors}
+    />
+  );
+}
+
+function TranscriptHideWatermarkInput({
+  data,
+  updateData,
+  errors,
+}: InputProps) {
+  const allowed = useAppFeature((f) => f.transcript_no_watermark);
+
+  return (
+    <BaseCheckbox
+      field="transcript_hide_watermark"
+      title="Ẩn watermark"
+      description={
+        allowed
+          ? "Bỏ nhãn Vibe Bot ở góc tệp HTML và dòng cuối của tệp txt."
+          : "Bỏ nhãn Vibe Bot ở góc tệp HTML và dòng cuối của tệp txt. Gói hiện tại của ứng dụng chưa có tính năng này."
+      }
+      value={!!data.transcript_hide_watermark}
+      updateValue={(v) =>
+        updateData({ transcript_hide_watermark: v || undefined })
+      }
+      errors={errors}
+      disabled={!allowed}
     />
   );
 }

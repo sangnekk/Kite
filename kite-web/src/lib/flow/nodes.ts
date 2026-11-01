@@ -418,6 +418,7 @@ export const nodeTypes: Record<string, NodeValues> = {
       "transcript_before",
       "transcript_after",
       "transcript_exclude_bots",
+      "transcript_hide_watermark",
       "transcript_output_channel",
       "temporary_name",
       "custom_label",
