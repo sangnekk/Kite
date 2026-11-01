@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { parse as parseToml } from "smol-toml";
+import { parseKiteModels, type LoadedModels } from "./models";
 
 export const config = {
   port: Number(process.env.PORT ?? 3001),
@@ -28,8 +29,6 @@ export const config = {
 // configuration in its database and edits it from the admin console. The mounted
 // kite.toml [ai] section is only a fallback for when kite-service is unreachable
 // at startup. key -> gateway model id, e.g. "minimax-m27" -> "minimax/minimax-m2.7".
-type LoadedModels = { map: Record<string, string>; defaultKey?: string };
-
 function loadModelsFromKiteToml(): LoadedModels {
   try {
     const raw = readFileSync(config.kiteConfigPath, "utf8");
@@ -63,15 +62,9 @@ async function loadModelsFromKiteService(): Promise<LoadedModels | null> {
       signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const body = (await res.json()) as {
-      default_model?: string;
-      models?: { key?: string; model?: string }[];
-    };
-    const map: Record<string, string> = {};
-    for (const m of body.models ?? []) {
-      if (m.key && m.model) map[m.key] = m.model;
-    }
-    return { map, defaultKey: body.default_model };
+    const loaded = parseKiteModels(await res.json());
+    if (!loaded) throw new Error("unexpected answer from kite-service");
+    return loaded;
   } catch (err) {
     console.warn(
       "Could not load AI models from kite-service:",
