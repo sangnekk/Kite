@@ -16,8 +16,10 @@ kite-web/out
 kite-service/kite-service
 **/*.exe
 
+# Local build output of the admin console (the image builds its own)
+kite-admin-console/dist
+
 # Other services / docs (not part of the kite image)
-kite-admin-console
 kite-admin-service
 kite-docs
 kite_original_source

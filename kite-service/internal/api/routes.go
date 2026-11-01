@@ -38,6 +38,7 @@ import (
 	"github.com/kitecloud/kite/kite-service/internal/util"
 	"github.com/kitecloud/kite/kite-service/pkg/plugin"
 	"github.com/kitecloud/kite/kite-service/pkg/provider"
+	kiteadmin "github.com/sangnekk/Kite/kite-admin-console"
 	kiteweb "github.com/sangnekk/Kite/kite-web"
 )
 
@@ -103,6 +104,15 @@ func (s *APIServer) RegisterRoutes(
 		s.mux.Handle("/", handler.APIHandler(func(c *handler.Context) error {
 			return handler.ErrNotFound("unknown_route", "Route not found")
 		}))
+	}
+
+	// The admin console is a separate single page app served under /admin/.
+	// Its API lives under /v1/admin.
+	if adminWeb, err := kiteadmin.NewHandler(); err == nil {
+		slog.Info("Admin console embedded")
+		s.mux.Handle("/admin/", http.StripPrefix("/admin", adminWeb))
+	} else {
+		slog.Info("Admin console not embedded, set 'embedadmin' build tag to embed it.")
 	}
 
 	// Unknown /v1 paths must return a JSON 404 instead of falling through to the

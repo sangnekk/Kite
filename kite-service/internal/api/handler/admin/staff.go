@@ -13,14 +13,29 @@ import (
 var discordIDPattern = regexp.MustCompile(`^\d{15,25}$`)
 
 type MeResponse struct {
-	UserID    string `json:"user_id"`
-	DiscordID string `json:"discord_id"`
-	Role      string `json:"role"`
+	UserID          string  `json:"user_id"`
+	DiscordID       string  `json:"discord_id"`
+	Role            string  `json:"role"`
+	DisplayName     string  `json:"display_name"`
+	DiscordUsername string  `json:"discord_username"`
+	DiscordAvatar   *string `json:"discord_avatar"`
 }
 
 // HandleMe tells the console who is signed in and what they may do.
 func (h *Handler) HandleMe(c *handler.Context) (*MeResponse, error) {
-	return &MeResponse{UserID: c.Session.UserID, DiscordID: c.AdminDiscordID, Role: c.AdminRole}, nil
+	user, err := h.users.User(c.Context(), c.Session.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load user: %w", err)
+	}
+
+	me := &MeResponse{
+		UserID: user.ID, DiscordID: c.AdminDiscordID, Role: c.AdminRole,
+		DisplayName: user.DisplayName, DiscordUsername: user.DiscordUsername,
+	}
+	if user.DiscordAvatar.Valid {
+		me.DiscordAvatar = &user.DiscordAvatar.String
+	}
+	return me, nil
 }
 
 type StaffItem struct {

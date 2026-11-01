@@ -24,7 +24,19 @@ ENV OUTPUT=export
 RUN npm run build
 
 ###############################################################################
-# Stage 2 — build the Go backend with the frontend embedded
+# Stage 2 — build the admin console (Vite) served under /admin/
+###############################################################################
+FROM node:20-slim AS admin
+WORKDIR /app/kite-admin-console
+
+COPY kite-admin-console/package.json kite-admin-console/package-lock.json ./
+RUN npm ci
+
+COPY kite-admin-console/ ./
+RUN npm run build
+
+###############################################################################
+# Stage 3 — build the Go backend with both frontends embedded
 ###############################################################################
 FROM golang:1.25-bookworm AS builder
 WORKDIR /src
@@ -34,24 +46,27 @@ WORKDIR /src
 COPY go.work go.work.sum ./
 COPY kite-service/go.mod kite-service/go.sum ./kite-service/
 COPY kite-web/go.mod kite-web/go.sum ./kite-web/
+COPY kite-admin-console/go.mod ./kite-admin-console/
 COPY arikawa/go.mod arikawa/go.sum ./arikawa/
 RUN go mod download
 
 # Go sources. kite-web only needs its Go files (the embed package).
 COPY kite-service ./kite-service
 COPY kite-web/*.go ./kite-web/
+COPY kite-admin-console/*.go ./kite-admin-console/
 COPY arikawa ./arikawa
 
 # Bring in the built frontend so the `embedweb` build tag can embed it.
 COPY --from=web /app/kite-web/out ./kite-web/out
+COPY --from=admin /app/kite-admin-console/dist ./kite-admin-console/dist
 
-# Static, stripped binary with the web UI embedded.
+# Static, stripped binary with the web UI and the admin console embedded.
 RUN --mount=type=cache,target=/root/.cache/go-build \
     cd kite-service && \
-    CGO_ENABLED=0 go build -tags embedweb -ldflags "-s -w" -o /out/kite-service
+    CGO_ENABLED=0 go build -tags "embedweb embedadmin" -ldflags "-s -w" -o /out/kite-service
 
 ###############################################################################
-# Stage 3 — minimal runtime image
+# Stage 4 — minimal runtime image
 ###############################################################################
 FROM debian:stable-slim
 WORKDIR /root/
