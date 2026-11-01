@@ -22,6 +22,7 @@ import {
   diagnose,
   Diagnostic,
 } from "@/lib/flow/expressionEngine";
+import { mergeDiagnostics } from "@/lib/hooks/expressionCheck";
 import { CircleAlertIcon } from "lucide-react";
 
 // See https://akashhamirwasia.com/blog/building-highlighted-input-field-in-react/
@@ -262,100 +263,111 @@ const PlaceholderInput = forwardRef<
     suggestions?: PlaceholderSuggestion[];
     /** What the expression language knows here: enables members and functions. */
     completion?: CompletionContext;
+    /** Problems found elsewhere (the server), shown with the ones found here. */
+    problems?: Diagnostic[];
   }
->(({ value, onChange, placeholder, suggestions, completion }, ref) => {
-  const renderRef = useRef<HTMLDivElement>(null);
-  const innerRef = useRef<HTMLInputElement>(null);
-  useImperativeHandle(ref, () => innerRef.current as HTMLInputElement, []);
+>(
+  (
+    { value, onChange, placeholder, suggestions, completion, problems },
+    ref,
+  ) => {
+    const renderRef = useRef<HTMLDivElement>(null);
+    const innerRef = useRef<HTMLInputElement>(null);
+    useImperativeHandle(ref, () => innerRef.current as HTMLInputElement, []);
 
-  const ac = usePlaceholderAutocomplete(
-    value,
-    onChange,
-    suggestions,
-    innerRef,
-    completion,
-  );
+    const ac = usePlaceholderAutocomplete(
+      value,
+      onChange,
+      suggestions,
+      innerRef,
+      completion,
+    );
 
-  const selectionRef = useRef<{ start: number; end: number } | null>(null);
+    const selectionRef = useRef<{ start: number; end: number } | null>(null);
 
-  const syncScroll = useCallback((e: any) => {
-    if (renderRef.current) {
-      renderRef.current.scrollTop = e.target.scrollTop;
-      renderRef.current.scrollLeft = e.target.scrollLeft;
-    }
-  }, []);
+    const syncScroll = useCallback((e: any) => {
+      if (renderRef.current) {
+        renderRef.current.scrollTop = e.target.scrollTop;
+        renderRef.current.scrollLeft = e.target.scrollLeft;
+      }
+    }, []);
 
-  const diagnostics = useMemo(
-    () => (completion ? diagnose(value, completion) : []),
-    [value, completion],
-  );
+    const diagnostics = useMemo(
+      () =>
+        mergeDiagnostics(
+          completion ? diagnose(value, completion) : [],
+          problems ?? [],
+        ),
+      [value, completion, problems],
+    );
 
-  const parts = useMemo(
-    () => highlightParts(value, diagnostics),
-    [value, diagnostics],
-  );
+    const parts = useMemo(
+      () => highlightParts(value, diagnostics),
+      [value, diagnostics],
+    );
 
-  // Restore the caret after `value` actually changes in the DOM. The value
-  // flows back through an external store (React Flow / Zustand) and may land in
-  // a later commit than the keystroke. Keying this to [value] makes the restore
-  // run on the commit where the new value is applied — instead of on every
-  // render, which would consume selectionRef on a stale-value commit and let
-  // the caret jump to the end on the next one.
-  useLayoutEffect(() => {
-    const el = innerRef.current;
-    if (el && selectionRef.current && document.activeElement === el) {
-      el.setSelectionRange(
-        selectionRef.current.start,
-        selectionRef.current.end,
-      );
-      selectionRef.current = null;
-    }
-  }, [value]);
+    // Restore the caret after `value` actually changes in the DOM. The value
+    // flows back through an external store (React Flow / Zustand) and may land in
+    // a later commit than the keystroke. Keying this to [value] makes the restore
+    // run on the commit where the new value is applied — instead of on every
+    // render, which would consume selectionRef on a stale-value commit and let
+    // the caret jump to the end on the next one.
+    useLayoutEffect(() => {
+      const el = innerRef.current;
+      if (el && selectionRef.current && document.activeElement === el) {
+        el.setSelectionRange(
+          selectionRef.current.start,
+          selectionRef.current.end,
+        );
+        selectionRef.current = null;
+      }
+    }, [value]);
 
-  return (
-    <div className="w-full">
-      <div className="relative h-10 w-full">
-        <Input
-          onScroll={syncScroll}
-          value={value}
-          onChange={(e) => {
-            selectionRef.current = {
-              start: e.target.selectionStart ?? 0,
-              end: e.target.selectionEnd ?? 0,
-            };
-            onChange(e.target.value);
-            ac.onCaret(e.target);
-          }}
-          onKeyUp={(e) => ac.onCaret(e.currentTarget)}
-          onClick={(e) => ac.onCaret(e.currentTarget)}
-          onKeyDown={ac.onKeyDown}
-          onBlur={() => window.setTimeout(ac.close, 150)}
-          className="bg-transparent absolute inset-0 z-10"
-          ref={innerRef}
-          placeholder={placeholder}
-        />
-        <div
-          ref={renderRef}
-          className="absolute inset-0 whitespace-pre overflow-x-auto select-none scroll px-3 py-2 text-sm flex items-center text-transparent"
-          style={{
-            scrollbarWidth: "none",
-          }}
-        >
-          {parts}
-        </div>
-        {ac.isOpen && (
-          <PlaceholderDropdown
-            items={ac.filtered}
-            active={ac.active}
-            onPick={ac.insert}
-            onHover={ac.setActive}
+    return (
+      <div className="w-full">
+        <div className="relative h-10 w-full">
+          <Input
+            onScroll={syncScroll}
+            value={value}
+            onChange={(e) => {
+              selectionRef.current = {
+                start: e.target.selectionStart ?? 0,
+                end: e.target.selectionEnd ?? 0,
+              };
+              onChange(e.target.value);
+              ac.onCaret(e.target);
+            }}
+            onKeyUp={(e) => ac.onCaret(e.currentTarget)}
+            onClick={(e) => ac.onCaret(e.currentTarget)}
+            onKeyDown={ac.onKeyDown}
+            onBlur={() => window.setTimeout(ac.close, 150)}
+            className="bg-transparent absolute inset-0 z-10"
+            ref={innerRef}
+            placeholder={placeholder}
           />
-        )}
+          <div
+            ref={renderRef}
+            className="absolute inset-0 whitespace-pre overflow-x-auto select-none scroll px-3 py-2 text-sm flex items-center text-transparent"
+            style={{
+              scrollbarWidth: "none",
+            }}
+          >
+            {parts}
+          </div>
+          {ac.isOpen && (
+            <PlaceholderDropdown
+              items={ac.filtered}
+              active={ac.active}
+              onPick={ac.insert}
+              onHover={ac.setActive}
+            />
+          )}
+        </div>
+        <DiagnosticMessages diagnostics={diagnostics} />
       </div>
-      <DiagnosticMessages diagnostics={diagnostics} />
-    </div>
-  );
-});
+    );
+  },
+);
 
 PlaceholderInput.displayName = "PlaceholderInput";
 export default PlaceholderInput;
@@ -371,12 +383,23 @@ export const PlaceholderTextarea = forwardRef<
     placeholder?: string;
     suggestions?: PlaceholderSuggestion[];
     completion?: CompletionContext;
+    /** Problems found elsewhere (the server), shown with the ones found here. */
+    problems?: Diagnostic[];
     minRows?: number;
     maxRows?: number;
   }
 >(
   (
-    { value, onChange, placeholder, suggestions, completion, minRows, maxRows },
+    {
+      value,
+      onChange,
+      placeholder,
+      suggestions,
+      completion,
+      problems,
+      minRows,
+      maxRows,
+    },
     ref,
   ) => {
     const innerRef = useRef<HTMLTextAreaElement>(null);
@@ -391,8 +414,12 @@ export const PlaceholderTextarea = forwardRef<
     );
 
     const textareaDiagnostics = useMemo(
-      () => (completion ? diagnose(value, completion) : []),
-      [value, completion],
+      () =>
+        mergeDiagnostics(
+          completion ? diagnose(value, completion) : [],
+          problems ?? [],
+        ),
+      [value, completion, problems],
     );
 
     const selectionRef = useRef<{ start: number; end: number } | null>(null);

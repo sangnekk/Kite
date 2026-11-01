@@ -9,7 +9,6 @@ import (
 	"github.com/kitecloud/kite/kite-service/internal/api/handler"
 	adminhandler "github.com/kitecloud/kite/kite-service/internal/api/handler/admin"
 	aihandler "github.com/kitecloud/kite/kite-service/internal/api/handler/ai"
-	internalai "github.com/kitecloud/kite/kite-service/internal/api/handler/internal_ai"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/app"
 	appstate "github.com/kitecloud/kite/kite-service/internal/api/handler/app_state"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/asset"
@@ -19,8 +18,10 @@ import (
 	customevent "github.com/kitecloud/kite/kite-service/internal/api/handler/custom_event"
 	customtable "github.com/kitecloud/kite/kite-service/internal/api/handler/custom_table"
 	eventlistener "github.com/kitecloud/kite/kite-service/internal/api/handler/event_listener"
+	expressionhandler "github.com/kitecloud/kite/kite-service/internal/api/handler/expression"
 	flowhandler "github.com/kitecloud/kite/kite-service/internal/api/handler/flow"
 	integrationhandler "github.com/kitecloud/kite/kite-service/internal/api/handler/integration"
+	internalai "github.com/kitecloud/kite/kite-service/internal/api/handler/internal_ai"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/logs"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/message"
 	pluginhandler "github.com/kitecloud/kite/kite-service/internal/api/handler/plugin"
@@ -331,6 +332,16 @@ func (s *APIServer) RegisterRoutes(
 	customTableGroup.Delete("/rows/{rowID}", handler.Typed(customTableHandler.DeleteRow))
 
 	// Schedule routes
+	// The editor asks while a field is typed, so this has a limit of its own and
+	// does not eat the one of the other app routes (60 a minute for all of them).
+	expressionHandler := expressionhandler.NewExpressionHandler()
+	expressionGroup := v1Group.Group("/apps/{appID}/expressions",
+		sessionManager.RequireSession,
+		handler.RateLimitByUser(300, time.Minute),
+		accessManager.AppAccess,
+	)
+	expressionGroup.Post("/check", handler.TypedWithBody(expressionHandler.HandleExpressionCheck))
+
 	scheduleHandler := schedulehandler.NewScheduleHandler(scheduleStore)
 
 	schedulesGroup := appGroup.Group("/schedules")

@@ -15,6 +15,7 @@ import {
 } from "@/lib/hooks/api";
 import { useRouter } from "next/router";
 import { useAppFeature } from "@/lib/hooks/api";
+import { useExpressionProblems } from "@/lib/hooks/expressionCheck";
 import EntityPicker from "./inputs/EntityPicker";
 import InputModeToggle, { idHint } from "./inputs/InputModeToggle";
 import {
@@ -4449,6 +4450,8 @@ const FlowPlaceholderInput = forwardRef<
 >((props, ref) => {
   const groups = useFlowPlaceholders();
   const completion = useFlowCompletionContext();
+  const flowContext = useFlowContext((c) => c.type);
+  const problems = useExpressionProblems(props.value, flowContext);
 
   const suggestions = useMemo(
     () =>
@@ -4468,6 +4471,7 @@ const FlowPlaceholderInput = forwardRef<
       ref={ref}
       suggestions={suggestions}
       completion={completion}
+      problems={problems}
     />
   );
 });
@@ -4484,6 +4488,8 @@ const FlowPlaceholderTextarea = forwardRef<
 >((props, ref) => {
   const groups = useFlowPlaceholders();
   const completion = useFlowCompletionContext();
+  const flowContext = useFlowContext((c) => c.type);
+  const problems = useExpressionProblems(props.value, flowContext);
 
   const suggestions = useMemo(
     () =>
@@ -4503,6 +4509,7 @@ const FlowPlaceholderTextarea = forwardRef<
       ref={ref}
       suggestions={suggestions}
       completion={completion}
+      problems={problems}
     />
   );
 });

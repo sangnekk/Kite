@@ -916,3 +916,30 @@ export interface WebhookIntegrationUpdateEnabledRequest {
 }
 export type WebhookIntegrationUpdateEnabledResponse = WebhookIntegration;
 export type WebhookIntegrationDeleteResponse = Empty;
+
+/**
+ * Expression check, hand-added (see the note on the stale generated types).
+ */
+export interface ExpressionCheckRequest {
+  /**
+   * Text holds the {{ expressions }} to check, as typed in a field of a node.
+   */
+  text: string;
+  /**
+   * Context is the kind of flow the text is in (command, event_discord...),
+   * which decides the values that exist. Empty means any.
+   */
+  context: string;
+}
+export interface ExpressionProblem {
+  /**
+   * From and To are indexes into the text in UTF-16 code units, as a
+   * JavaScript string counts them.
+   */
+  from: number /* int */;
+  to: number /* int */;
+  message: string;
+}
+export interface ExpressionCheckResponse {
+  problems: ExpressionProblem[];
+}
