@@ -35,6 +35,7 @@ import {
   PluginInstanceListResponse,
   PluginListResponse,
   StateGuildChannelListResponse,
+  StateGuildRoleListResponse,
   StateGuildListResponse,
   StateStatusGetResponse,
   SubscriptionListResponse,
@@ -367,6 +368,22 @@ export function useAppStateGuildChannelsQuery(
         `/v1/apps/${appId}/state/guilds/${guildId}/channels`
       ),
     enabled: !!appId && !!guildId,
+  });
+}
+
+export function useAppStateGuildRolesQuery(
+  appId: string,
+  guildId: string | null
+) {
+  return useQuery({
+    queryKey: ["apps", appId, "state", "guilds", guildId, "roles"],
+    queryFn: () =>
+      apiRequest<StateGuildRoleListResponse>(
+        `/v1/apps/${appId}/state/guilds/${guildId}/roles`
+      ),
+    enabled: !!appId && !!guildId,
+    // The pickers of a flow ask for the same list again and again.
+    staleTime: 30_000,
   });
 }
 

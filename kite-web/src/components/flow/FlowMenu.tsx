@@ -85,7 +85,9 @@ export default function FlowMenu({
 
       {tab === "logs" && <FlowLogList logs={logs} />}
 
-      {selectedNodeId && <FlowNodeEditor nodeId={selectedNodeId} />}
+      {selectedNodeId && (
+        <FlowNodeEditor key={selectedNodeId} nodeId={selectedNodeId} />
+      )}
     </>
   );
 

@@ -178,8 +178,27 @@ export interface Channel {
   type: number /* int */;
   name: string;
   topic: string;
+  /**
+   * ParentID is the category (or the channel of a thread), empty when there is none.
+   */
+  parent_id?: string;
+  position: number /* int */;
 }
 export type StateGuildChannelListResponse = (Channel | undefined)[];
+/**
+ * StateRole is a role of a guild as the flow editor lists it.
+ */
+export interface StateRole {
+  id: string;
+  name: string;
+  color: number /* int */;
+  position: number /* int */;
+  /**
+   * Managed roles belong to a bot or an integration and can not be given by hand.
+   */
+  managed: boolean;
+}
+export type StateGuildRoleListResponse = (StateRole | undefined)[];
 export type StateGuildLeaveResponse = Empty;
 
 //////////

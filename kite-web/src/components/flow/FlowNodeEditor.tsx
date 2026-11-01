@@ -15,6 +15,14 @@ import {
 } from "@/lib/hooks/api";
 import { useRouter } from "next/router";
 import { useAppFeature } from "@/lib/hooks/api";
+import EntityPicker from "./inputs/EntityPicker";
+import InputModeToggle, { idHint } from "./inputs/InputModeToggle";
+import {
+  detectInputMode,
+  fieldHint,
+  InputMode,
+  pickConfigOf,
+} from "@/lib/flow/inputMode";
 import { useAppId } from "@/lib/hooks/params";
 import {
   CommandArgumentChoiceData,
@@ -4506,6 +4514,14 @@ function BaseInput({
 }) {
   const error = errors[field];
 
+  // Fields that hold the ID of a server, channel or role can be picked by name.
+  const pickConfig =
+    type === undefined || type === "text" ? pickConfigOf(field) : undefined;
+  const [mode, setMode] = useState<InputMode>(() => detectInputMode(value));
+  const picking = !!pickConfig && mode === "pick";
+  const hint =
+    placeholder ?? (pickConfig ? idHint(pickConfig.kind) : fieldHint(field));
+
   const inputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -4535,12 +4551,23 @@ function BaseInput({
 
   return (
     <div className="flex-auto">
-      <div className="font-medium text-foreground">{title}</div>
+      <div className="flex items-center justify-between gap-2">
+        <div className="font-medium text-foreground">{title}</div>
+        {pickConfig && (
+          <InputModeToggle mode={mode} onChange={setMode} />
+        )}
+      </div>
       {description ? (
         <div className="text-muted-foreground text-sm mt-1">{description}</div>
       ) : null}
       <div className="relative mt-2">
-        {type === "textarea" ? (
+        {picking && pickConfig ? (
+          <EntityPicker
+            config={pickConfig}
+            value={value}
+            onChange={(v) => updateValue(v)}
+          />
+        ) : type === "textarea" ? (
           placeholders ? (
             <FlowPlaceholderTextarea
               value={value}
@@ -4589,7 +4616,7 @@ function BaseInput({
             value={value}
             onChange={(v) => updateValue(v)}
             ref={inputRef}
-            placeholder={placeholder}
+            placeholder={hint}
           />
         ) : (
           <Input
@@ -4597,10 +4624,10 @@ function BaseInput({
             value={value}
             onChange={(e) => updateValue(e.target.value)}
             ref={inputRef}
-            placeholder={placeholder}
+            placeholder={hint}
           />
         )}
-        {placeholders && (
+        {placeholders && !picking && (
           <FlowPlaceholderExplorer
             onSelect={onPlaceholderSelect}
             hideBrackets={disablePlaceholderBrackets}

@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/diamondburned/arikawa/v3/discord"
+	arikawastore "github.com/diamondburned/arikawa/v3/state/store"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler"
 	"github.com/kitecloud/kite/kite-service/internal/api/wire"
 	"github.com/kitecloud/kite/kite-service/internal/store"
@@ -68,7 +69,7 @@ func (h *AppStateHandler) HandleStateGuildChannelList(c *handler.Context) (*wire
 	}
 
 	channels, err := state.AppGuildChannels(c.Context(), guildID)
-	if err != nil {
+	if err != nil && !errors.Is(err, arikawastore.ErrNotFound) {
 		return nil, fmt.Errorf("failed to get guild channels: %w", err)
 	}
 
@@ -77,6 +78,25 @@ func (h *AppStateHandler) HandleStateGuildChannelList(c *handler.Context) (*wire
 		res[i] = wire.ChannelToWire(&channel)
 	}
 
+	return &res, nil
+}
+
+func (h *AppStateHandler) HandleStateGuildRoleList(c *handler.Context) (*wire.StateGuildRoleListResponse, error) {
+	guildID := c.Param("guildID")
+
+	state, err := h.appStateManager.AppState(c.Context(), c.App.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get app state: %w", err)
+	}
+
+	// A server the bot has not loaded yet (or is not in) is an empty list, the
+	// editor shows that instead of an error.
+	roles, err := state.AppGuildRoles(c.Context(), guildID)
+	if err != nil && !errors.Is(err, arikawastore.ErrNotFound) {
+		return nil, fmt.Errorf("failed to get guild roles: %w", err)
+	}
+
+	res := wire.RolesToWire(roles)
 	return &res, nil
 }
 
