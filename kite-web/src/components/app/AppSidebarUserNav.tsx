@@ -1,6 +1,6 @@
 import { ChevronsUpDown, LogOutIcon } from "lucide-react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import UserAvatar from "@/components/common/UserAvatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,11 +42,7 @@ export default function AppSidebarUserNav() {
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarFallback className="rounded-lg">
-                  {appreviateDisplayName(user?.display_name || "")}
-                </AvatarFallback>
-              </Avatar>
+              <UserAvatar user={user} className="h-8 w-8 rounded-lg" />
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">
                   {user?.display_name}
@@ -64,11 +60,7 @@ export default function AppSidebarUserNav() {
           >
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarFallback className="rounded-lg">
-                    {appreviateDisplayName(user?.display_name || "")}
-                  </AvatarFallback>
-                </Avatar>
+                <UserAvatar user={user} className="h-8 w-8 rounded-lg" />
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">
                     {user?.display_name}
@@ -87,11 +79,4 @@ export default function AppSidebarUserNav() {
       </SidebarMenuItem>
     </SidebarMenu>
   );
-}
-
-function appreviateDisplayName(name: string) {
-  return name
-    .split(" ")
-    .map((word) => word[0])
-    .join("");
 }
