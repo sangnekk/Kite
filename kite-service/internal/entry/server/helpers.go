@@ -9,6 +9,7 @@ import (
 	"github.com/diamondburned/arikawa/v3/utils/httputil"
 	"github.com/kitecloud/kite/kite-service/internal/config"
 	"github.com/kitecloud/kite/kite-service/internal/core/engine"
+	"github.com/kitecloud/kite/kite-service/internal/core/settings"
 	"github.com/kitecloud/kite/kite-service/pkg/provider"
 )
 
@@ -63,11 +64,11 @@ func engineHTTPClient(cfg *config.Config) *http.Client {
 // router from configuration. Providers without an api_key are skipped so their
 // models never surface in the picker. A legacy bare [openai] api_key with no
 // [ai] providers configured falls back to the built-in OpenAI model set.
-func buildAIProvider(cfg *config.Config, httpClient *http.Client) (*engine.AIProvider, *provider.AIModelRegistry) {
+func buildAIProvider(ai settings.AI, legacyOpenAIKey string, httpClient *http.Client) (*engine.AIProvider, *provider.AIModelRegistry) {
 	var conns []engine.AIProviderConn
 	var models []provider.AIModel
 
-	for _, pc := range cfg.AI.Providers {
+	for _, pc := range ai.Providers {
 		if pc.APIKey == "" {
 			slog.Warn("Skipping AI provider without api_key", slog.String("provider", pc.ID))
 			continue
@@ -93,12 +94,12 @@ func buildAIProvider(cfg *config.Config, httpClient *http.Client) (*engine.AIPro
 		}
 	}
 
-	if len(models) == 0 && cfg.OpenAI.APIKey != "" {
+	if len(models) == 0 && legacyOpenAIKey != "" {
 		const legacyID = "openai"
 		conns = append(conns, engine.AIProviderConn{
 			ID:      legacyID,
 			APIType: provider.AIModelAPIOpenAI,
-			APIKey:  cfg.OpenAI.APIKey,
+			APIKey:  legacyOpenAIKey,
 		})
 		for _, m := range defaultOpenAIModels() {
 			m.ProviderID = legacyID
@@ -107,7 +108,7 @@ func buildAIProvider(cfg *config.Config, httpClient *http.Client) (*engine.AIPro
 		}
 	}
 
-	registry := provider.NewAIModelRegistry(models, cfg.AI.DefaultModel)
+	registry := provider.NewAIModelRegistry(models, ai.DefaultModel)
 	return engine.NewMultiAIProvider(registry, conns, httpClient), registry
 }
 

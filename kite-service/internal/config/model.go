@@ -15,6 +15,12 @@ type Config struct {
 	Billing    BillingConfig    `toml:"billing"`
 	Encryption EncryptionConfig `toml:"encryption"`
 
+	// SystemOwner is the Discord user ID of the owner of this instance. The owner
+	// always has full admin console access, independent of the database, so the
+	// console can never lock everyone out. It is deliberately not editable from
+	// the console.
+	SystemOwner string `toml:"system_owner"`
+
 	ClusterCount int `toml:"cluster_count"`
 	ClusterIndex int `toml:"cluster_index"`
 }

@@ -18,7 +18,7 @@ import (
 )
 
 func (h *BillingHandler) HandleSePayIPN(c *handler.Context, body json.RawMessage) (*wire.BillingWebhookResponse, error) {
-	secret := strings.TrimSpace(h.config.SePaySecretKey)
+	secret := strings.TrimSpace(h.cfg().SePaySecretKey)
 	authHeader := strings.TrimSpace(c.Header("Authorization"))
 	secretHeader := strings.TrimSpace(c.Header("X-Secret-Key"))
 	if secret == "" || (authHeader != "Apikey "+secret && authHeader != "APIKEY "+secret && secretHeader != secret) {
@@ -96,7 +96,7 @@ func (h *BillingHandler) processSePayIPN(c *handler.Context, body json.RawMessag
 		return nil, handler.ErrBadRequest("amount_mismatch", fmt.Sprintf("expected %d got %d", session.Amount, amount))
 	}
 
-	if strings.TrimSpace(req.AccountNumber) != strings.TrimSpace(h.config.MerchantAccountNo) {
+	if strings.TrimSpace(req.AccountNumber) != strings.TrimSpace(h.cfg().MerchantAccountNo) {
 		return nil, handler.ErrBadRequest("account_mismatch", "payment account does not match configured account")
 	}
 

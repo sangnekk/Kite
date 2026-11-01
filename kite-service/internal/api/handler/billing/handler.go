@@ -27,7 +27,8 @@ type BillingHandlerConfig struct {
 }
 
 type BillingHandler struct {
-	config              BillingHandlerConfig
+	// settings returns the live billing settings (edited from the admin console).
+	settings            func() BillingHandlerConfig
 	paymentSessionStore store.PaymentSessionStore
 	sepay               *sepayClient
 	appStore            store.AppStore
@@ -39,7 +40,7 @@ type BillingHandler struct {
 }
 
 func NewBillingHandler(
-	config BillingHandlerConfig,
+	settings func() BillingHandlerConfig,
 	paymentSessionStore store.PaymentSessionStore,
 	appStore store.AppStore,
 	userStore store.UserStore,
@@ -47,6 +48,27 @@ func NewBillingHandler(
 	entitlementStore store.EntitlementStore,
 	planManager *plan.PlanManager,
 ) *BillingHandler {
+	h := &BillingHandler{
+		settings:            settings,
+		paymentSessionStore: paymentSessionStore,
+		appStore:            appStore,
+		userStore:           userStore,
+		subscriptionStore:   subscriptionStore,
+		entitlementStore:    entitlementStore,
+		planManager:         planManager,
+		discordNotifier:     newDiscordNotifier(os.Getenv("DISCORD_ERROR_WEBHOOK_URL")),
+	}
+
+	initial := h.cfg()
+	h.sepay = newSePayClient(initial.SePayAPIBaseURL, initial.SePayBearerToken)
+	return h
+}
+
+// cfg returns the current billing settings with defaults applied. It is read on
+// every use so changes made in the admin console apply without a restart.
+func (h *BillingHandler) cfg() BillingHandlerConfig {
+	config := h.settings()
+
 	if config.TransferCodePrefix == "" {
 		config.TransferCodePrefix = "KITE"
 	}
@@ -67,15 +89,5 @@ func NewBillingHandler(
 		config.SePayCheckoutTTLMinutes = 30
 	}
 
-	return &BillingHandler{
-		config:              config,
-		paymentSessionStore: paymentSessionStore,
-		sepay:               newSePayClient(config.SePayAPIBaseURL, config.SePayBearerToken),
-		appStore:            appStore,
-		userStore:           userStore,
-		subscriptionStore:   subscriptionStore,
-		entitlementStore:    entitlementStore,
-		planManager:         planManager,
-		discordNotifier:     newDiscordNotifier(os.Getenv("DISCORD_ERROR_WEBHOOK_URL")),
-	}
+	return config
 }

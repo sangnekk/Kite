@@ -8,6 +8,22 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type AdminAuditLog struct {
+	ID             int64
+	ActorDiscordID string
+	Action         string
+	Target         string
+	Detail         []byte
+	CreatedAt      pgtype.Timestamp
+}
+
+type AdminUser struct {
+	DiscordID string
+	Role      string
+	AddedBy   string
+	CreatedAt pgtype.Timestamp
+}
+
 type AiConversation struct {
 	ID         string
 	AppID      string
@@ -211,6 +227,38 @@ type PaymentSession struct {
 	Seq                   pgtype.Int8
 }
 
+type Plan struct {
+	ID                          string
+	Title                       string
+	Description                 string
+	Price                       float32
+	PaymentAmount               int32
+	PremiumDurationDays         int32
+	IsDefault                   bool
+	Popular                     bool
+	Hidden                      bool
+	Archived                    bool
+	SortOrder                   int32
+	LemonsqueezyProductID       string
+	LemonsqueezyVariantID       string
+	DiscordRoleID               string
+	FeatureMaxCollaborators     int32
+	FeatureUsageCreditsPerMonth int32
+	FeatureMaxGuilds            int32
+	FeatureMaxCommands          int32
+	FeatureMaxVariables         int32
+	FeatureMaxCustomTables      int32
+	FeatureMaxCustomEvents      int32
+	FeatureMaxMessages          int32
+	FeatureMaxEventListeners    int32
+	FeatureMaxSchedules         int32
+	FeaturePrioritySupport      bool
+	FeatureCustomBotStatus      bool
+	FeatureAiIncluded           bool
+	FeatureAiCreditPerDay       int32
+	UpdatedAt                   pgtype.Timestamp
+}
+
 type PluginInstance struct {
 	ID                 string
 	PluginID           string
@@ -272,6 +320,15 @@ type Session struct {
 	UserID    string
 	CreatedAt pgtype.Timestamp
 	ExpiresAt pgtype.Timestamp
+}
+
+type Setting struct {
+	Namespace string
+	Key       string
+	Value     []byte
+	IsSecret  bool
+	UpdatedBy pgtype.Text
+	UpdatedAt pgtype.Timestamp
 }
 
 type Subscription struct {

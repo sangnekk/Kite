@@ -32,6 +32,16 @@ type Plan struct {
 	FeatureAICreditPerDay       int
 }
 
+// PlanRecord is a Plan as persisted in the database, with the admin-only
+// metadata that must not leak into the public Plan type.
+type PlanRecord struct {
+	Plan
+	// Archived plans can no longer be purchased, but entitlements that already
+	// reference them keep working.
+	Archived  bool
+	SortOrder int
+}
+
 func (p Plan) Features() Features {
 	return Features{
 		MaxCollaborators:     p.FeatureMaxCollaborators,

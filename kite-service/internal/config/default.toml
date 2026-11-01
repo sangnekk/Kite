@@ -1,3 +1,12 @@
+# Discord user ID of the owner of this instance. The owner always has full access
+# to the admin console and is the only one who can manage staff and secrets. It is
+# kept here (not in the database) so nobody can get locked out.
+# system_owner = "123456789012345678"
+
+# Runtime settings (plans, billing/SePay, limits, engine limits, Discord bot, AI
+# providers) are stored in the database and edited from the admin console. The
+# [billing], [user_limits], [engine], [ai] and [discord] bot_token/guild_id values
+# below / in kite.toml are only used to seed an empty database on first start.
 cluster_count = 1
 cluster_index = 0
 

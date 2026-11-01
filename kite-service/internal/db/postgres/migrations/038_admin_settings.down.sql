@@ -1,0 +1,4 @@
+DROP TABLE IF EXISTS admin_audit_log;
+DROP TABLE IF EXISTS admin_users;
+DROP TABLE IF EXISTS settings;
+DROP TABLE IF EXISTS plans;

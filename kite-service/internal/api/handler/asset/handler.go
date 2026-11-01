@@ -15,7 +15,9 @@ import (
 
 type AssetHandlerConfig struct {
 	APIPublicBaseURL string
-	MaxAssetSize     int64
+	// MaxAssetSize returns the current size limit (0 = unlimited), read per request
+	// so console changes apply live.
+	MaxAssetSize func() int64
 }
 
 type AssetHandler struct {
@@ -30,16 +32,23 @@ func NewAssetHandler(assetStore store.AssetStore, config AssetHandlerConfig) *As
 	}
 }
 
+func (h *AssetHandler) maxAssetSize() int64 {
+	if h.config.MaxAssetSize == nil {
+		return 0
+	}
+	return h.config.MaxAssetSize()
+}
+
 func (h *AssetHandler) HandleAssetCreate(c *handler.Context) (*wire.AssetCreateResponse, error) {
 	file, header, err := c.FormFile("file")
 	if err != nil {
 		return nil, handler.ErrBadRequest("invalid_form", "failed to get file from form")
 	}
 
-	if h.config.MaxAssetSize != 0 && header.Size > h.config.MaxAssetSize {
+	if maxSize := h.maxAssetSize(); maxSize != 0 && header.Size > maxSize {
 		return nil, handler.ErrBadRequest(
 			"resource_limit",
-			fmt.Sprintf("file size exceeds maximum allowed size (%d)", h.config.MaxAssetSize),
+			fmt.Sprintf("file size exceeds maximum allowed size (%d)", maxSize),
 		)
 	}
 

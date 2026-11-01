@@ -24,8 +24,10 @@ export const config = {
   ),
 };
 
-// Models are read from kite.toml [ai] so the service uses exactly the models the
-// operator configured (key -> Vercel AI Gateway model id), with no hardcoding.
+// Models come from kite-service (GET /v1/internal/ai/models), which owns the AI
+// configuration in its database and edits it from the admin console. The mounted
+// kite.toml [ai] section is only a fallback for when kite-service is unreachable
+// at startup. key -> gateway model id, e.g. "minimax-m27" -> "minimax/minimax-m2.7".
 type LoadedModels = { map: Record<string, string>; defaultKey?: string };
 
 function loadModelsFromKiteToml(): LoadedModels {
@@ -53,24 +55,72 @@ function loadModelsFromKiteToml(): LoadedModels {
   }
 }
 
-const loaded = loadModelsFromKiteToml();
+async function loadModelsFromKiteService(): Promise<LoadedModels | null> {
+  const secret = process.env.INTERNAL_SECRET ?? "";
+  try {
+    const res = await fetch(`${config.kiteApiBaseUrl}/v1/internal/ai/models`, {
+      headers: { "X-Internal-Secret": secret },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const body = (await res.json()) as {
+      default_model?: string;
+      models?: { key?: string; model?: string }[];
+    };
+    const map: Record<string, string> = {};
+    for (const m of body.models ?? []) {
+      if (m.key && m.model) map[m.key] = m.model;
+    }
+    return { map, defaultKey: body.default_model };
+  } catch (err) {
+    console.warn(
+      "Could not load AI models from kite-service:",
+      err instanceof Error ? err.message : err
+    );
+    return null;
+  }
+}
 
-// key -> gateway model id (e.g. "minimax-m27" -> "minimax/minimax-m2.7").
-export const MODEL_MAP: Record<string, string> = loaded.map;
+// key -> gateway model id. Mutated in place on refresh so existing importers
+// always see the current models.
+export const MODEL_MAP: Record<string, string> = {};
+let defaultModel = "";
 
-// Default model: kite.toml default_model, accepting either a model KEY or a
-// gateway model id (forgiving). Falls back to the first configured model.
-const dk = loaded.defaultKey;
-const defaultModel =
-  (dk && MODEL_MAP[dk]) ||
-  (dk && Object.values(MODEL_MAP).includes(dk) ? dk : "") ||
-  Object.values(MODEL_MAP)[0] ||
-  process.env.DEFAULT_MODEL ||
-  "";
+// Default model: accepts either a model KEY or a gateway model id (forgiving).
+// Falls back to the first configured model.
+function applyModels(loaded: LoadedModels, source: string) {
+  for (const key of Object.keys(MODEL_MAP)) delete MODEL_MAP[key];
+  Object.assign(MODEL_MAP, loaded.map);
 
-console.log(
-  `AI models loaded from kite.toml: [${Object.keys(MODEL_MAP).join(", ")}] default=${defaultModel || "(none)"}`
-);
+  const dk = loaded.defaultKey;
+  defaultModel =
+    (dk && MODEL_MAP[dk]) ||
+    (dk && Object.values(MODEL_MAP).includes(dk) ? dk : "") ||
+    Object.values(MODEL_MAP)[0] ||
+    process.env.DEFAULT_MODEL ||
+    "";
+
+  console.log(
+    `AI models loaded from ${source}: [${Object.keys(MODEL_MAP).join(", ")}] default=${defaultModel || "(none)"}`
+  );
+}
+
+const MODEL_REFRESH_MS = 60_000;
+
+async function refreshModels(): Promise<boolean> {
+  const loaded = await loadModelsFromKiteService();
+  if (!loaded) return false;
+  applyModels(loaded, "kite-service");
+  return true;
+}
+
+if (!(await refreshModels())) {
+  applyModels(loadModelsFromKiteToml(), "kite.toml (fallback)");
+}
+
+setInterval(() => {
+  void refreshModels();
+}, MODEL_REFRESH_MS).unref();
 
 // resolveModel maps a model KEY (as sent by the editor / Go /ai-models) to its
 // gateway model id, falling back to the configured default.

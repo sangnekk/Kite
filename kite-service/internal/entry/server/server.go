@@ -13,6 +13,7 @@ import (
 	"github.com/kitecloud/kite/kite-service/internal/core/event"
 	"github.com/kitecloud/kite/kite-service/internal/core/gateway"
 	"github.com/kitecloud/kite/kite-service/internal/core/plan"
+	"github.com/kitecloud/kite/kite-service/internal/core/settings"
 	"github.com/kitecloud/kite/kite-service/internal/core/usage"
 	"github.com/kitecloud/kite/kite-service/internal/db/postgres"
 	"github.com/kitecloud/kite/kite-service/internal/db/s3"
@@ -54,8 +55,17 @@ func StartServer(c context.Context, cfg *config.Config) error {
 		return fmt.Errorf("failed to create token crypt: %w", err)
 	}
 
+	// Runtime settings live in the database (seeded from kite.toml on first run).
+	settingsMgr, err := settings.NewManager(ctx, pg, tokenCrypt, seedSettings(cfg))
+	if err != nil {
+		slog.With("error", err).Error("Failed to load settings")
+		return fmt.Errorf("failed to load settings: %w", err)
+	}
+	settingsMgr.RunReload(ctx)
+	runtimeSettings := settingsMgr.Snapshot()
+
 	engineHTTP := engineHTTPClient(cfg)
-	aiProvider, aiRegistry := buildAIProvider(cfg, engineHTTP)
+	aiProvider, aiRegistry := buildAIProvider(runtimeSettings.AI, cfg.OpenAI.APIKey, engineHTTP)
 	provider.SetDefaultModelRegistry(aiRegistry)
 
 	pluginRegistry := plugin.NewRegistry()
@@ -68,13 +78,13 @@ func StartServer(c context.Context, cfg *config.Config) error {
 	eng := engine.NewEngine(
 		engine.Env{
 			Config: engine.EngineConfig{
-				MaxStackDepth: cfg.Engine.MaxStackDepth,
-				MaxOperations: cfg.Engine.MaxOperations,
-				MaxCredits:    cfg.Engine.MaxCredits,
+				MaxStackDepth: runtimeSettings.Engine.MaxStackDepth,
+				MaxOperations: runtimeSettings.Engine.MaxOperations,
+				MaxCredits:    runtimeSettings.Engine.MaxCredits,
 				ClusterCount:  cfg.ClusterCount,
 				ClusterIndex:  cfg.ClusterIndex,
 
-				ComponentResumePointTTL: time.Duration(cfg.Engine.ComponentResumePointTTLDays) * 24 * time.Hour,
+				ComponentResumePointTTL: time.Duration(runtimeSettings.Engine.ComponentResumePointTTLDays) * 24 * time.Hour,
 			},
 			AppStore:             pg,
 			AppSettingsStore:     pg,
@@ -109,10 +119,18 @@ func StartServer(c context.Context, cfg *config.Config) error {
 		billingPlans[i] = model.Plan(plan)
 	}
 
-	planManager := plan.NewPlanManager(pg, pg, pg, billingPlans, plan.PlanManagerConfig{
-		DiscordBotToken: cfg.Discord.BotToken,
-		DiscordGuildID:  cfg.Discord.GuildID,
+	// The plans live in the database; kite.toml is only used to seed an empty table.
+	planManager, err := plan.NewPlanManager(ctx, pg, pg, pg, pg, billingPlans, plan.PlanManagerConfig{
+		Discord: func() (string, string) {
+			d := settingsMgr.Discord()
+			return d.BotToken, d.GuildID
+		},
 	})
+	if err != nil {
+		slog.With("error", err).Error("Failed to create plan manager")
+		return fmt.Errorf("failed to create plan manager: %w", err)
+	}
+	planManager.RunReload(ctx)
 
 	gatewayMgr := gateway.NewGatewayManager(pg, pg, planManager, handler, tokenCrypt, gateway.GatewayManagerConfig{
 		ClusterCount: cfg.ClusterCount,
@@ -150,27 +168,7 @@ func StartServer(c context.Context, cfg *config.Config) error {
 		DiscordClientSecret: cfg.Discord.ClientSecret,
 		WebhookBaseURL:      cfg.API.WebhookBaseURL,
 		InternalSecret:      cfg.API.InternalSecret,
-		UserLimits: api.APIUserLimitsConfig{
-			MaxAppsPerUser: cfg.UserLimits.MaxAppsPerUser,
-		},
-		Billing: api.BillingConfig{
-			WebhookHMACSecret:       cfg.Billing.WebhookHMACSecret,
-			TransferCodePrefix:      cfg.Billing.TransferCodePrefix,
-			MerchantBankName:        cfg.Billing.MerchantBankName,
-			MerchantAccountNo:       cfg.Billing.MerchantAccountNo,
-			CheckoutTTLMinutes:      cfg.Billing.CheckoutTTLMinutes,
-			SePayMerchantID:         cfg.Billing.SePayMerchantID,
-			SePaySecretKey:          cfg.Billing.SePaySecretKey,
-			SePayCheckoutBaseURL:    cfg.Billing.SePayCheckoutBaseURL,
-			SePayAPIBaseURL:         cfg.Billing.SePayAPIBaseURL,
-			SePayBearerToken:        cfg.Billing.SePayBearerToken,
-			SePayBankAccountXID:     cfg.Billing.SePayBankAccountXID,
-			SePayVaPrefix:           cfg.Billing.SePayVaPrefix,
-			SePayQRCodeTemplate:     cfg.Billing.SePayQRCodeTemplate,
-			SePayWithQRCode:         cfg.Billing.SePayWithQRCode,
-			SePayCheckoutTTLMinutes: cfg.Billing.SePayCheckoutTTLMinutes,
-			Plans:                   cfg.Billing.Plans,
-		},
+		Settings:            settingsMgr,
 	},
 		pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg, pg,
 		assetStore, gatewayMgr, planManager, pluginRegistry, tokenCrypt, commandManager,

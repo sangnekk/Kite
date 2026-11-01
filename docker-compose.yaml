@@ -101,7 +101,10 @@ services:
       - KITE_API_BASE_URL=http://kite:8080
       # Browser origin allowed to call this service (with credentials).
       - WEB_ORIGIN=http://localhost:8080
-      # AI models are read from the same kite.toml as the Go service.
+      # AI models are fetched from the Go service (GET /v1/internal/ai/models),
+      # authenticated with the shared internal secret.
+      - INTERNAL_SECRET=${INTERNAL_SECRET}
+      # kite.toml [ai] is only a fallback while the Go service is unreachable.
       - KITE_CONFIG_PATH=/app/kite.toml
       # AI_GATEWAY_API_KEY comes from .env (Vercel AI Gateway key).
     volumes:

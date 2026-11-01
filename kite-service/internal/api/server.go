@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	webhookevent "github.com/kitecloud/kite/kite-service/internal/api/handler/webhook_event"
-	"github.com/kitecloud/kite/kite-service/internal/config"
 	"github.com/kitecloud/kite/kite-service/internal/core/command"
 	"github.com/kitecloud/kite/kite-service/internal/core/plan"
+	"github.com/kitecloud/kite/kite-service/internal/core/settings"
 	"github.com/kitecloud/kite/kite-service/internal/store"
 	"github.com/kitecloud/kite/kite-service/internal/util"
 	"github.com/kitecloud/kite/kite-service/pkg/plugin"
@@ -29,32 +29,8 @@ type APIServerConfig struct {
 	DiscordClientSecret string
 	WebhookBaseURL      string
 	InternalSecret      string
-	UserLimits          APIUserLimitsConfig
-	Billing             BillingConfig
-}
-
-type APIUserLimitsConfig struct {
-	MaxAppsPerUser int
-	MaxAssetSize   int
-}
-
-type BillingConfig struct {
-	WebhookHMACSecret       string
-	TransferCodePrefix      string
-	MerchantBankName        string
-	MerchantAccountNo       string
-	CheckoutTTLMinutes      int
-	SePayMerchantID         string
-	SePaySecretKey          string
-	SePayCheckoutBaseURL    string
-	SePayAPIBaseURL         string
-	SePayBearerToken        string
-	SePayBankAccountXID     string
-	SePayVaPrefix           string
-	SePayQRCodeTemplate     string
-	SePayWithQRCode         bool
-	SePayCheckoutTTLMinutes int
-	Plans                   []config.BillingPlanConfig
+	// Settings provides the live runtime settings (limits, billing, ...).
+	Settings *settings.Manager
 }
 
 type APIServer struct {

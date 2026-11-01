@@ -18,7 +18,7 @@ type AppHandler struct {
 	appStore         store.AppStore
 	appSettingsStore store.AppSettingsStore
 	userStore        store.UserStore
-	maxAppsPerUser   int
+	maxAppsPerUser   func() int
 
 	tokenCrypt *util.SymmetricCrypt
 }
@@ -27,7 +27,7 @@ func NewAppHandler(
 	appStore store.AppStore,
 	appSettingsStore store.AppSettingsStore,
 	userStore store.UserStore,
-	maxAppsPerUser int,
+	maxAppsPerUser func() int,
 	tokenCrypt *util.SymmetricCrypt,
 ) *AppHandler {
 	return &AppHandler{
@@ -111,8 +111,8 @@ func (h *AppHandler) HandleAppCreate(c *handler.Context, req wire.AppCreateReque
 		return nil, fmt.Errorf("failed to count apps: %w", err)
 	}
 
-	if appCount >= h.maxAppsPerUser {
-		return nil, handler.ErrBadRequest("resource_limit", fmt.Sprintf("maximum number of apps (%d) reached", h.maxAppsPerUser))
+	if maxApps := h.maxAppsPerUser(); appCount >= maxApps {
+		return nil, handler.ErrBadRequest("resource_limit", fmt.Sprintf("maximum number of apps (%d) reached", maxApps))
 	}
 
 	// TODO: existingApp, err := h.appStore.AppByDiscordID()

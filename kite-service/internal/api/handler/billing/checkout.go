@@ -18,7 +18,7 @@ func (h *BillingHandler) HandleAppCheckout(c *handler.Context, req wire.BillingC
 	planID := strings.TrimSpace(req.PlanID)
 
 	plan := h.planManager.PlanByID(planID)
-	if plan == nil {
+	if plan == nil || h.planManager.IsArchived(planID) {
 		return nil, handler.ErrBadRequest("unknown_plan", "Unknown plan")
 	}
 
@@ -41,10 +41,10 @@ func (h *BillingHandler) HandleAppCheckout(c *handler.Context, req wire.BillingC
 	if h.paymentSessionStore == nil {
 		return nil, fmt.Errorf("payment session store is not configured")
 	}
-	if strings.TrimSpace(h.config.MerchantAccountNo) == "" {
+	if strings.TrimSpace(h.cfg().MerchantAccountNo) == "" {
 		return nil, fmt.Errorf("merchant account no is not configured")
 	}
-	if strings.TrimSpace(h.config.MerchantBankName) == "" {
+	if strings.TrimSpace(h.cfg().MerchantBankName) == "" {
 		return nil, fmt.Errorf("merchant bank name is not configured")
 	}
 
@@ -55,7 +55,7 @@ func (h *BillingHandler) HandleAppCheckout(c *handler.Context, req wire.BillingC
 
 	paymentID := payment.EncodeInvoiceNumber(seq)
 	qrContent := paymentID
-	qrImageURL := buildSePayQRCodeURL(h.config.MerchantAccountNo, h.config.MerchantBankName, amount, qrContent)
+	qrImageURL := buildSePayQRCodeURL(h.cfg().MerchantAccountNo, h.cfg().MerchantBankName, amount, qrContent)
 	now := time.Now().UTC()
 
 	if _, err := h.paymentSessionStore.CreatePaymentSession(c.Context(), model.PaymentSession{
@@ -89,10 +89,10 @@ func (h *BillingHandler) HandleAppCheckout(c *handler.Context, req wire.BillingC
 		QRCodeURL:        qrImageURL,
 		PaymentContent:   qrContent,
 		PaymentStatusURL: fmt.Sprintf("/v1/apps/%s/billing/checkouts/%s?plan_id=%s", c.App.ID, paymentID, url.QueryEscape(plan.ID)),
-		BankName:         strings.TrimSpace(h.config.MerchantBankName),
-		AccountNumber:    strings.TrimSpace(h.config.MerchantAccountNo),
+		BankName:         strings.TrimSpace(h.cfg().MerchantBankName),
+		AccountNumber:    strings.TrimSpace(h.cfg().MerchantAccountNo),
 		Amount:           amount,
-		ExpiresAt:        now.Add(time.Duration(h.config.CheckoutTTLMinutes) * time.Minute),
+		ExpiresAt:        now.Add(time.Duration(h.cfg().CheckoutTTLMinutes) * time.Minute),
 	}, nil
 }
 

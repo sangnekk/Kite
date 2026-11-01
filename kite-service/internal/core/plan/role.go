@@ -32,11 +32,12 @@ func (m *PlanManager) Run(ctx context.Context) {
 }
 
 func (m *PlanManager) handOutRoles(ctx context.Context) error {
-	if m.config.DiscordBotToken == "" || m.config.DiscordGuildID == "" {
+	botToken, guildID := m.config.Discord()
+	if botToken == "" || guildID == "" {
 		return nil
 	}
 
-	client := api.NewClient("Bot " + m.config.DiscordBotToken)
+	client := api.NewClient("Bot " + botToken)
 
 	subscriptions, err := m.subscriptionStore.AllSubscriptions(ctx)
 	if err != nil {
@@ -57,12 +58,12 @@ func (m *PlanManager) handOutRoles(ctx context.Context) error {
 			continue
 		}
 
-		discordGuildID, err := strconv.ParseUint(m.config.DiscordGuildID, 10, 64)
+		discordGuildID, err := strconv.ParseUint(guildID, 10, 64)
 		if err != nil {
 			slog.Error(
 				"Failed to parse discord guild ID from config",
 				slog.String("error", err.Error()),
-				slog.String("discord_guild_id", m.config.DiscordGuildID),
+				slog.String("discord_guild_id", guildID),
 				slog.String("subscription_id", sub.ID),
 			)
 			continue

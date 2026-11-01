@@ -8,6 +8,7 @@ import (
 	"github.com/kitecloud/kite/kite-service/internal/api/access"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler"
 	aihandler "github.com/kitecloud/kite/kite-service/internal/api/handler/ai"
+	internalai "github.com/kitecloud/kite/kite-service/internal/api/handler/internal_ai"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/app"
 	appstate "github.com/kitecloud/kite/kite-service/internal/api/handler/app_state"
 	"github.com/kitecloud/kite/kite-service/internal/api/handler/asset"
@@ -146,7 +147,7 @@ func (s *APIServer) RegisterRoutes(
 		appStore,
 		appSettingsStore,
 		userStore,
-		s.config.UserLimits.MaxAppsPerUser,
+		func() int { return s.config.Settings.Limits().MaxAppsPerUser },
 		tokenCrypt,
 	)
 
@@ -184,26 +185,33 @@ func (s *APIServer) RegisterRoutes(
 	appGroup.Delete("/collaborators/{userID}", handler.Typed(appHandler.HandleAppCollaboratorDelete))
 
 	// Billing routes
-	billingHandler := billing.NewBillingHandler(billing.BillingHandlerConfig{
-		WebhookHMACSecret:       s.config.Billing.WebhookHMACSecret,
-		TransferCodePrefix:      s.config.Billing.TransferCodePrefix,
-		MerchantBankName:        s.config.Billing.MerchantBankName,
-		MerchantAccountNo:       s.config.Billing.MerchantAccountNo,
-		CheckoutTTLMinutes:      s.config.Billing.CheckoutTTLMinutes,
-		SePayMerchantID:         s.config.Billing.SePayMerchantID,
-		SePaySecretKey:          s.config.Billing.SePaySecretKey,
-		SePayCheckoutBaseURL:    s.config.Billing.SePayCheckoutBaseURL,
-		SePayAPIBaseURL:         s.config.Billing.SePayAPIBaseURL,
-		SePayBearerToken:        s.config.Billing.SePayBearerToken,
-		SePayBankAccountXID:     s.config.Billing.SePayBankAccountXID,
-		SePayVaPrefix:           s.config.Billing.SePayVaPrefix,
-		SePayQRCodeTemplate:     s.config.Billing.SePayQRCodeTemplate,
-		SePayWithQRCode:         s.config.Billing.SePayWithQRCode,
-		SePayCheckoutTTLMinutes: s.config.Billing.SePayCheckoutTTLMinutes,
-		AppPublicBaseURL:        s.config.AppPublicBaseURL,
+	billingHandler := billing.NewBillingHandler(func() billing.BillingHandlerConfig {
+		b := s.config.Settings.Billing()
+		return billing.BillingHandlerConfig{
+			WebhookHMACSecret:       b.WebhookHMACSecret,
+			TransferCodePrefix:      b.TransferCodePrefix,
+			MerchantBankName:        b.MerchantBankName,
+			MerchantAccountNo:       b.MerchantAccountNo,
+			CheckoutTTLMinutes:      b.CheckoutTTLMinutes,
+			SePayMerchantID:         b.SePayMerchantID,
+			SePaySecretKey:          b.SePaySecretKey,
+			SePayCheckoutBaseURL:    b.SePayCheckoutBaseURL,
+			SePayAPIBaseURL:         b.SePayAPIBaseURL,
+			SePayBearerToken:        b.SePayBearerToken,
+			SePayBankAccountXID:     b.SePayBankAccountXID,
+			SePayVaPrefix:           b.SePayVaPrefix,
+			SePayQRCodeTemplate:     b.SePayQRCodeTemplate,
+			SePayWithQRCode:         b.SePayWithQRCode,
+			SePayCheckoutTTLMinutes: b.SePayCheckoutTTLMinutes,
+			AppPublicBaseURL:        s.config.AppPublicBaseURL,
+		}
 	}, paymentSessionStore, appStore, userStore, subscriptionStore, entitlementStore, planManager)
 
 	v1Group.Post("/billing/sepay/ipn", handler.TypedWithBody(billingHandler.HandleSePayIPN))
+
+	// Internal routes for sibling microservices (authenticated by the shared secret).
+	internalAIHandler := internalai.NewHandler(s.config.InternalSecret, s.config.Settings.AI)
+	v1Group.Get("/internal/ai/models", handler.Typed(internalAIHandler.HandleModels))
 	v1Group.Get("/billing/plans", handler.Typed(billingHandler.HandleBillingPlanList))
 
 	// Integration routes (public reference data, no auth)
@@ -379,7 +387,7 @@ func (s *APIServer) RegisterRoutes(
 	// Asset routes
 	assetHandler := asset.NewAssetHandler(assetStore, asset.AssetHandlerConfig{
 		APIPublicBaseURL: s.config.APIPublicBaseURL,
-		MaxAssetSize:     int64(s.config.UserLimits.MaxAssetSize),
+		MaxAssetSize:     func() int64 { return int64(s.config.Settings.Limits().MaxAssetSize) },
 	})
 
 	assetsGroup := appGroup.Group("/assets")
