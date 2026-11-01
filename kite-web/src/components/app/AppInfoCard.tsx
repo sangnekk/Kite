@@ -30,7 +30,18 @@ export default function AppInfoCard() {
 
   return (
     <Card className="overflow-hidden">
-      <CardHeader className="flex flex-row items-start bg-muted/50">
+      <CardHeader className="flex flex-row items-center gap-3 bg-muted/50">
+        {app && (
+          // The id of a bot user is the id of its application.
+          <UserAvatar
+            user={{
+              discord_id: app.discord_id,
+              discord_avatar: app.discord_avatar,
+              display_name: app.name,
+            }}
+            className="h-11 w-11 rounded-lg"
+          />
+        )}
         <div className="grid gap-0.5">
           <CardTitle className="text-lg">
             {app?.name || "Ứng dụng không xác định"}
