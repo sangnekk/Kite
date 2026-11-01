@@ -16,17 +16,6 @@ services:
       timeout: 30s
       retries: 3
 
-  redis:
-    image: redis:7-alpine
-    restart: always
-    volumes:
-      - kite-local-redis:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 3s
-      timeout: 30s
-      retries: 3
-
   minio:
     image: quay.io/minio/minio
     command: server --console-address ":9001" /data
@@ -124,42 +113,6 @@ services:
     ports:
       - "4000:80"
 
-  admin-service:
-    build:
-      context: ./kite-admin-service
-      dockerfile: Dockerfile
-    restart: always
-    ports:
-      - "${ADMIN_SERVICE_PORT}:8000"
-    env_file:
-      - .env
-    environment:
-      - DATABASE_URL=${ADMIN_DATABASE_URL}
-      - REDIS_URL=${ADMIN_REDIS_URL}
-      - JWT_SECRET=${ADMIN_JWT_SECRET}
-    volumes:
-      - kite-admin-data:/app/.data
-      - ./kite-admin-service/users.json:/app/users.json:ro
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
-  admin-console:
-    build:
-      context: ./kite-admin-console
-      dockerfile: Dockerfile
-      args:
-        VITE_API_URL: ${ADMIN_CONSOLE_API_URL}
-    restart: always
-    ports:
-      - "${ADMIN_CONSOLE_PORT}:8080"
-    depends_on:
-      - admin-service
-
 volumes:
   kite-local-postgres:
   kite-local-minio:
-  kite-local-redis:
-  kite-admin-data:

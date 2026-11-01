@@ -20,7 +20,6 @@ kite-service/kite-service
 kite-admin-console/dist
 
 # Other services / docs (not part of the kite image)
-kite-admin-service
 kite-docs
 kite_original_source
 

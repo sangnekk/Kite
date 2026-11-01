@@ -28,17 +28,34 @@ Bạn có thể tìm các bản build sẵn của server kèm file frontend [t�
 Để cấu hình server, bạn có thể tạo file `kite.toml` với các trường sau:
 
 ```toml
+# Discord user ID của chủ hệ thống. PHẢI đặt ở đầu file, trước mọi dòng [...]
+system_owner = "123456789012345678"
+
 [discord]
 client_id = "..." # ID ứng dụng Discord dùng cho Oauth2
 client_secret = "..." # Secret ứng dụng Discord dùng cho Oauth2
 
 [encryption]
-token_encryption_key = "..." # Khóa AES mã hóa HEX để mã hóa Discord token
+token_encryption_key = "..." # Khóa AES mã hóa HEX để mã hóa Discord token và các giá trị bí mật trong cơ sở dữ liệu
 ```
 
 Để tạo khóa mã hóa cho token, bạn có thể dùng `openssl enc -aes-256-cbc -k secret -P -md sha1`.
 
-Bạn cũng có thể đặt giá trị cấu hình qua biến môi trường. Ví dụ `KITE_DISCORD__CLIENT_ID` sẽ đặt client id của Discord.
+Bạn cũng có thể đặt giá trị cấu hình qua biến môi trường. Ví dụ `KITE_DISCORD__CLIENT_ID` sẽ đặt client id của Discord, `KITE_SYSTEM_OWNER` đặt chủ hệ thống.
+
+> **Giữ `token_encryption_key` an toàn và không bao giờ đổi nó.** Khóa này nằm trong file cấu hình (không nằm trong cơ sở dữ liệu) và mã hóa token bot cũng như các khóa bí mật bạn nhập ở trang quản trị. Mất hoặc đổi khóa thì các giá trị đó không giải mã được nữa.
+
+### Trang quản trị
+
+Trang quản trị nằm ở `/admin/` (ví dụ [localhost:8080/admin/](http://localhost:8080/admin/)) và đăng nhập bằng Discord như người dùng thường.
+
+- **Chủ hệ thống** là tài khoản có Discord ID trong `system_owner`. Quyền này chỉ đổi được bằng cách sửa file cấu hình, nên không ai có thể tự khóa mình ra ngoài. Chủ hệ thống thêm **quản trị viên** (xem và thay đổi dữ liệu) và **nhân viên** (chỉ xem) ở mục *Nhân sự*.
+- Tài khoản phải đã đăng nhập Vibe Bot ít nhất một lần (để cho phép ứng dụng Discord OAuth2).
+- `app.public_base_url` phải trùng origin với nơi bạn mở trang quản trị, nếu không sau khi đăng nhập bạn sẽ bị đưa về trang chủ.
+
+Phần lớn cấu hình vận hành **không còn nằm trong `kite.toml`** mà được lưu trong cơ sở dữ liệu và sửa ở trang quản trị: gói đăng ký, tài khoản nhận tiền và SePay, giới hạn người dùng, giới hạn engine, bot Discord cấp vai trò, nhà cung cấp AI. Các mục `[billing]`, `[user_limits]`, `[engine]`, `[ai]` và `bot_token`/`guild_id` trong `kite.toml` chỉ được dùng **một lần** để nhập dữ liệu ban đầu vào cơ sở dữ liệu trống; sau đó file bị bỏ qua cho các mục này. Hãy xóa các giá trị bí mật (khóa SePay, API key AI, bot token) khỏi file sau lần chạy đầu tiên.
+
+Engine và AI chỉ được đọc khi khởi động, đổi ở trang quản trị xong cần khởi động lại máy chủ. Các nhóm còn lại áp dụng ngay.
 
 ### Sử dụng Docker (docker-compose)
 
@@ -129,6 +146,25 @@ OUTPUT=export npm run build
 npm run build
 ```
 
+#### Build trang quản trị
+
+```shell
+# Chuyển đến thư mục kite-admin-console
+cd kite-admin-console
+
+# Cài đặt dependencies
+npm install
+
+# Chạy server phát triển tại localhost:5173/admin/ (gọi API của Go ở localhost:8080)
+npm run dev
+
+# Chạy test
+npm test
+
+# Build để nhúng vào kite-service (tag embedadmin)
+npm run build
+```
+
 #### Build tài liệu
 
 Bạn có thể tải NodeJS và NPM từ [nodejs.org](https://nodejs.org/en/download/).
@@ -165,8 +201,8 @@ go run main.go database migrate postgres up
 # Chạy server phát triển (tùy chọn)
 go run main.go server
 
-# Build và nhúng file kite-web vào binary backend (build website trước)
-go build --tags  "embedweb"
+# Build và nhúng kite-web và trang quản trị vào binary backend (build chúng trước)
+go build --tags "embedweb embedadmin"
 
 # Build không nhúng file frontend vào binary backend (bạn cần tự serve chúng)
 go build
