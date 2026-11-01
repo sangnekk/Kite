@@ -18,6 +18,14 @@ type FlowProviders struct {
 	ResumePoint     ResumePointProvider
 	InternalEvent   provider.InternalEventProvider
 	CustomTable     provider.CustomTableProvider
+	// Features tells which plan features the app has. It may be nil, then the
+	// app has none of the optional ones.
+	Features FeatureProvider
+}
+
+// FeatureProvider answers which optional plan features the running app has.
+type FeatureProvider interface {
+	TranscriptNoWatermark(ctx context.Context) bool
 }
 
 type ResumePointProvider interface {

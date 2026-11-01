@@ -333,6 +333,7 @@ export interface BillingPlan {
   feature_max_schedules: number /* int */;
   feature_priority_support: boolean;
   feature_custom_bot_status: boolean;
+  feature_transcript_no_watermark: boolean;
   feature_ai_included: boolean;
   feature_ai_credit_per_day: number /* int */;
 }
@@ -598,6 +599,7 @@ export interface Features {
   max_schedules: number /* int */;
   priority_support: boolean;
   custom_bot_status: boolean;
+  transcript_no_watermark: boolean;
   ai_included: boolean;
   ai_credit_per_day: number /* int */;
 }

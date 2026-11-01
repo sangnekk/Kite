@@ -20,11 +20,13 @@ import (
 	"github.com/diamondburned/arikawa/v3/api"
 	"github.com/diamondburned/arikawa/v3/discord"
 	"github.com/diamondburned/arikawa/v3/utils/json/option"
+	"github.com/diamondburned/arikawa/v3/utils/sendpart"
 	"github.com/kitecloud/kite/kite-service/internal/util"
 	"github.com/kitecloud/kite/kite-service/pkg/eval"
 	"github.com/kitecloud/kite/kite-service/pkg/message"
 	"github.com/kitecloud/kite/kite-service/pkg/provider"
 	"github.com/kitecloud/kite/kite-service/pkg/thing"
+	"github.com/kitecloud/kite/kite-service/pkg/transcript"
 	"gopkg.in/guregu/null.v4"
 )
 
@@ -1524,6 +1526,8 @@ func (n *CompiledFlowNode) Execute(ctx *FlowContext) error {
 		}
 
 		return n.ExecuteChildren(ctx)
+	case FlowNodeTypeActionTranscript:
+		return n.executeTranscript(ctx)
 	case FlowNodeTypeActionVariableSet:
 		scope, err := ctx.EvalTemplate(n.Data.VariableScope)
 		if err != nil {
@@ -2835,7 +2839,7 @@ func (n *CompiledFlowNode) CreditsCost() int {
 
 		// Web search is charged at 5x the model's base chat cost.
 		return aiModelCredits(data.Model, 5) * 5
-	case FlowNodeTypeActionHTTPRequest:
+	case FlowNodeTypeActionHTTPRequest, FlowNodeTypeActionTranscript:
 		return 3
 	case FlowNodeTypeActionQRCreate:
 		// Pure URL string building, no external call — free.
@@ -3553,4 +3557,167 @@ func expandSeparator(s string) string {
 	s = strings.ReplaceAll(s, "\\n", "\n")
 	s = strings.ReplaceAll(s, "\\t", "\t")
 	return s
+}
+
+
+const (
+	transcriptDefaultLimit = 100
+	transcriptMaxLimit     = 1000
+	// Discord rejects uploads above 8 MB on servers without boosts.
+	transcriptMaxFileSize = 8 << 20
+)
+
+func (n *CompiledFlowNode) executeTranscript(ctx *FlowContext) error {
+	channelID := ctx.Data.ChannelID()
+	if n.Data.ChannelTarget != "" {
+		target, err := ctx.EvalTemplate(n.Data.ChannelTarget)
+		if err != nil {
+			return traceError(n, err)
+		}
+		channelID = discord.ChannelID(target.Snowflake())
+	}
+
+	limit := transcriptDefaultLimit
+	if n.Data.TranscriptLimit != "" {
+		v, err := ctx.EvalTemplate(n.Data.TranscriptLimit)
+		if err != nil {
+			return traceError(n, err)
+		}
+		limit = int(v.Int())
+	}
+	if limit <= 0 {
+		limit = transcriptDefaultLimit
+	}
+	limit = min(limit, transcriptMaxLimit)
+
+	opts := provider.ChannelMessagesOpts{Limit: limit}
+	if n.Data.TranscriptBefore != "" {
+		v, err := ctx.EvalTemplate(n.Data.TranscriptBefore)
+		if err != nil {
+			return traceError(n, err)
+		}
+		opts.Before = discord.MessageID(v.Snowflake())
+	}
+	if n.Data.TranscriptAfter != "" {
+		v, err := ctx.EvalTemplate(n.Data.TranscriptAfter)
+		if err != nil {
+			return traceError(n, err)
+		}
+		opts.After = discord.MessageID(v.Snowflake())
+	}
+
+	messages, err := ctx.Discord.ChannelMessages(ctx, channelID, opts)
+	if err != nil {
+		return traceError(n, err)
+	}
+
+	if n.Data.TranscriptExcludeBots {
+		messages = slices.DeleteFunc(slices.Clone(messages), func(m discord.Message) bool {
+			return m.Author.Bot
+		})
+	}
+
+	channelName := ""
+	if channel, err := ctx.Discord.Channel(ctx, channelID); err == nil && channel != nil {
+		channelName = channel.Name
+	}
+
+	name := ""
+	if n.Data.TranscriptName != "" {
+		v, err := ctx.EvalTemplate(n.Data.TranscriptName)
+		if err != nil {
+			return traceError(n, err)
+		}
+		name = v.String()
+	}
+
+	renderOpts := transcript.Options{
+		Format:      transcript.FormatHTML,
+		Name:        name,
+		ChannelName: channelName,
+		ChannelID:   channelID,
+		// Only plans that were given the feature in the admin console may hide it.
+		HideWatermark: ctx.Features != nil && ctx.Features.TranscriptNoWatermark(ctx),
+	}
+
+	// "both" gives an HTML file and a text file. The html one stays the main
+	// result, the text one is added next to it.
+	var files []transcript.Result
+	var textResult *transcript.Result
+	switch n.Data.TranscriptFormat {
+	case transcript.FormatText:
+		renderOpts.Format = transcript.FormatText
+		files = append(files, transcript.Render(messages, renderOpts))
+	case transcript.FormatBoth:
+		files = append(files, transcript.Render(messages, renderOpts))
+		renderOpts.Format = transcript.FormatText
+		text := transcript.Render(messages, renderOpts)
+		textResult = &text
+		files = append(files, text)
+	default:
+		files = append(files, transcript.Render(messages, renderOpts))
+	}
+	result := files[0]
+
+	// Without the message content intent Discord sends messages with an empty
+	// content, which would silently give an empty looking transcript.
+	warning := ""
+	if transcriptLooksHidden(messages) {
+		warning = "Nội dung tin nhắn bị trống. Hãy bật Message Content Intent cho ứng dụng bot trong Discord Developer Portal."
+	}
+
+	if n.Data.TranscriptOutputChannel != "" {
+		target, err := ctx.EvalTemplate(n.Data.TranscriptOutputChannel)
+		if err != nil {
+			return traceError(n, err)
+		}
+
+		total := 0
+		upload := make([]sendpart.File, 0, len(files))
+		for _, f := range files {
+			total += len(f.Content)
+			upload = append(upload, sendpart.File{Name: f.FileName, Reader: bytes.NewReader(f.Content)})
+		}
+		if total > transcriptMaxFileSize {
+			return traceError(n, fmt.Errorf("transcript is too large to send (%d bytes), lower the message limit", total))
+		}
+
+		_, err = ctx.Discord.CreateMessage(ctx, discord.ChannelID(target.Snowflake()), api.SendMessageData{
+			Files: upload,
+		})
+		if err != nil {
+			return traceError(n, err)
+		}
+	}
+
+	textFileName, textContent := "", ""
+	if textResult != nil {
+		textFileName, textContent = textResult.FileName, string(textResult.Content)
+	}
+
+	ctx.StoreNodeResult(n, thing.NewObject(map[string]thing.Thing{
+		"count":          thing.NewInt(result.Count),
+		"channel_id":     thing.NewString(channelID.String()),
+		"file_name":      thing.NewString(result.FileName),
+		"content":        thing.NewString(string(result.Content)),
+		"text_file_name": thing.NewString(textFileName),
+		"text_content":   thing.NewString(textContent),
+		"warning":        thing.NewString(warning),
+	}))
+
+	return n.ExecuteChildren(ctx)
+}
+
+// transcriptLooksHidden reports whether the messages have nothing readable in
+// them at all, which is what Discord sends when the bot may not see content.
+func transcriptLooksHidden(messages []discord.Message) bool {
+	if len(messages) == 0 {
+		return false
+	}
+	for _, m := range messages {
+		if m.Content != "" || len(m.Attachments) > 0 || len(m.Embeds) > 0 {
+			return false
+		}
+	}
+	return true
 }

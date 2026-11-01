@@ -101,6 +101,7 @@ const (
 	FlowNodeTypeActionRoleDelete            FlowNodeType = "action_role_delete"
 	FlowNodeTypeActionGuildGet              FlowNodeType = "action_guild_get"
 	FlowNodeTypeActionMessageGet            FlowNodeType = "action_message_get"
+	FlowNodeTypeActionTranscript            FlowNodeType = "action_transcript"
 	FlowNodeTypeActionHTTPRequest           FlowNodeType = "action_http_request"
 	FlowNodeTypeActionAIChatCompletion      FlowNodeType = "action_ai_chat_completion"
 	FlowNodeTypeActionAISearchWeb           FlowNodeType = "action_ai_web_search"
@@ -249,6 +250,15 @@ type FlowNodeData struct {
 	// MessageDeferUpdate makes action_response_defer acknowledge a component
 	// interaction as a message update instead of a "thinking..." reply.
 	MessageDeferUpdate bool `json:"message_defer_update,omitempty"`
+
+	// Transcript (the channel is the channel_target field below)
+	TranscriptLimit         string `json:"transcript_limit,omitempty"`          // template, default 100, at most 1000
+	TranscriptFormat        string `json:"transcript_format,omitempty"`         // "html" (default), "text" or "both"
+	TranscriptName          string `json:"transcript_name,omitempty"`           // template, the name of the file and the title of the page
+	TranscriptBefore        string `json:"transcript_before,omitempty"`         // template, only messages older than this id
+	TranscriptAfter         string `json:"transcript_after,omitempty"`          // template, only messages newer than this id
+	TranscriptExcludeBots   bool   `json:"transcript_exclude_bots,omitempty"`   // leave out messages of bots
+	TranscriptOutputChannel string `json:"transcript_output_channel,omitempty"` // template, when set the file is sent to this channel
 
 	// Message Reaction Create, Delete
 	EmojiData *EmojiData `json:"emoji_data,omitempty"`

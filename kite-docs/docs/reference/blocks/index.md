@@ -59,6 +59,7 @@ Mỗi khối hành động tiêu tốn [credit](/reference/credit-system) khi ch
 - [Chỉnh sửa tin nhắn kênh](/reference/blocks/actions/action_message_edit) - Chỉnh sửa tin nhắn trong kênh
 - [Xóa tin nhắn kênh](/reference/blocks/actions/action_message_delete) - Xóa tin nhắn trong kênh
 - [Lấy tin nhắn kênh](/reference/blocks/actions/action_message_get) - Lấy thông tin tin nhắn trong kênh
+- [Lưu transcript](/reference/blocks/actions/action_transcript) - Lưu lịch sử chat của kênh thành tệp HTML hoặc văn bản
 - [Gửi tin nhắn riêng](/reference/blocks/actions/action_private_message_create) - Gửi tin nhắn riêng
 - [Tạo reaction tin nhắn](/reference/blocks/actions/action_message_reaction_create) - Thêm reaction cho tin nhắn
 - [Xóa reaction tin nhắn](/reference/blocks/actions/action_message_reaction_delete) - Xóa reaction khỏi tin nhắn

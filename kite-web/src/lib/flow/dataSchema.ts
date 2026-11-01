@@ -984,6 +984,25 @@ export const nodeActionMessagePurgeDataSchema = nodeBaseDataSchema.extend({
   audit_log_reason: auditLogReasonSchema,
 });
 
+export const nodeActionTranscriptDataSchema = nodeBaseDataSchema.extend({
+  channel_target: z
+    .string()
+    .regex(numericRegex)
+    .or(z.string().regex(placeholderRegex))
+    .optional(),
+  transcript_limit: z.string().optional(),
+  transcript_format: z.enum(["html", "text", "both"]).optional(),
+  transcript_name: z.string().optional(),
+  transcript_before: z.string().optional(),
+  transcript_after: z.string().optional(),
+  transcript_exclude_bots: z.boolean().optional(),
+  transcript_output_channel: z
+    .string()
+    .regex(numericRegex)
+    .or(z.string().regex(placeholderRegex))
+    .optional(),
+});
+
 export const nodeActionChannelSlowmodeDataSchema = nodeBaseDataSchema.extend({
   channel_target: z
     .string()

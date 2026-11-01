@@ -12,10 +12,10 @@ INSERT INTO plans (
     feature_max_commands, feature_max_variables, feature_max_custom_tables,
     feature_max_custom_events, feature_max_messages, feature_max_event_listeners,
     feature_max_schedules, feature_priority_support, feature_custom_bot_status,
-    feature_ai_included, feature_ai_credit_per_day, updated_at
+    feature_ai_included, feature_ai_credit_per_day, feature_transcript_no_watermark, updated_at
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
-    $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27
+    $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28
 )
 ON CONFLICT (id) DO UPDATE SET
     title = EXCLUDED.title,
@@ -41,6 +41,7 @@ ON CONFLICT (id) DO UPDATE SET
     feature_max_schedules = EXCLUDED.feature_max_schedules,
     feature_priority_support = EXCLUDED.feature_priority_support,
     feature_custom_bot_status = EXCLUDED.feature_custom_bot_status,
+    feature_transcript_no_watermark = EXCLUDED.feature_transcript_no_watermark,
     feature_ai_included = EXCLUDED.feature_ai_included,
     feature_ai_credit_per_day = EXCLUDED.feature_ai_credit_per_day,
     updated_at = EXCLUDED.updated_at;

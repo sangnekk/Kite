@@ -58,6 +58,7 @@ export const nodeCategories = {
         "action_message_pin",
         "action_message_unpin",
         "action_message_purge",
+        "action_transcript",
       ],
       contextTypes: null,
     },

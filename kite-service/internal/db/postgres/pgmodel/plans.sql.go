@@ -32,7 +32,7 @@ func (q *Queries) CountPlans(ctx context.Context) (int64, error) {
 }
 
 const listPlans = `-- name: ListPlans :many
-SELECT id, title, description, price, payment_amount, premium_duration_days, is_default, popular, hidden, archived, sort_order, discord_role_id, feature_max_collaborators, feature_usage_credits_per_month, feature_max_guilds, feature_max_commands, feature_max_variables, feature_max_custom_tables, feature_max_custom_events, feature_max_messages, feature_max_event_listeners, feature_max_schedules, feature_priority_support, feature_custom_bot_status, feature_ai_included, feature_ai_credit_per_day, updated_at FROM plans ORDER BY sort_order, id
+SELECT id, title, description, price, payment_amount, premium_duration_days, is_default, popular, hidden, archived, sort_order, discord_role_id, feature_max_collaborators, feature_usage_credits_per_month, feature_max_guilds, feature_max_commands, feature_max_variables, feature_max_custom_tables, feature_max_custom_events, feature_max_messages, feature_max_event_listeners, feature_max_schedules, feature_priority_support, feature_custom_bot_status, feature_ai_included, feature_ai_credit_per_day, updated_at, feature_transcript_no_watermark FROM plans ORDER BY sort_order, id
 `
 
 func (q *Queries) ListPlans(ctx context.Context) ([]Plan, error) {
@@ -72,6 +72,7 @@ func (q *Queries) ListPlans(ctx context.Context) ([]Plan, error) {
 			&i.FeatureAiIncluded,
 			&i.FeatureAiCreditPerDay,
 			&i.UpdatedAt,
+			&i.FeatureTranscriptNoWatermark,
 		); err != nil {
 			return nil, err
 		}
@@ -91,10 +92,10 @@ INSERT INTO plans (
     feature_max_commands, feature_max_variables, feature_max_custom_tables,
     feature_max_custom_events, feature_max_messages, feature_max_event_listeners,
     feature_max_schedules, feature_priority_support, feature_custom_bot_status,
-    feature_ai_included, feature_ai_credit_per_day, updated_at
+    feature_ai_included, feature_ai_credit_per_day, feature_transcript_no_watermark, updated_at
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
-    $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27
+    $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28
 )
 ON CONFLICT (id) DO UPDATE SET
     title = EXCLUDED.title,
@@ -120,39 +121,41 @@ ON CONFLICT (id) DO UPDATE SET
     feature_max_schedules = EXCLUDED.feature_max_schedules,
     feature_priority_support = EXCLUDED.feature_priority_support,
     feature_custom_bot_status = EXCLUDED.feature_custom_bot_status,
+    feature_transcript_no_watermark = EXCLUDED.feature_transcript_no_watermark,
     feature_ai_included = EXCLUDED.feature_ai_included,
     feature_ai_credit_per_day = EXCLUDED.feature_ai_credit_per_day,
     updated_at = EXCLUDED.updated_at
 `
 
 type UpsertPlanParams struct {
-	ID                          string
-	Title                       string
-	Description                 string
-	Price                       float32
-	PaymentAmount               int32
-	PremiumDurationDays         int32
-	IsDefault                   bool
-	Popular                     bool
-	Hidden                      bool
-	Archived                    bool
-	SortOrder                   int32
-	DiscordRoleID               string
-	FeatureMaxCollaborators     int32
-	FeatureUsageCreditsPerMonth int32
-	FeatureMaxGuilds            int32
-	FeatureMaxCommands          int32
-	FeatureMaxVariables         int32
-	FeatureMaxCustomTables      int32
-	FeatureMaxCustomEvents      int32
-	FeatureMaxMessages          int32
-	FeatureMaxEventListeners    int32
-	FeatureMaxSchedules         int32
-	FeaturePrioritySupport      bool
-	FeatureCustomBotStatus      bool
-	FeatureAiIncluded           bool
-	FeatureAiCreditPerDay       int32
-	UpdatedAt                   pgtype.Timestamp
+	ID                           string
+	Title                        string
+	Description                  string
+	Price                        float32
+	PaymentAmount                int32
+	PremiumDurationDays          int32
+	IsDefault                    bool
+	Popular                      bool
+	Hidden                       bool
+	Archived                     bool
+	SortOrder                    int32
+	DiscordRoleID                string
+	FeatureMaxCollaborators      int32
+	FeatureUsageCreditsPerMonth  int32
+	FeatureMaxGuilds             int32
+	FeatureMaxCommands           int32
+	FeatureMaxVariables          int32
+	FeatureMaxCustomTables       int32
+	FeatureMaxCustomEvents       int32
+	FeatureMaxMessages           int32
+	FeatureMaxEventListeners     int32
+	FeatureMaxSchedules          int32
+	FeaturePrioritySupport       bool
+	FeatureCustomBotStatus       bool
+	FeatureAiIncluded            bool
+	FeatureAiCreditPerDay        int32
+	FeatureTranscriptNoWatermark bool
+	UpdatedAt                    pgtype.Timestamp
 }
 
 func (q *Queries) UpsertPlan(ctx context.Context, arg UpsertPlanParams) error {
@@ -183,6 +186,7 @@ func (q *Queries) UpsertPlan(ctx context.Context, arg UpsertPlanParams) error {
 		arg.FeatureCustomBotStatus,
 		arg.FeatureAiIncluded,
 		arg.FeatureAiCreditPerDay,
+		arg.FeatureTranscriptNoWatermark,
 		arg.UpdatedAt,
 	)
 	return err

@@ -27,6 +27,8 @@ type Plan struct {
 	FeatureCustomBotStatus      bool
 	FeatureAIIncluded           bool
 	FeatureAICreditPerDay       int
+	// FeatureTranscriptNoWatermark lets the transcript block leave its badge out.
+	FeatureTranscriptNoWatermark bool
 }
 
 // PlanRecord is a Plan as persisted in the database, with the admin-only
@@ -41,56 +43,59 @@ type PlanRecord struct {
 
 func (p Plan) Features() Features {
 	return Features{
-		MaxCollaborators:     p.FeatureMaxCollaborators,
-		UsageCreditsPerMonth: p.FeatureUsageCreditsPerMonth,
-		MaxGuilds:            p.FeatureMaxGuilds,
-		MaxCommands:          p.FeatureMaxCommands,
-		MaxVariables:         p.FeatureMaxVariables,
-		MaxCustomTables:      p.FeatureMaxCustomTables,
-		MaxCustomEvents:      p.FeatureMaxCustomEvents,
-		MaxMessages:          p.FeatureMaxMessages,
-		MaxEventListeners:    p.FeatureMaxEventListeners,
-		MaxSchedules:         p.FeatureMaxSchedules,
-		PrioritySupport:      p.FeaturePrioritySupport,
-		CustomBotStatus:      p.FeatureCustomBotStatus,
-		AIIncluded:           p.FeatureAIIncluded,
-		AICreditPerDay:       p.FeatureAICreditPerDay,
+		MaxCollaborators:      p.FeatureMaxCollaborators,
+		UsageCreditsPerMonth:  p.FeatureUsageCreditsPerMonth,
+		MaxGuilds:             p.FeatureMaxGuilds,
+		MaxCommands:           p.FeatureMaxCommands,
+		MaxVariables:          p.FeatureMaxVariables,
+		MaxCustomTables:       p.FeatureMaxCustomTables,
+		MaxCustomEvents:       p.FeatureMaxCustomEvents,
+		MaxMessages:           p.FeatureMaxMessages,
+		MaxEventListeners:     p.FeatureMaxEventListeners,
+		MaxSchedules:          p.FeatureMaxSchedules,
+		PrioritySupport:       p.FeaturePrioritySupport,
+		CustomBotStatus:       p.FeatureCustomBotStatus,
+		AIIncluded:            p.FeatureAIIncluded,
+		AICreditPerDay:        p.FeatureAICreditPerDay,
+		TranscriptNoWatermark: p.FeatureTranscriptNoWatermark,
 	}
 }
 
 type Features struct {
-	MaxCollaborators     int
-	UsageCreditsPerMonth int
-	MaxGuilds            int
-	MaxCommands          int
-	MaxVariables         int
-	MaxCustomTables      int
-	MaxCustomEvents      int
-	MaxMessages          int
-	MaxEventListeners    int
-	MaxSchedules         int
-	PrioritySupport      bool
-	CustomBotStatus      bool
-	AIIncluded           bool
-	AICreditPerDay       int
+	MaxCollaborators      int
+	UsageCreditsPerMonth  int
+	MaxGuilds             int
+	MaxCommands           int
+	MaxVariables          int
+	MaxCustomTables       int
+	MaxCustomEvents       int
+	MaxMessages           int
+	MaxEventListeners     int
+	MaxSchedules          int
+	PrioritySupport       bool
+	CustomBotStatus       bool
+	AIIncluded            bool
+	AICreditPerDay        int
+	TranscriptNoWatermark bool
 }
 
 func (f Features) Merge(other Features) Features {
 	return Features{
-		MaxCollaborators:     max(f.MaxCollaborators, other.MaxCollaborators),
-		UsageCreditsPerMonth: max(f.UsageCreditsPerMonth, other.UsageCreditsPerMonth),
-		MaxGuilds:            max(f.MaxGuilds, other.MaxGuilds),
-		MaxCommands:          max(f.MaxCommands, other.MaxCommands),
-		MaxVariables:         max(f.MaxVariables, other.MaxVariables),
-		MaxCustomTables:      mergeSignedFeatureLimit(f.MaxCustomTables, other.MaxCustomTables),
-		MaxCustomEvents:      mergeSignedFeatureLimit(f.MaxCustomEvents, other.MaxCustomEvents),
-		MaxMessages:          max(f.MaxMessages, other.MaxMessages),
-		MaxEventListeners:    max(f.MaxEventListeners, other.MaxEventListeners),
-		MaxSchedules:         mergeSignedFeatureLimit(f.MaxSchedules, other.MaxSchedules),
-		PrioritySupport:      f.PrioritySupport || other.PrioritySupport,
-		CustomBotStatus:      f.CustomBotStatus || other.CustomBotStatus,
-		AIIncluded:           f.AIIncluded || other.AIIncluded,
-		AICreditPerDay:       max(f.AICreditPerDay, other.AICreditPerDay),
+		MaxCollaborators:      max(f.MaxCollaborators, other.MaxCollaborators),
+		UsageCreditsPerMonth:  max(f.UsageCreditsPerMonth, other.UsageCreditsPerMonth),
+		MaxGuilds:             max(f.MaxGuilds, other.MaxGuilds),
+		MaxCommands:           max(f.MaxCommands, other.MaxCommands),
+		MaxVariables:          max(f.MaxVariables, other.MaxVariables),
+		MaxCustomTables:       mergeSignedFeatureLimit(f.MaxCustomTables, other.MaxCustomTables),
+		MaxCustomEvents:       mergeSignedFeatureLimit(f.MaxCustomEvents, other.MaxCustomEvents),
+		MaxMessages:           max(f.MaxMessages, other.MaxMessages),
+		MaxEventListeners:     max(f.MaxEventListeners, other.MaxEventListeners),
+		MaxSchedules:          mergeSignedFeatureLimit(f.MaxSchedules, other.MaxSchedules),
+		PrioritySupport:       f.PrioritySupport || other.PrioritySupport,
+		CustomBotStatus:       f.CustomBotStatus || other.CustomBotStatus,
+		AIIncluded:            f.AIIncluded || other.AIIncluded,
+		AICreditPerDay:        max(f.AICreditPerDay, other.AICreditPerDay),
+		TranscriptNoWatermark: f.TranscriptNoWatermark || other.TranscriptNoWatermark,
 	}
 }
 

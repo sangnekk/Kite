@@ -100,18 +100,18 @@ type BillingSePayIPNRequest struct {
 }
 
 type Subscription struct {
-	ID                         string      `json:"id"`
-	DisplayName                string      `json:"display_name"`
-	PlanID                     string      `json:"plan_id"`
-	Source                     string      `json:"source"`
-	Status                     string      `json:"status"`
-	StatusFormatted            string      `json:"status_formatted"`
-	CreatedAt                  time.Time   `json:"created_at"`
-	UpdatedAt                  time.Time   `json:"updated_at"`
-	RenewsAt                   time.Time   `json:"renews_at"`
-	TrialEndsAt                null.Time   `json:"trial_ends_at"`
-	EndsAt                     null.Time   `json:"ends_at"`
-	UserID                     string      `json:"user_id"`
+	ID              string    `json:"id"`
+	DisplayName     string    `json:"display_name"`
+	PlanID          string    `json:"plan_id"`
+	Source          string    `json:"source"`
+	Status          string    `json:"status"`
+	StatusFormatted string    `json:"status_formatted"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
+	RenewsAt        time.Time `json:"renews_at"`
+	TrialEndsAt     null.Time `json:"trial_ends_at"`
+	EndsAt          null.Time `json:"ends_at"`
+	UserID          string    `json:"user_id"`
 }
 
 type SubscriptionListResponse = []*Subscription
@@ -122,18 +122,18 @@ func SubscriptionToWire(subscription *model.Subscription) *Subscription {
 	}
 
 	return &Subscription{
-		ID:                         subscription.ID,
-		DisplayName:                subscription.DisplayName,
-		PlanID:                     subscription.PlanID.String,
-		Source:                     string(subscription.Source),
-		Status:                     subscription.Status,
-		StatusFormatted:            subscription.StatusFormatted,
-		CreatedAt:                  subscription.CreatedAt,
-		UpdatedAt:                  subscription.UpdatedAt,
-		RenewsAt:                   subscription.RenewsAt,
-		TrialEndsAt:                subscription.TrialEndsAt,
-		EndsAt:                     subscription.EndsAt,
-		UserID:                     subscription.UserID,
+		ID:              subscription.ID,
+		DisplayName:     subscription.DisplayName,
+		PlanID:          subscription.PlanID.String,
+		Source:          string(subscription.Source),
+		Status:          subscription.Status,
+		StatusFormatted: subscription.StatusFormatted,
+		CreatedAt:       subscription.CreatedAt,
+		UpdatedAt:       subscription.UpdatedAt,
+		RenewsAt:        subscription.RenewsAt,
+		TrialEndsAt:     subscription.TrialEndsAt,
+		EndsAt:          subscription.EndsAt,
+		UserID:          subscription.UserID,
 	}
 }
 
@@ -150,20 +150,21 @@ type BillingPlan struct {
 
 	DiscordRoleID string `json:"discord_role_id"`
 
-	FeatureMaxCollaborators     int  `json:"feature_max_collaborators"`
-	FeatureUsageCreditsPerMonth int  `json:"feature_usage_credits_per_month"`
-	FeatureMaxGuilds            int  `json:"feature_max_guilds"`
-	FeatureMaxCommands          int  `json:"feature_max_commands"`
-	FeatureMaxVariables         int  `json:"feature_max_variables"`
-	FeatureMaxCustomTables      int  `json:"feature_max_custom_tables"`
-	FeatureMaxCustomEvents      int  `json:"feature_max_custom_events"`
-	FeatureMaxMessages          int  `json:"feature_max_messages"`
-	FeatureMaxEventListeners    int  `json:"feature_max_event_listeners"`
-	FeatureMaxSchedules         int  `json:"feature_max_schedules"`
-	FeaturePrioritySupport      bool `json:"feature_priority_support"`
-	FeatureCustomBotStatus      bool `json:"feature_custom_bot_status"`
-	FeatureAIIncluded           bool `json:"feature_ai_included"`
-	FeatureAICreditPerDay       int  `json:"feature_ai_credit_per_day"`
+	FeatureMaxCollaborators      int  `json:"feature_max_collaborators"`
+	FeatureUsageCreditsPerMonth  int  `json:"feature_usage_credits_per_month"`
+	FeatureMaxGuilds             int  `json:"feature_max_guilds"`
+	FeatureMaxCommands           int  `json:"feature_max_commands"`
+	FeatureMaxVariables          int  `json:"feature_max_variables"`
+	FeatureMaxCustomTables       int  `json:"feature_max_custom_tables"`
+	FeatureMaxCustomEvents       int  `json:"feature_max_custom_events"`
+	FeatureMaxMessages           int  `json:"feature_max_messages"`
+	FeatureMaxEventListeners     int  `json:"feature_max_event_listeners"`
+	FeatureMaxSchedules          int  `json:"feature_max_schedules"`
+	FeaturePrioritySupport       bool `json:"feature_priority_support"`
+	FeatureCustomBotStatus       bool `json:"feature_custom_bot_status"`
+	FeatureAIIncluded            bool `json:"feature_ai_included"`
+	FeatureAICreditPerDay        int  `json:"feature_ai_credit_per_day"`
+	FeatureTranscriptNoWatermark bool `json:"feature_transcript_no_watermark"`
 }
 
 type BillingPlanListResponse = []*BillingPlan

@@ -189,6 +189,13 @@ const intputs: Record<string, any> = {
   number_style: NumberStyleInput,
   number_decimals: NumberDecimalsInput,
   message_purge_count: MessagePurgeCountInput,
+  transcript_limit: TranscriptLimitInput,
+  transcript_format: TranscriptFormatInput,
+  transcript_name: TranscriptNameInput,
+  transcript_before: TranscriptBeforeInput,
+  transcript_after: TranscriptAfterInput,
+  transcript_exclude_bots: TranscriptExcludeBotsInput,
+  transcript_output_channel: TranscriptOutputChannelInput,
   channel_slowmode_seconds: ChannelSlowmodeSecondsInput,
   list_input: ListInputField,
   list_item_template: ListItemTemplateInput,
@@ -2402,6 +2409,114 @@ function MessagePurgeCountInput({ data, updateData, errors }: InputProps) {
       description="Số tin nhắn gần nhất cần xóa (tối đa 100, không xóa được tin quá 14 ngày)."
       value={data.message_purge_count || ""}
       updateValue={(v) => updateData({ message_purge_count: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+// --- Transcript ---
+
+function TranscriptLimitInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="transcript_limit"
+      title="Số tin nhắn"
+      description="Số tin nhắn gần nhất cần lưu (mặc định 100, tối đa 1000)."
+      value={data.transcript_limit || ""}
+      updateValue={(v) => updateData({ transcript_limit: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function TranscriptFormatInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="transcript_format"
+      title="Định dạng"
+      type="select"
+      options={[
+        { value: "html", label: "HTML (mở bằng trình duyệt)" },
+        { value: "text", label: "Văn bản thuần (.txt)" },
+        { value: "both", label: "Cả hai (.html và .txt)" },
+      ]}
+      value={data.transcript_format || ""}
+      updateValue={(v) => updateData({ transcript_format: v || undefined })}
+      errors={errors}
+    />
+  );
+}
+
+function TranscriptNameInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="transcript_name"
+      title="Tên transcript (tùy chọn)"
+      description="Dùng làm tên tệp và tiêu đề trang HTML. Để trống sẽ tự đặt theo kênh và giờ. Ký tự đặc biệt sẽ được đổi thành dấu gạch ngang."
+      value={data.transcript_name || ""}
+      updateValue={(v) => updateData({ transcript_name: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function TranscriptBeforeInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="transcript_before"
+      title="Chỉ tin cũ hơn tin nhắn (ID, tùy chọn)"
+      value={data.transcript_before || ""}
+      updateValue={(v) => updateData({ transcript_before: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function TranscriptAfterInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseInput
+      field="transcript_after"
+      title="Chỉ tin mới hơn tin nhắn (ID, tùy chọn)"
+      value={data.transcript_after || ""}
+      updateValue={(v) => updateData({ transcript_after: v || undefined })}
+      errors={errors}
+      placeholders
+    />
+  );
+}
+
+function TranscriptExcludeBotsInput({ data, updateData, errors }: InputProps) {
+  return (
+    <BaseCheckbox
+      field="transcript_exclude_bots"
+      title="Bỏ tin nhắn của bot"
+      value={!!data.transcript_exclude_bots}
+      updateValue={(v) =>
+        updateData({ transcript_exclude_bots: v || undefined })
+      }
+      errors={errors}
+    />
+  );
+}
+
+function TranscriptOutputChannelInput({
+  data,
+  updateData,
+  errors,
+}: InputProps) {
+  return (
+    <BaseInput
+      field="transcript_output_channel"
+      title="Gửi tệp vào kênh (tùy chọn)"
+      description="Để trống nếu chỉ muốn dùng kết quả ở các khối sau. Transcript chứa tin nhắn của thành viên, đừng gửi vào kênh công khai."
+      value={data.transcript_output_channel || ""}
+      updateValue={(v) =>
+        updateData({ transcript_output_channel: v || undefined })
+      }
       errors={errors}
       placeholders
     />

@@ -158,6 +158,32 @@ func (p *DiscordProvider) Message(ctx context.Context, channelID discord.Channel
 	return msg, nil
 }
 
+func (p *DiscordProvider) ChannelMessages(ctx context.Context, channelID discord.ChannelID, opts provider.ChannelMessagesOpts) ([]discord.Message, error) {
+	if opts.Limit <= 0 {
+		return nil, nil
+	}
+
+	// Limit 0 would mean "everything" to arikawa, so it is never passed on.
+	// The result is sorted from latest to oldest.
+	msgs, err := p.session.MessagesBefore(channelID, opts.Before, uint(opts.Limit))
+	if err != nil {
+		if util.IsDiscordRestStatusCode(err, http.StatusNotFound) {
+			return nil, provider.ErrNotFound
+		}
+		return nil, fmt.Errorf("failed to get channel messages: %w", err)
+	}
+
+	res := make([]discord.Message, 0, len(msgs))
+	for i := len(msgs) - 1; i >= 0; i-- {
+		if opts.After != 0 && msgs[i].ID <= opts.After {
+			continue
+		}
+		res = append(res, msgs[i])
+	}
+
+	return res, nil
+}
+
 func (p *DiscordProvider) GuildRoles(ctx context.Context, guildID discord.GuildID) ([]discord.Role, error) {
 	roles, err := p.session.Roles(guildID)
 	if err != nil {

@@ -197,4 +197,6 @@ type BillingPlanConfig struct {
 	FeatureCustomBotStatus      bool `toml:"feature_custom_bot_status"`
 	FeatureAIIncluded           bool `toml:"feature_ai_included"`
 	FeatureAICreditPerDay       int  `toml:"feature_ai_credit_per_day"`
+	// Not set in kite.toml: it is turned on per plan in the admin console.
+	FeatureTranscriptNoWatermark bool `toml:"feature_transcript_no_watermark"`
 }

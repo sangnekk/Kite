@@ -64,6 +64,7 @@ export const FlowNodeTypeActionRoleEdit: FlowNodeType = "action_role_edit";
 export const FlowNodeTypeActionRoleDelete: FlowNodeType = "action_role_delete";
 export const FlowNodeTypeActionGuildGet: FlowNodeType = "action_guild_get";
 export const FlowNodeTypeActionMessageGet: FlowNodeType = "action_message_get";
+export const FlowNodeTypeActionTranscript: FlowNodeType = "action_transcript";
 export const FlowNodeTypeActionHTTPRequest: FlowNodeType = "action_http_request";
 export const FlowNodeTypeActionAIChatCompletion: FlowNodeType = "action_ai_chat_completion";
 export const FlowNodeTypeActionAISearchWeb: FlowNodeType = "action_ai_web_search";
@@ -282,6 +283,16 @@ export interface FlowNodeData {
   list_item_template?: string; // per-item template, with {{item}} and {{index}} bound
   list_joiner?: string; // separator template, default newline
   list_sort_order?: string; // asc | desc
+  /**
+   * Transcript (the channel is channel_target)
+   */
+  transcript_limit?: string; // template, default 100, at most 1000
+  transcript_format?: string; // "html" (default), "text" or "both"
+  transcript_name?: string; // template, the name of the file and the title of the page
+  transcript_before?: string; // template, only messages older than this id
+  transcript_after?: string; // template, only messages newer than this id
+  transcript_exclude_bots?: boolean; // leave out messages of bots
+  transcript_output_channel?: string; // template, when set the file is sent to this channel
   /**
    * Message Purge / Channel Slowmode (pin/unpin reuse channel_target + message_target)
    */

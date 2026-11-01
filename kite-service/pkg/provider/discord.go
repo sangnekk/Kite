@@ -19,6 +19,9 @@ type DiscordProvider interface {
 	Role(ctx context.Context, guildID discord.GuildID, roleID discord.RoleID) (*discord.Role, error)
 	Member(ctx context.Context, guildID discord.GuildID, userID discord.UserID) (*discord.Member, error)
 	Message(ctx context.Context, channelID discord.ChannelID, messageID discord.MessageID) (*discord.Message, error)
+	// ChannelMessages returns up to opts.Limit messages of the channel sorted
+	// from oldest to newest. See ChannelMessagesOpts for the range.
+	ChannelMessages(ctx context.Context, channelID discord.ChannelID, opts ChannelMessagesOpts) ([]discord.Message, error)
 
 	// BotPermissions returns the bot's own effective permissions in the given
 	// channel, accounting for role and channel-level overwrites.
@@ -68,6 +71,15 @@ type DiscordProvider interface {
 	ResolveAsset(ctx context.Context, assetID string) (*AssetData, error)
 }
 
+// ChannelMessagesOpts selects the messages ChannelMessages returns: the newest
+// Limit messages that are older than Before (0 means from the latest message)
+// and newer than After (0 means no lower bound).
+type ChannelMessagesOpts struct {
+	Before discord.MessageID
+	After  discord.MessageID
+	Limit  int
+}
+
 type InteractionResponseResource struct {
 	Type    api.InteractionResponseType
 	Message *discord.Message
@@ -99,6 +111,10 @@ func (p *MockDiscordProvider) GuildRoles(ctx context.Context, guildID discord.Gu
 }
 
 func (p *MockDiscordProvider) Channel(ctx context.Context, channelID discord.ChannelID) (*discord.Channel, error) {
+	return nil, nil
+}
+
+func (p *MockDiscordProvider) ChannelMessages(ctx context.Context, channelID discord.ChannelID, opts ChannelMessagesOpts) ([]discord.Message, error) {
 	return nil, nil
 }
 

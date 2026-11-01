@@ -95,6 +95,7 @@ func (s Env) flowProviders(appID string, session *state.State, links entityLinks
 		),
 		InternalEvent: NewInternalEventProvider(appID, s.CustomEventStore, s.InternalEventDispatcher),
 		CustomTable:   NewCustomTableProvider(appID, s.CustomTableStore),
+		Features:      featureProvider{appID: appID, lookup: s.FeatureLookup},
 	}
 }
 

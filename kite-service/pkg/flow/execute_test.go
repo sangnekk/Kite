@@ -110,6 +110,12 @@ type TestDiscordProvider struct {
 	purgeChannel   discord.ChannelID
 	purgeCount     int
 	purgeReturn    int
+
+	transcriptMessages []discord.Message
+	transcriptOpts     provider.ChannelMessagesOpts
+	transcriptChannel  discord.ChannelID
+	sentChannel        discord.ChannelID
+	sentData           api.SendMessageData
 	slowmodeEdited api.ModifyChannelData
 
 	createdRoleGuild discord.GuildID
@@ -147,6 +153,18 @@ func (p *TestDiscordProvider) PinMessage(ctx context.Context, channelID discord.
 	p.pinnedChannel = channelID
 	p.pinnedMessage = messageID
 	return nil
+}
+
+func (p *TestDiscordProvider) ChannelMessages(ctx context.Context, channelID discord.ChannelID, opts provider.ChannelMessagesOpts) ([]discord.Message, error) {
+	p.transcriptChannel = channelID
+	p.transcriptOpts = opts
+	return p.transcriptMessages, nil
+}
+
+func (p *TestDiscordProvider) CreateMessage(ctx context.Context, channelID discord.ChannelID, message api.SendMessageData) (*discord.Message, error) {
+	p.sentChannel = channelID
+	p.sentData = message
+	return &discord.Message{ID: 1}, nil
 }
 
 func (p *TestDiscordProvider) BulkDeleteMessages(ctx context.Context, channelID discord.ChannelID, count int, reason api.AuditLogReason) (int, error) {
@@ -710,6 +728,110 @@ func TestFlowExecuteChannelSlowmode(t *testing.T) {
 	require.NoError(t, node.Execute(c))
 	require.NotNil(t, d.slowmodeEdited.UserRateLimit)
 	assert.Equal(t, uint(30), d.slowmodeEdited.UserRateLimit.Val)
+}
+
+func transcriptMsg(id int, name, content string, bot bool) discord.Message {
+	return discord.Message{
+		ID:        discord.MessageID(id),
+		Author:    discord.User{ID: discord.UserID(id), Username: name, Bot: bot},
+		Content:   content,
+		Timestamp: discord.Timestamp(time.Date(2026, 11, 1, 10, 0, id, 0, time.UTC)),
+	}
+}
+
+func TestFlowExecuteTranscript(t *testing.T) {
+	d := &TestDiscordProvider{transcriptMessages: []discord.Message{
+		transcriptMsg(1, "an", "xin chào", false),
+		transcriptMsg(2, "bot", "tự động", true),
+	}}
+	c := newDiscordTestContext(t, d)
+	defer c.Cancel()
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionTranscript,
+		Data: FlowNodeData{ChannelTarget: "111", TranscriptLimit: "5000", TranscriptBefore: "900", TranscriptAfter: "10", TranscriptFormat: "text"},
+	}
+
+	require.NoError(t, node.Execute(c))
+	assert.Equal(t, discord.ChannelID(111), d.transcriptChannel)
+	assert.Equal(t, 1000, d.transcriptOpts.Limit, "the limit is capped")
+	assert.Equal(t, discord.MessageID(900), d.transcriptOpts.Before)
+	assert.Equal(t, discord.MessageID(10), d.transcriptOpts.After)
+
+	res := c.GetNodeResult("0")
+	assert.Equal(t, int64(2), res.Object()["count"].Int())
+	assert.Contains(t, res.Object()["file_name"].String(), ".txt")
+	assert.Contains(t, res.Object()["content"].String(), "an: xin chào")
+	assert.Empty(t, res.Object()["warning"].String())
+	assert.Equal(t, discord.ChannelID(0), d.sentChannel, "nothing is sent without an output channel")
+}
+
+func TestFlowExecuteTranscriptDefaultsAndBotFilter(t *testing.T) {
+	d := &TestDiscordProvider{transcriptMessages: []discord.Message{
+		transcriptMsg(1, "an", "xin chào", false),
+		transcriptMsg(2, "bot", "tự động", true),
+	}}
+	c := newDiscordTestContext(t, d)
+	defer c.Cancel()
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionTranscript,
+		Data: FlowNodeData{ChannelTarget: "111", TranscriptExcludeBots: true},
+	}
+
+	require.NoError(t, node.Execute(c))
+	assert.Equal(t, 100, d.transcriptOpts.Limit)
+
+	res := c.GetNodeResult("0")
+	assert.Equal(t, int64(1), res.Object()["count"].Int())
+	assert.Contains(t, res.Object()["file_name"].String(), ".html")
+	assert.NotContains(t, res.Object()["content"].String(), "tự động")
+}
+
+func TestFlowExecuteTranscriptSendsFile(t *testing.T) {
+	d := &TestDiscordProvider{transcriptMessages: []discord.Message{transcriptMsg(1, "an", "xin chào", false)}}
+	c := newDiscordTestContext(t, d)
+	defer c.Cancel()
+
+	node := &CompiledFlowNode{
+		ID:   "0",
+		Type: FlowNodeTypeActionTranscript,
+		Data: FlowNodeData{ChannelTarget: "111", TranscriptOutputChannel: "222"},
+	}
+
+	require.NoError(t, node.Execute(c))
+	assert.Equal(t, discord.ChannelID(222), d.sentChannel)
+	require.Len(t, d.sentData.Files, 1)
+	assert.Contains(t, d.sentData.Files[0].Name, ".html")
+}
+
+func TestFlowExecuteTranscriptWarnsWhenContentIsHidden(t *testing.T) {
+	d := &TestDiscordProvider{transcriptMessages: []discord.Message{
+		transcriptMsg(1, "an", "", false),
+		transcriptMsg(2, "binh", "", false),
+	}}
+	c := newDiscordTestContext(t, d)
+	defer c.Cancel()
+
+	node := &CompiledFlowNode{ID: "0", Type: FlowNodeTypeActionTranscript, Data: FlowNodeData{ChannelTarget: "111"}}
+
+	require.NoError(t, node.Execute(c))
+	assert.Contains(t, c.GetNodeResult("0").Object()["warning"].String(), "Message Content Intent")
+}
+
+func TestFlowExecuteTranscriptEmptyChannel(t *testing.T) {
+	d := &TestDiscordProvider{}
+	c := newDiscordTestContext(t, d)
+	defer c.Cancel()
+
+	node := &CompiledFlowNode{ID: "0", Type: FlowNodeTypeActionTranscript, Data: FlowNodeData{ChannelTarget: "111"}}
+
+	require.NoError(t, node.Execute(c))
+	res := c.GetNodeResult("0")
+	assert.Equal(t, int64(0), res.Object()["count"].Int())
+	assert.Empty(t, res.Object()["warning"].String())
 }
 
 type TestContextData struct{}

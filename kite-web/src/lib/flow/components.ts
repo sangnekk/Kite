@@ -79,6 +79,7 @@ export const nodeTypes = {
   action_role_delete: FlowNodeActionBase,
   action_guild_get: FlowNodeActionBase,
   action_message_get: FlowNodeActionBase,
+  action_transcript: FlowNodeActionBase,
   action_variable_set: FlowNodeActionBase,
   action_variable_delete: FlowNodeActionBase,
   action_variable_get: FlowNodeActionBase,

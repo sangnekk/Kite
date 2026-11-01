@@ -230,33 +230,34 @@ type PaymentSession struct {
 }
 
 type Plan struct {
-	ID                          string
-	Title                       string
-	Description                 string
-	Price                       float32
-	PaymentAmount               int32
-	PremiumDurationDays         int32
-	IsDefault                   bool
-	Popular                     bool
-	Hidden                      bool
-	Archived                    bool
-	SortOrder                   int32
-	DiscordRoleID               string
-	FeatureMaxCollaborators     int32
-	FeatureUsageCreditsPerMonth int32
-	FeatureMaxGuilds            int32
-	FeatureMaxCommands          int32
-	FeatureMaxVariables         int32
-	FeatureMaxCustomTables      int32
-	FeatureMaxCustomEvents      int32
-	FeatureMaxMessages          int32
-	FeatureMaxEventListeners    int32
-	FeatureMaxSchedules         int32
-	FeaturePrioritySupport      bool
-	FeatureCustomBotStatus      bool
-	FeatureAiIncluded           bool
-	FeatureAiCreditPerDay       int32
-	UpdatedAt                   pgtype.Timestamp
+	ID                           string
+	Title                        string
+	Description                  string
+	Price                        float32
+	PaymentAmount                int32
+	PremiumDurationDays          int32
+	IsDefault                    bool
+	Popular                      bool
+	Hidden                       bool
+	Archived                     bool
+	SortOrder                    int32
+	DiscordRoleID                string
+	FeatureMaxCollaborators      int32
+	FeatureUsageCreditsPerMonth  int32
+	FeatureMaxGuilds             int32
+	FeatureMaxCommands           int32
+	FeatureMaxVariables          int32
+	FeatureMaxCustomTables       int32
+	FeatureMaxCustomEvents       int32
+	FeatureMaxMessages           int32
+	FeatureMaxEventListeners     int32
+	FeatureMaxSchedules          int32
+	FeaturePrioritySupport       bool
+	FeatureCustomBotStatus       bool
+	FeatureAiIncluded            bool
+	FeatureAiCreditPerDay        int32
+	UpdatedAt                    pgtype.Timestamp
+	FeatureTranscriptNoWatermark bool
 }
 
 type PluginInstance struct {

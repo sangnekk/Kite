@@ -116,3 +116,19 @@ export const nodeActionTableQueryResultSchema = z.object({
 export const nodeActionTableMutationResultSchema = z.object({
   affected_rows: z.number(),
 });
+
+export const nodeActionTranscriptResultSchema = z.object({
+  count: z.number().describe("The number of messages in the transcript"),
+  channel_id: z.string().describe("The ID of the channel"),
+  file_name: z.string().describe("The name of the transcript file"),
+  content: z.string().describe("The whole transcript file as text (the HTML file when the format is both)"),
+  text_file_name: z
+    .string()
+    .describe("The name of the text file, only when the format is both"),
+  text_content: z
+    .string()
+    .describe("The whole text file, only when the format is both"),
+  warning: z
+    .string()
+    .describe("A warning, for example when the message content is hidden"),
+});

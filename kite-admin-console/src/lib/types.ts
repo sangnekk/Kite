@@ -201,6 +201,7 @@ export interface Plan {
   feature_custom_bot_status: boolean
   feature_ai_included: boolean
   feature_ai_credit_per_day: number
+  feature_transcript_no_watermark: boolean
 }
 
 // ---- staff, audit, settings

@@ -1760,6 +1760,138 @@
       "creditsCost": 1
     },
     {
+      "type": "action_transcript",
+      "category": "action",
+      "section": "Tin nhắn",
+      "contextTypes": null,
+      "title": "Lưu transcript",
+      "description": "Lưu lịch sử chat của kênh thành tệp HTML hoặc văn bản và có thể gửi vào một kênh",
+      "icon": "file-text",
+      "color": "#3b82f6",
+      "dataFields": [
+        "channel_target",
+        "transcript_limit",
+        "transcript_format",
+        "transcript_name",
+        "transcript_before",
+        "transcript_after",
+        "transcript_exclude_bots",
+        "transcript_output_channel",
+        "temporary_name",
+        "custom_label"
+      ],
+      "dataSchema": {
+        "type": "object",
+        "properties": {
+          "custom_label": {
+            "type": "string"
+          },
+          "result_key": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "channel_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          },
+          "transcript_limit": {
+            "type": "string"
+          },
+          "transcript_format": {
+            "type": "string",
+            "enum": [
+              "html",
+              "text",
+              "both"
+            ]
+          },
+          "transcript_name": {
+            "type": "string"
+          },
+          "transcript_before": {
+            "type": "string"
+          },
+          "transcript_after": {
+            "type": "string"
+          },
+          "transcript_exclude_bots": {
+            "type": "boolean"
+          },
+          "transcript_output_channel": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\{\\{[a-z0-9_'().]+\\}\\}$"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "resultSchema": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "description": "The number of messages in the transcript"
+          },
+          "channel_id": {
+            "type": "string",
+            "description": "The ID of the channel"
+          },
+          "file_name": {
+            "type": "string",
+            "description": "The name of the transcript file"
+          },
+          "content": {
+            "type": "string",
+            "description": "The whole transcript file as text (the HTML file when the format is both)"
+          },
+          "text_file_name": {
+            "type": "string",
+            "description": "The name of the text file, only when the format is both"
+          },
+          "text_content": {
+            "type": "string",
+            "description": "The whole text file, only when the format is both"
+          },
+          "warning": {
+            "type": "string",
+            "description": "A warning, for example when the message content is hidden"
+          }
+        },
+        "required": [
+          "count",
+          "channel_id",
+          "file_name",
+          "content",
+          "text_file_name",
+          "text_content",
+          "warning"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "producesResult": true,
+      "resultKind": "object",
+      "ownsChildren": false,
+      "creditsCost": 3
+    },
+    {
       "type": "action_channel_slowmode",
       "category": "action",
       "section": "Kênh",
