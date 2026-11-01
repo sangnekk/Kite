@@ -18,6 +18,7 @@ import { useAppCollaborators, useAppFeature } from "@/lib/hooks/api";
 import { useAppId } from "@/lib/hooks/params";
 import { MinusIcon } from "lucide-react";
 import ConfirmDialog from "../common/ConfirmDialog";
+import UserAvatar from "../common/UserAvatar";
 import { Button } from "../ui/button";
 import AppCollaboratorAddDialog from "./AppCollaboratorAddDialog";
 import { toast } from "sonner";
@@ -65,7 +66,13 @@ export default function AppSettingsCollaborators() {
             {collaborators?.map((collaborator) => (
               <TableRow key={collaborator!.user.id}>
                 <TableCell className="font-medium">
-                  {collaborator!.user.display_name}
+                  <div className="flex items-center gap-3">
+                    <UserAvatar
+                      user={collaborator!.user}
+                      className="h-8 w-8 rounded-lg"
+                    />
+                    {collaborator!.user.display_name}
+                  </div>
                 </TableCell>
                 <TableCell>{collaborator!.user.discord_id}</TableCell>
                 <TableCell>{collaborator!.role}</TableCell>

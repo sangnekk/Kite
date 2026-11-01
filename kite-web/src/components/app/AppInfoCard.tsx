@@ -11,6 +11,7 @@ import { useApp, useResponseData, useUsageCredits } from "@/lib/hooks/api";
 import { formatDate } from "@/lib/utils";
 import { CopyIcon } from "lucide-react";
 import { useCallback } from "react";
+import UserAvatar from "../common/UserAvatar";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Separator } from "../ui/separator";
@@ -66,7 +67,10 @@ export default function AppInfoCard() {
             </li>
             <li className="flex items-center justify-between">
               <span className="text-muted-foreground">Chủ sở hữu</span>
-              <span>
+              <span className="flex items-center gap-2">
+                {ownerUser && (
+                  <UserAvatar user={ownerUser} className="h-6 w-6 rounded-md" />
+                )}
                 {ownerUser ? ownerUser.display_name : app?.owner_user_id}
               </span>
             </li>
