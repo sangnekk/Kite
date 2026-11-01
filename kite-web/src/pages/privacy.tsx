@@ -6,7 +6,7 @@ export default function PrivacyPolicyPage() {
     <HomeLayout title="Chính sách quyền riêng tư">
       <div className="prose dark:prose-invert text-foreground mx-auto my-16 max-w-7xl px-5">
         <h1>Chính sách quyền riêng tư</h1>
-        <p>Cập nhật lần cuối: 24 tháng 9, 2025</p>
+        <p>Cập nhật lần cuối: 1 tháng 11, 2026</p>
         <p>
           Chính sách quyền riêng tư này mô tả các chính sách và quy trình
           của chúng tôi về việc thu thập, sử dụng và tiết lộ thông tin của
@@ -139,7 +139,10 @@ export default function PrivacyPolicyPage() {
             <p>Địa chỉ email</p>
           </li>
           <li>
-            <p>Thông tin thanh toán (được xử lý bởi Lemon Squeezy)</p>
+            <p>
+              Thông tin giao dịch chuyển khoản (số tiền, mã chuyển khoản và
+              mã tham chiếu do ngân hàng cung cấp)
+            </p>
           </li>
           <li>
             <p>Dữ liệu sử dụng</p>
@@ -192,33 +195,49 @@ export default function PrivacyPolicyPage() {
         </p>
         <h4>Thông tin thanh toán</h4>
         <p>
-          Khi bạn đăng ký dịch vụ premium, việc xử lý thanh toán được thực
-          hiện bởi Lemon Squeezy, bên xử lý thanh toán bên thứ ba. Khi bạn
-          thanh toán, bạn sẽ được chuyển đến trang web bảo mật của Lemon
-          Squeezy nơi bạn nhập thông tin thanh toán trực tiếp. Chúng tôi
-          không lưu trữ chi tiết thẻ thanh toán trên máy chủ của mình.
+          Chúng tôi nhận thanh toán cho dịch vụ premium bằng chuyển khoản
+          ngân hàng. Khi bạn chọn một gói, chúng tôi hiển thị số tài khoản,
+          số tiền và một mã chuyển khoản riêng cho giao dịch của bạn dưới
+          dạng văn bản và mã QR. Bạn thực hiện chuyển khoản từ ứng dụng
+          ngân hàng của chính bạn. Chúng tôi không thu thập và không lưu
+          trữ thông tin thẻ thanh toán, tài khoản ngân hàng hay thông tin
+          đăng nhập ngân hàng của bạn.
         </p>
         <p>
-          Lemon Squeezy có thể thu thập và xử lý thông tin sau từ bạn:
+          Để biết khi nào tiền đã về, chúng tôi sử dụng SePay, dịch vụ theo
+          dõi biến động số dư tài khoản nhận tiền của chúng tôi. Khi có tiền
+          vào, SePay gửi cho chúng tôi một thông báo giao dịch gồm các thông
+          tin như số tiền, ngân hàng, nội dung chuyển khoản, mã tham chiếu
+          và thời điểm giao dịch. Chúng tôi đối chiếu mã chuyển khoản trong
+          nội dung với giao dịch bạn đã tạo để kích hoạt gói. Nội dung
+          chuyển khoản là thông tin do bạn và ngân hàng của bạn nhập, vì vậy
+          bạn không nên ghi thêm thông tin cá nhân vào đó.
         </p>
+        <p>Chúng tôi lưu cho mỗi giao dịch:</p>
         <ul>
-          <li>Thông tin thẻ thanh toán (số thẻ, ngày hết hạn, CVV)</li>
-          <li>Địa chỉ thanh toán và thông tin liên hệ</li>
-          <li>Chi tiết giao dịch và lịch sử thanh toán</li>
+          <li>Ứng dụng và gói bạn chọn, số tiền, trạng thái và thời điểm tạo</li>
+          <li>Mã chuyển khoản và nội dung mã QR được tạo cho bạn</li>
+          <li>
+            Mã tham chiếu và nội dung thông báo giao dịch nhận từ SePay, dùng
+            để đối soát khi có sự cố
+          </li>
         </ul>
         <p>
-          Chúng tôi chia sẻ ID người dùng và chi tiết đăng ký với Lemon
-          Squeezy để tạo điều kiện cho quá trình thanh toán và quản lý đăng
-          ký. Lemon Squeezy có chính sách quyền riêng tư và điều khoản dịch
-          vụ riêng quản lý cách họ xử lý thông tin thanh toán. Chúng tôi
-          khuyến khích bạn xem chính sách quyền riêng tư của Lemon Squeezy
-          tại{" "}
+          Chúng tôi không gửi ID người dùng hay thông tin tài khoản của bạn
+          cho SePay. Tuy nhiên, hình ảnh mã QR được tải trực tiếp từ máy chủ
+          của SePay (qr.sepay.vn), nên SePay nhận được địa chỉ IP của bạn
+          cùng với số tài khoản, số tiền và mã chuyển khoản nằm trong mã QR.
+          Khi một giao dịch không xử lý được, chúng tôi có thể gửi cảnh báo
+          kèm số tiền, mã tham chiếu và nội dung chuyển khoản đến kênh nội
+          bộ của đội ngũ để đối soát thủ công. SePay và ngân hàng của bạn có
+          chính sách quyền riêng tư riêng quản lý cách họ xử lý thông tin
+          của bạn. Chúng tôi khuyến khích bạn xem chính sách của SePay tại{" "}
           <a
-            href="https://www.lemonsqueezy.com/privacy"
+            href="https://sepay.vn"
             rel="external nofollow noopener"
             target="_blank"
           >
-            https://www.lemonsqueezy.com/privacy
+            https://sepay.vn
           </a>
           .
         </p>
@@ -336,8 +355,8 @@ export default function PrivacyPolicyPage() {
               <strong>Để thực hiện hợp đồng:</strong> phát triển, tuân thủ
               và thực hiện hợp đồng mua bán sản phẩm, hàng hóa hoặc dịch
               vụ bạn đã mua hoặc bất kỳ hợp đồng nào khác với chúng tôi
-              qua Dịch vụ, bao gồm xử lý thanh toán và quản lý đăng ký
-              thông qua bên xử lý thanh toán Lemon Squeezy.
+              qua Dịch vụ, bao gồm xác nhận thanh toán chuyển khoản và quản
+              lý đăng ký dựa trên thông báo giao dịch từ SePay.
             </p>
           </li>
           <li>
@@ -392,10 +411,10 @@ export default function PrivacyPolicyPage() {
           <li>
             <strong>Với Nhà cung cấp dịch vụ:</strong> chúng tôi có thể chia
             sẻ thông tin cá nhân với Nhà cung cấp dịch vụ để giám sát và
-            phân tích việc sử dụng Dịch vụ, liên hệ bạn và xử lý thanh
-            toán. Chúng tôi chia sẻ ID người dùng và thông tin thanh toán
-            với Lemon Squeezy, bên xử lý thanh toán, để tạo điều kiện cho
-            dịch vụ đăng ký.
+            phân tích việc sử dụng Dịch vụ và liên hệ bạn. Chúng tôi dùng
+            SePay để nhận thông báo khi có chuyển khoản vào tài khoản của
+            chúng tôi; chúng tôi không gửi ID người dùng hay thông tin tài
+            khoản của bạn cho SePay (xem mục Thông tin thanh toán).
           </li>
           <li>
             <strong>Cho chuyển nhượng kinh doanh:</strong> chúng tôi có thể
