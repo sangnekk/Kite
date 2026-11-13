@@ -10,6 +10,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { apiRequest } from "@/lib/api/client";
 import { useCheckoutCancelMutation } from "@/lib/api/mutations";
 import { useBillingCheckoutStatus } from "@/lib/hooks/api";
 import { useAppId } from "@/lib/hooks/params";
@@ -126,6 +127,32 @@ export default function CheckoutDialog({
   const phase = outcome ?? live;
   const waiting = phase === "pending";
 
+  // The order lives as long as this page does: reloading or leaving it ends the
+  // order. The browser asks first (it writes the question itself), and when the
+  // user goes on, the cancel is sent as the page goes away, which is what
+  // keepalive is for. If the money arrived first the server keeps the payment.
+  useEffect(() => {
+    if (!waiting || !appId) return;
+
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    const onPageHide = () => {
+      void apiRequest(
+        `/v1/apps/${appId}/billing/checkouts/${encodeURIComponent(checkout.payment_id)}/cancel`,
+        { method: "POST", keepalive: true }
+      ).catch(() => {});
+    };
+
+    window.addEventListener("beforeunload", onBeforeUnload);
+    window.addEventListener("pagehide", onPageHide);
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      window.removeEventListener("pagehide", onPageHide);
+    };
+  }, [waiting, appId, checkout.payment_id]);
+
   useEffect(() => {
     if (settled) return;
 
@@ -226,6 +253,8 @@ export default function CheckoutDialog({
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent
+        // While it waits, the only way out is the cancel button.
+        hideClose={waiting}
         className="max-h-[92dvh] gap-5 overflow-y-auto sm:max-w-2xl"
         onInteractOutside={(event) => {
           // A click beside the dialog must not drop the QR code while it is awaited.
@@ -393,8 +422,10 @@ function CheckoutBody({
             <>
               <p className="text-xs text-muted-foreground">
                 Nhập đúng nội dung chuyển khoản. Nếu bạn đã chuyển khoản, gói sẽ
-                tự kích hoạt sau khi SePay báo về, kể cả khi bạn đóng cửa sổ
-                này.
+                tự kích hoạt sau khi SePay báo về.{" "}
+                <strong className="text-foreground">
+                  Tải lại hoặc rời khỏi trang sẽ hủy đơn này.
+                </strong>
               </p>
               <p
                 role={waitedLong ? "alert" : undefined}
@@ -485,25 +516,17 @@ function CheckoutActions({
   }
 
   if (phase === "pending") {
+    // The only button while the money is awaited: there is no way to close the
+    // window and come back to the same order, so leaving is cancelling.
     return (
-      <>
-        <Button
-          variant="ghost"
-          className="w-full text-destructive hover:text-destructive sm:w-auto"
-          onClick={onAskCancel}
-          disabled={retrying}
-        >
-          Hủy đơn
-        </Button>
-        <Button
-          variant="outline"
-          className="w-full sm:w-auto"
-          onClick={onClose}
-          disabled={retrying}
-        >
-          Đóng
-        </Button>
-      </>
+      <Button
+        variant="outline"
+        className="w-full border-destructive/40 text-destructive hover:text-destructive sm:w-auto"
+        onClick={onAskCancel}
+        disabled={retrying}
+      >
+        Hủy đơn
+      </Button>
     );
   }
 
