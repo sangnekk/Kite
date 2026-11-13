@@ -18,6 +18,7 @@ import {
   AuthLogoutResponse,
   BillingCheckoutRequest,
   BillingCheckoutResponse,
+  BillingCheckoutStatusResponse,
   CommandCreateRequest,
   CommandCreateResponse,
   CommandDeleteResponse,
@@ -1022,6 +1023,17 @@ export function useAppCollaboratorDeleteMutation(appId: string) {
         queryKey: ["apps", appId, "collaborators"],
       });
     },
+  });
+}
+
+/** Gives up on a payment that was not paid: its QR code can no longer be used. */
+export function useCheckoutCancelMutation(appId: string) {
+  return useMutation({
+    mutationFn: (paymentId: string) =>
+      apiRequest<BillingCheckoutStatusResponse>(
+        `/v1/apps/${appId}/billing/checkouts/${encodeURIComponent(paymentId)}/cancel`,
+        { method: "POST" }
+      ),
   });
 }
 

@@ -3,9 +3,9 @@ import {
   BotIcon,
   CheckIcon,
   ClockIcon,
-  CopyIcon,
   DatabaseIcon,
   HeadphonesIcon,
+  Loader2Icon,
   MinusIcon,
   RadioTowerIcon,
   SparklesIcon,
@@ -13,18 +13,15 @@ import {
   WorkflowIcon,
   ZapIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import {
-  useAppSubscriptions,
-  useBillingCheckoutStatus,
-  useBillingPlans,
-} from "@/lib/hooks/api";
+import { useAppSubscriptions, useBillingPlans } from "@/lib/hooks/api";
 import { useBillingCheckout } from "@/lib/hooks/billing";
 import { useAppId } from "@/lib/hooks/params";
 import { BillingCheckoutResponse, BillingPlan } from "@/lib/types/wire.gen";
+import CheckoutDialog from "./CheckoutDialog";
 import { cn, formatBillingPeriod, formatNumber } from "@/lib/utils";
 
 import { Badge } from "../ui/badge";
@@ -46,11 +43,18 @@ export default function AppPricingList() {
   const queryClient = useQueryClient();
   const subscriptions = useAppSubscriptions();
   const plans = useBillingPlans();
-  const checkout = useBillingCheckout();
+  const { checkout, isPending: creatingCheckout } = useBillingCheckout();
   const [activeCheckout, setActiveCheckout] = useState<{
     planId: string;
+    planTitle: string;
     checkout: BillingCheckoutResponse;
   } | null>(null);
+  // Which plan a code is being made for, to say so on its button.
+  const [creatingFor, setCreatingFor] = useState<string | null>(null);
+
+  // While a code is being made or a payment is open every plan button is locked:
+  // a second tap would make a second payment that replaces the first.
+  const locked = creatingCheckout || activeCheckout !== null;
 
   const activeSubscriptions = subscriptions?.filter(
     (subscription) => subscription!.status !== "expired",
@@ -79,27 +83,58 @@ export default function AppPricingList() {
     [pricings],
   );
 
-  const checkoutStatus = useBillingCheckoutStatus(
-    activeCheckout?.checkout.payment_id ?? "",
-    activeCheckout?.planId ?? "",
+  const startCheckout = useCallback(
+    (pricing: Pricing) => {
+      setCreatingFor(pricing.id);
+      checkout(pricing.id, (data) => {
+        setActiveCheckout({
+          planId: pricing.id,
+          planTitle: pricing.title,
+          checkout: data,
+        });
+      });
+    },
+    [checkout]
   );
 
-  useEffect(() => {
-    if (checkoutStatus?.paid && activeCheckout) {
-      toast.success("Thanh toán thành công");
-      queryClient.invalidateQueries({
-        queryKey: ["apps", appId, "billing", "subscriptions"],
-      });
-      setActiveCheckout(null);
-    }
-  }, [activeCheckout, appId, checkoutStatus?.paid, queryClient]);
+  const refreshPlan = useCallback(() => {
+    // The subscriptions of the app and its features (under "billing") both change
+    // with the plan.
+    queryClient.invalidateQueries({
+      queryKey: ["apps", appId, "subscriptions"],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["apps", appId, "billing"],
+    });
+  }, [appId, queryClient]);
+
+  const handlePaid = useCallback(() => {
+    toast.success("Thanh toán thành công");
+    refreshPlan();
+  }, [refreshPlan]);
+
+  const closeCheckout = useCallback(() => {
+    setActiveCheckout(null);
+    setCreatingFor(null);
+    refreshPlan();
+  }, [refreshPlan]);
 
   return (
     <>
       {activeCheckout ? (
-        <CheckoutCard
+        <CheckoutDialog
+          // A new code is a new payment: start from a clean state.
+          key={activeCheckout.checkout.payment_id}
           checkout={activeCheckout.checkout}
-          paid={Boolean(checkoutStatus?.paid)}
+          planId={activeCheckout.planId}
+          planTitle={activeCheckout.planTitle}
+          retrying={creatingCheckout}
+          onPaid={handlePaid}
+          onRetry={() => {
+            const pricing = pricings.find((p) => p.id === activeCheckout.planId);
+            if (pricing) startCheckout(pricing);
+          }}
+          onClose={closeCheckout}
         />
       ) : null}
 
@@ -117,11 +152,10 @@ export default function AppPricingList() {
               isCurrent={isCurrent}
               isFeatured={isFeatured}
               hasActivePlan={hasActivePlan}
-              onCheckout={() =>
-                checkout(pricing.id, (data) => {
-                  setActiveCheckout({ planId: pricing.id, checkout: data });
-                })
-              }
+              locked={locked}
+              busy={creatingCheckout && creatingFor === pricing.id}
+              paying={activeCheckout?.planId === pricing.id}
+              onCheckout={() => startCheckout(pricing)}
               canCheckout={canCheckout}
             />
           );
@@ -149,6 +183,9 @@ function PricingCard({
   isFeatured,
   hasActivePlan,
   canCheckout,
+  locked,
+  busy,
+  paying,
   onCheckout,
 }: {
   pricing: Pricing;
@@ -156,15 +193,25 @@ function PricingCard({
   isFeatured: boolean;
   hasActivePlan: boolean;
   canCheckout: boolean;
+  /** A payment is being made somewhere on the page: no plan can be started. */
+  locked: boolean;
+  /** The code of this plan is being made. */
+  busy: boolean;
+  /** The payment of this plan is open. */
+  paying: boolean;
   onCheckout: () => void;
 }) {
-  const buttonLabel = isCurrent
-    ? "Gói hiện tại"
-    : hasActivePlan
-      ? "Đang dùng gói khác"
-      : pricing.price <= 0
-        ? "Gói mặc định"
-        : "Chọn gói này";
+  const buttonLabel = busy
+    ? "Đang tạo mã thanh toán..."
+    : paying
+      ? "Đang thanh toán"
+      : isCurrent
+        ? "Gói hiện tại"
+        : hasActivePlan
+          ? "Đang dùng gói khác"
+          : pricing.price <= 0
+            ? "Gói mặc định"
+            : "Chọn gói này";
 
   return (
     <Card
@@ -300,11 +347,14 @@ function PricingCard({
         <Button
           className="w-full gap-2"
           size="lg"
-          disabled={!canCheckout}
+          disabled={!canCheckout || locked}
+          aria-busy={busy}
           variant={isFeatured && canCheckout ? "default" : "outline"}
           onClick={onCheckout}
         >
-          {isCurrent ? (
+          {busy ? (
+            <Loader2Icon data-icon="inline-start" className="size-4 animate-spin" />
+          ) : isCurrent ? (
             <CheckIcon data-icon="inline-start" className="size-4" />
           ) : canCheckout ? (
             <ArrowRightIcon data-icon="inline-start" className="size-4" />
@@ -374,122 +424,6 @@ function PlanFeature({
           </p>
         ) : null}
       </div>
-    </div>
-  );
-}
-
-function CheckoutCard({
-  checkout,
-  paid,
-}: {
-  checkout: BillingCheckoutResponse;
-  paid: boolean;
-}) {
-  return (
-    <Card className="mx-auto mb-8 max-w-5xl overflow-hidden border-primary/30 bg-gradient-to-br from-card to-muted/30">
-      <CardHeader>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <CardTitle className="text-xl sm:text-2xl">
-            Quét QR để thanh toán
-          </CardTitle>
-          <Badge variant={paid ? "default" : "secondary"}>
-            {paid ? "Đã thanh toán" : "Đang chờ xác nhận"}
-          </Badge>
-        </div>
-        <CardDescription>
-          Chuyển khoản đúng số tiền và nội dung để hệ thống tự xác nhận.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-6 lg:grid-cols-[auto_1fr] lg:items-center">
-        <div className="mx-auto rounded-2xl bg-white p-3 shadow-lg shadow-black/10 ring-1 ring-black/5 lg:mx-0">
-          <img
-            src={checkout.qr_code_url}
-            alt="Mã QR thanh toán SePay"
-            className="size-56 rounded-xl object-contain sm:size-64"
-          />
-        </div>
-
-        <div className="flex min-w-0 flex-col gap-4 text-sm">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <PaymentDetail label="Ngân hàng" value={checkout.bank_name} />
-            <PaymentDetail
-              label="Số tiền"
-              value={`${formatNumber(checkout.amount)}đ`}
-              emphasized
-            />
-          </div>
-
-          <CopyablePaymentDetail
-            label="Số tài khoản"
-            value={checkout.account_number}
-            successMessage="Đã sao chép số tài khoản"
-          />
-          <CopyablePaymentDetail
-            label="Nội dung chuyển khoản"
-            value={checkout.payment_content}
-            successMessage="Đã sao chép nội dung chuyển khoản"
-          />
-
-          <div className="rounded-xl border bg-background/60 px-4 py-3">
-            <p className="text-xs text-muted-foreground">Trạng thái</p>
-            <p className="mt-1 font-medium">
-              {paid
-                ? "Hệ thống đã ghi nhận thanh toán"
-                : "Đang chờ SePay xác nhận giao dịch"}
-            </p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function PaymentDetail({
-  label,
-  value,
-  emphasized = false,
-}: {
-  label: string;
-  value: string;
-  emphasized?: boolean;
-}) {
-  return (
-    <div className="rounded-xl border bg-background/60 px-4 py-3">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={cn("mt-1 font-medium", emphasized && "text-xl font-bold")}>
-        {value}
-      </p>
-    </div>
-  );
-}
-
-function CopyablePaymentDetail({
-  label,
-  value,
-  successMessage,
-}: {
-  label: string;
-  value: string;
-  successMessage: string;
-}) {
-  return (
-    <div className="rounded-xl border bg-background/60 p-3 sm:flex sm:items-center sm:justify-between sm:gap-3">
-      <div className="min-w-0 px-1">
-        <p className="text-xs text-muted-foreground">{label}</p>
-        <p className="mt-1 break-all font-mono text-sm font-medium">{value}</p>
-      </div>
-      <Button
-        className="mt-3 w-full gap-2 sm:mt-0 sm:w-auto"
-        variant="outline"
-        size="sm"
-        onClick={async () => {
-          await navigator.clipboard.writeText(value);
-          toast.success(successMessage);
-        }}
-      >
-        <CopyIcon data-icon="inline-start" className="size-3.5" />
-        Sao chép
-      </Button>
     </div>
   );
 }

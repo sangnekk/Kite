@@ -116,6 +116,25 @@ WHERE app_id = $1
 	return err
 }
 
+// CancelPendingPaymentSession marks one pending payment session of an app as
+// failed. The status is checked in the same statement that changes it, so a
+// payment that the bank confirmed in the meantime can not be cancelled.
+func (c *Client) CancelPendingPaymentSession(ctx context.Context, appID string, paymentID string, updatedAt time.Time) (bool, error) {
+	tag, err := c.DB.Exec(ctx, `
+UPDATE payment_sessions
+SET status = 'failed',
+	updated_at = $3
+WHERE payment_id = $1
+	AND app_id = $2
+	AND status = 'pending'
+`, paymentID, appID, pgtype.Timestamp{Time: updatedAt, Valid: true})
+	if err != nil {
+		return false, err
+	}
+
+	return tag.RowsAffected() > 0, nil
+}
+
 func scanPaymentSession(row interface{ Scan(dest ...any) error }) (*model.PaymentSession, error) {
 	var session model.PaymentSession
 	var seq pgtype.Int8

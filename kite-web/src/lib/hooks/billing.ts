@@ -6,11 +6,16 @@ import { BillingCheckoutResponse } from "../types/wire.gen";
 
 type CheckoutSuccessHandler = (checkout: BillingCheckoutResponse) => void;
 
+/**
+ * Starts the payment of a plan. `isPending` is true while the code is being
+ * made, so the buttons can be locked: a second tap would make a second payment
+ * that replaces the first.
+ */
 export function useBillingCheckout() {
   const appId = useAppId();
   const checkoutMutation = useCheckoutCreateMutation(appId);
 
-  return useCallback(
+  const checkout = useCallback(
     (planId: string, onSuccess?: CheckoutSuccessHandler) => {
       checkoutMutation.mutate(
         {
@@ -26,9 +31,14 @@ export function useBillingCheckout() {
               );
             }
           },
+          onError() {
+            toast.error("Tạo thanh toán thất bại, hãy thử lại");
+          },
         }
       );
     },
     [checkoutMutation]
   );
+
+  return { checkout, isPending: checkoutMutation.isPending };
 }
